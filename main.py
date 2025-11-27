@@ -4,44 +4,42 @@ import json
 import os
 import datetime
 import time
-import requests  # 引入 requests 库来做伪装
+import requests
+from bs4 import BeautifulSoup # 用来从 Google 新闻里扣图片
 
 # 设置时区 UTC+9
 JST_OFFSET = datetime.timedelta(hours=9)
 
-RSS_URL = "https://news.yahoo.co.jp/rss/ranking/comment/all.xml"
+# Google 新闻 (日本焦点) RSS
+RSS_URL = "https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja"
 
 def get_current_jst_time():
     return datetime.datetime.utcnow() + JST_OFFSET
 
 def update_news():
-    print("🚀 开始抓取 Yahoo 评论排行榜...")
+    print("🚀 开始抓取 Google 新闻(日本热榜)...")
     
-    # --- 🔥 核心修改：伪装成浏览器 ---
+    # 伪装头
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
     
     try:
-        # 先用 requests 带着伪装头去请求
         response = requests.get(RSS_URL, headers=headers, timeout=10)
-        # 打印状态码，方便调试 (200表示成功，403表示被拒)
-        print(f"📡 Yahoo 响应状态码: {response.status_code}")
+        print(f"📡 响应状态码: {response.status_code}")
         
         if response.status_code != 200:
-            print("❌ 访问被拒绝，可能IP被封锁")
+            print("❌ 访问被拒绝")
             return
 
-        # 把请求到的内容喂给 feedparser
         feed = feedparser.parse(response.content)
         
     except Exception as e:
         print(f"❌ 网络请求失败: {e}")
         return
-    # ----------------------------------
 
     if not feed.entries:
-        print("⚠️ 获取到的 RSS 内容为空，请检查网络或源")
+        print("⚠️ 未获取到新闻")
         return
 
     translator = GoogleTranslator(source='auto', target='zh-CN')
@@ -56,6 +54,7 @@ def update_news():
     existing_links = set()
     current_archive_data = []
 
+    # 读取旧数据
     if os.path.exists(archive_path):
         try:
             with open(archive_path, 'r', encoding='utf-8') as f:
@@ -67,24 +66,29 @@ def update_news():
 
     new_items_count = 0
     
-    for entry in feed.entries[:15]:
+    # 抓取前 20 条
+    for entry in feed.entries[:20]:
         link = entry.link
         if link in existing_links:
             continue
 
+        # 翻译标题
+        # Google新闻标题通常是 "标题 - 媒体名"，我们只翻译横杠前面的部分会更准确
+        clean_title = entry.title.split(' - ')[0]
         try:
-            zh_title = translator.translate(entry.title)
+            zh_title = translator.translate(clean_title)
         except:
-            zh_title = entry.title
+            zh_title = clean_title
         
+        # --- 🔥 核心：从 Google 描述中提取图片 ---
         image_url = ""
-        if 'media_thumbnail' in entry and len(entry.media_thumbnail) > 0:
-            image_url = entry.media_thumbnail[0]['url']
-        elif 'links' in entry:
-            for l in entry.links:
-                if 'image' in l.get('type', ''):
-                    image_url = l['href']
-                    break
+        if 'summary' in entry:
+            # Google 把图片放在 summary 的 html 标签里
+            soup = BeautifulSoup(entry.summary, 'html.parser')
+            img_tag = soup.find('img')
+            if img_tag and 'src' in img_tag.attrs:
+                image_url = img_tag['src']
+        # ---------------------------------------
         
         time_str = get_current_jst_time().strftime("%H:%M")
 
@@ -105,7 +109,6 @@ def update_news():
 
     with open(archive_path, 'w', encoding='utf-8') as f:
         json.dump(current_archive_data, f, ensure_ascii=False, indent=2)
-    print(f"✅ 历史存档已更新: {archive_path}")
 
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(current_archive_data[:20], f, ensure_ascii=False, indent=2)
