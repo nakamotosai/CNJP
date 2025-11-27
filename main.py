@@ -6,21 +6,25 @@ import datetime
 import time
 import requests
 from bs4 import BeautifulSoup
+import re   # ← 新增：用于正则过滤股票
 
-# 设置时区 UTC+9
+
+# 设置时区 UTC+9（日本时间）
 JST_OFFSET = datetime.timedelta(hours=9)
+
 
 def get_current_jst_time():
     return datetime.datetime.utcnow() + JST_OFFSET
 
+
 def extract_image(entry):
-    # 尝试提取图片的逻辑 (Google News 专用)
+    # 尝试从 Google News 的 summary/description 中提取图片
     content_html = ""
     if 'summary' in entry:
         content_html = entry.summary
     elif 'description' in entry:
         content_html = entry.description
-    
+
     if content_html:
         try:
             soup = BeautifulSoup(content_html, 'html.parser')
@@ -30,6 +34,7 @@ def extract_image(entry):
         except:
             pass
     return ""
+
 
 def classify_news(title):
     # 简单的关键词分类
@@ -41,59 +46,61 @@ def classify_news(title):
         "科技": ["科技", "科学", "AI", "互联网", "手机", "芯片", "航天", "研发", "半导体", "人工智能", "机器人", "无人机", "5G", "6G", "卫星", "火箭", "探测", "宇宙", "太空", "生物", "基因", "疫苗", "药物", "癌症", "诺贝尔", "物理", "化学", "数学", "天文", "黑洞", "量子", "超导", "材料", "电池", "能源", "清洁", "环保", "自动驾驶", "元宇宙", "区块链", "加密货币", "比特币"],
         "娱乐": ["娱乐", "电影", "音乐", "明星", "动漫", "游戏", "动画", "漫画", "声优", "偶像", "歌手", "演员", "导演", "剧集", "日剧", "韩剧", "综艺", "演唱会", "票房", "榜单", "红白", "吉卜力", "宫崎骏", "新海诚", "鬼灭", "咒术", "海贼王", "火影", "柯南", "宝可梦", "马里奥", "塞尔达"]
     }
-    
+
     for category, words in keywords.items():
-        for word in words:
-            if word in title:
-                return category
+        if any(word in title for word in words):
+            return category
     return "其他"
 
+
 def fetch_google_china_news():
-    print("🚀 正在抓取 Google News (日本/中国相关)...")
-    # 关键词：中国
-    # ceid=JP:ja 限制为日本版
-    # when:1d 限制过去24小时 (我们每天存，首页聚合7天，所以抓24小时够了)
+    print("正在抓取 Google News（日本版 · 中国相关）...")
     url = "https://news.google.com/rss/search?q=中国+when:1d&hl=ja&gl=JP&ceid=JP:ja"
-    
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
-    
     try:
-        response = requests.get(url, headers=headers, timeout=15)
-        if response.status_code != 200:
-            return []
+        response = requests.get(url, headers=headers, timeout=20)
+        response.raise_for_status()
         feed = feedparser.parse(response.content)
+        print(f"抓到 {len(feed.entries)} 条原始条目")
         return feed.entries
     except Exception as e:
-        print(f"❌ 抓取失败: {e}")
+        print(f"抓取失败: {e}")
         return []
+
 
 def process_entries(entries):
     processed = []
     translator = GoogleTranslator(source='auto', target='zh-CN')
-    
-    # 每次最多抓 30 条
+
     for entry in entries[:30]:
         original_title = entry.title
-        # 去掉媒体后缀 (例如 " - NHK NEWS")
         clean_title = original_title.split(' - ')[0]
-        
+
+        # 翻译标题
         try:
             zh_title = translator.translate(clean_title)
         except:
-            zh_title = clean_title 
+            zh_title = clean_title
+
+        # ★★★★★ 永久消灭日本垃圾股票新闻 ★★★★★
+        if re.search(r'^中国[々〇〻〆一-龯]{2,5}', zh_title):
+            print(f"已过滤股票垃圾 → {zh_title}")
+            continue
+        STOCK_KEYWORDS = ["株価", "上昇", "下落", "決算", "業績", "配当", "ストップ高", "ストップ安", "出来高", "売買高", "中国塗料", "中国電力", "中国工業", "中国汽船", "中国銀行"]
+        if any(kw in zh_title for kw in STOCK_KEYWORDS):
+            print(f"已过滤股票垃圾 → {zh_title}")
+            continue
+        # =======================================
 
         image_url = extract_image(entry)
-        category = classify_news(zh_title) # 自动分类
-        
-        # 获取当前时间对象
+        category = classify_news(zh_title)
+
+        # 时间处理
         now = get_current_jst_time()
-        
-        # 尝试解析 RSS 自带的时间
         try:
-            if hasattr(entry, 'published_parsed'):
-                # entry.published_parsed 是 UTC 时间，需转为 JST
+            if hasattr(entry, 'published_parsed') and entry.published_parsed:
                 pub_tm = entry.published_parsed
                 dt_utc = datetime.datetime(*pub_tm[:6])
                 dt_jst = dt_utc + datetime.timedelta(hours=9)
@@ -102,39 +109,36 @@ def process_entries(entries):
         except:
             dt_jst = now
 
-        # 格式化时间字符串
-        time_display = dt_jst.strftime("%m-%d %H:%M") # 显示为 11-28 10:00
-        timestamp = dt_jst.timestamp() # 用于排序的数字
+        time_display = dt_jst.strftime("%m-%d %H:%M")
+        timestamp = dt_jst.timestamp()
 
         item = {
             "title": zh_title,
             "origin": original_title,
             "link": entry.link,
             "time_str": time_display,
-            "timestamp": timestamp, # 排序用
+            "timestamp": timestamp,
             "image": image_url,
             "category": category
         }
         processed.append(item)
         time.sleep(0.2)
-        
+
+    print(f"过滤后保留 {len(processed)} 条有效新闻")
     return processed
 
+
 def update_news():
-    # 1. 抓取今日最新
     raw_entries = fetch_google_china_news()
     new_data = process_entries(raw_entries)
 
-    # 2. 存入今日存档
+    # 存档今日数据
     archive_dir = "archive"
-    if not os.path.exists(archive_dir):
-        os.makedirs(archive_dir)
-    
-    today = get_current_jst_time()
-    today_str = today.strftime("%Y-%m-%d")
+    os.makedirs(archive_dir, exist_ok=True)
+    today_str = get_current_jst_time().strftime("%Y-%m-%d")
     archive_path = os.path.join(archive_dir, f"{today_str}.json")
-    
-    # 读取旧的今日存档（合并去重）
+
+    # 读取已有今日数据并去重合并
     final_today_list = []
     if os.path.exists(archive_path):
         try:
@@ -143,31 +147,25 @@ def update_news():
         except:
             pass
 
-    # 合并逻辑
-    existing_links = set(i['link'] for i in final_today_list)
+    existing_links = {i['link'] for i in final_today_list}
     for item in new_data:
         if item['link'] not in existing_links:
-            final_today_list.insert(0, item) # 新的放前面
-    
-    # 保存今日存档
+            final_today_list.insert(0, item)
+
     with open(archive_path, 'w', encoding='utf-8') as f:
         json.dump(final_today_list, f, ensure_ascii=False, indent=2)
-    print(f"✅ 今日存档更新 ({len(final_today_list)}条)")
 
-    # 3. 生成首页数据 (聚合过去 30 天)
-    print("🔄 正在聚合近 30 天数据...")
+    # 聚合近30天生成首页 data.json
     home_data = []
     seen_links = set()
+    today = get_current_jst_time()
 
-    # 倒序遍历过去 30 天 (今天 -> 30天前)
     for i in range(30):
-        target_date = today - datetime.timedelta(days=i)
-        d_str = target_date.strftime("%Y-%m-%d")
-        f_path = os.path.join(archive_dir, f"{d_str}.json")
-        
-        if os.path.exists(f_path):
+        date = (today - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+        path = os.path.join(archive_dir, f"{date}.json")
+        if os.path.exists(path):
             try:
-                with open(f_path, 'r', encoding='utf-8') as f:
+                with open(path, 'r', encoding='utf-8') as f:
                     day_data = json.load(f)
                     for item in day_data:
                         if item['link'] not in seen_links:
@@ -175,13 +173,12 @@ def update_news():
                             seen_links.add(item['link'])
             except:
                 pass
-    
-    # 默认按热度/RSS顺序保留 (或者按时间排，这里先保持RSS原序，前端负责排序)
-    # Google RSS 本身就是按“相关性/热度”排序的
-    
+
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(home_data, f, ensure_ascii=False, indent=2)
-    print(f"✅ data.json 更新完毕 (包含 {len(home_data)} 条新闻)")
+
+    print(f"更新完成！今日 {len(final_today_list)} 条，首页共 {len(home_data)} 条新闻")
+
 
 if __name__ == "__main__":
     update_news()

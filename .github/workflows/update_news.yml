@@ -1,4 +1,4 @@
-name: Update News
+name: Auto Japan News
 
 on:
   schedule:
