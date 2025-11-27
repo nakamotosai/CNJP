@@ -27,7 +27,7 @@
         .notice-arrow.rotate { transform: rotate(180deg); }
         .notice-details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(13, 71, 161, 0.1); color: #1565C0; line-height: 1.6; }
 
-        /* --- 新增：存档按钮栏 --- */
+        /* 存档按钮栏 */
         .archive-bar {
             background: white;
             border-radius: 10px;
@@ -50,7 +50,6 @@
         .section-title-wrapper { display: flex; align-items: center; }
         .section-marker { width: 4px; height: 14px; background: #FF3B30; margin-right: 8px; border-radius: 2px; }
         
-        /* 返回首页按钮 (历史模式下显示) */
         .back-home-btn { 
             display: none; 
             font-size: 12px; color: #007AFF; 
@@ -59,7 +58,6 @@
             margin-left: 10px; cursor: pointer;
         }
 
-        /* 排序按钮 */
         .sort-control { display: flex; align-items: center; }
         .sort-btn { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: #E5E5EA; color: #8E8E93; cursor: pointer; margin-left: 8px; font-weight: 500; }
         .sort-btn.active { background: #000; color: white; }
@@ -74,10 +72,8 @@
         .card-title { font-size: 17px; font-weight: 700; line-height: 1.4; color: #000; margin-bottom: 6px; }
         .card-origin { font-size: 12px; color: #8E8E93; }
         
-        /* --- 通用弹窗 (新闻 & 日历) --- */
+        /* 弹窗 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; backdrop-filter: blur(5px); align-items: center; justify-content: center; }
-        
-        /* 新闻弹窗内容 */
         .news-modal-content { background: white; width: 85%; max-width: 400px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s; }
         .modal-img { width: 100%; height: 200px; object-fit: cover; background: #eee; display: none; }
         .modal-body { padding: 20px; }
@@ -85,7 +81,6 @@
         .modal-origin-title { font-size: 14px; color: #888; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .modal-btn { display: block; width: 100%; background: #007AFF; color: white; text-align: center; padding: 12px 0; border-radius: 10px; text-decoration: none; font-weight: 600; }
 
-        /* 日历弹窗内容 */
         .calendar-modal-content { background: white; width: 90%; max-width: 360px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s; }
         .cal-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .cal-modal-title { font-size: 18px; font-weight: bold; }
@@ -116,8 +111,8 @@
         <div class="notice-card" onclick="toggleNotice()">
             <div class="notice-header"><div><span class="notice-icon">ℹ️</span> 来自作者</div><div class="notice-arrow" id="n-arrow">▼</div></div>
             <div class="notice-details" id="n-details">
-                <p>本网站由日本华人<b>中本蔡</b>制作，专注聚合<b>日本媒体眼中的中国新闻</b>。首页实时展示<b>近7天</b>的报道，超过7天的历史新闻请通过日历查看。</p>
-                <p style="font-size:12px; opacity:0.8;">*每小时自动抓取，数据源为 Google News 日本版。</p>
+                <p>本网站由日本华人<b>中本蔡</b>制作，目的是让全世界华人都能看到真实的日本当地热点新闻。从 <b>2025年11月27日</b> 开始，系统每小时会自动抓取一次日本实时热门新闻和与中国有关的报道，手机用户请添加到主屏幕方便快速查看。</p>
+                <p style="font-size:12px; opacity:0.8;">*由于技术限制，无法查看建站之前的历史数据，敬请谅解。</p>
             </div>
         </div>
 
@@ -156,7 +151,7 @@
         </div>
     </div>
 
-    <!-- 日历弹窗 (新增) -->
+    <!-- 日历弹窗 -->
     <div id="calendar-modal" class="modal-overlay" onclick="closeModal(event, 'calendar-modal')">
         <div class="modal-content calendar-modal-content">
             <div class="cal-modal-header">
@@ -176,7 +171,6 @@
         function init() {
             if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wx-mask').style.display = 'block';
             checkPWA();
-            // 默认加载首页数据
             resetToHome();
             document.getElementById('date-picker-input').max = new Date().toISOString().split('T')[0];
             document.getElementById('install-close').onclick = () => document.getElementById('install-banner').style.display = 'none';
@@ -198,7 +192,6 @@
             }
         }
 
-        // --- 核心逻辑：加载数据 ---
         function loadNewsByDate(dateObj) {
             const container = document.getElementById('news-list');
             const title = document.getElementById('list-title');
@@ -206,30 +199,24 @@
             const backBtn = document.getElementById('btn-back-home');
             
             container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">加载中...</p>';
-            
-            // 关闭日历弹窗
             document.getElementById('calendar-modal').style.display = 'none';
 
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
             const d = String(dateObj.getDate()).padStart(2, '0');
             const dateStr = `${y}-${m}-${d}`;
-            const isToday = (dateObj.toDateString() === new Date().toDateString());
 
             let url;
-            
             if (dateObj === 'HOME') {
-                // 特殊标记：首页模式
                 url = `data.json?t=${Date.now()}`;
                 title.innerText = "近7天新闻";
                 sortCtrl.style.display = 'flex';
-                backBtn.style.display = 'none'; // 首页不显示返回按钮
+                backBtn.style.display = 'none';
             } else {
-                // 历史模式
                 url = `archive/${dateStr}.json`;
                 title.innerText = `${m}月${d}日 存档`;
-                sortCtrl.style.display = 'none'; // 历史存档暂不提供排序
-                backBtn.style.display = 'block'; // 显示返回按钮
+                sortCtrl.style.display = 'none';
+                backBtn.style.display = 'block';
             }
 
             fetch(url)
@@ -238,11 +225,11 @@
                     return res.json();
                 })
                 .then(data => {
-                    // 数据兼容
                     if (!Array.isArray(data) && data.china) { rawNewsData = data.china; } 
                     else if (Array.isArray(data)) { rawNewsData = data; } 
                     else { rawNewsData = []; }
                     
+                    // 🔥 修复点：这里去掉了判断空的 return，保证可以渲染出“暂无数据”
                     sortNews('default');
                 })
                 .catch(err => {
@@ -251,10 +238,8 @@
                 });
         }
 
-        // 返回首页
         function resetToHome() {
             loadNewsByDate('HOME');
-            // 日历重置为今天，但不打开
             currentDate = new Date(); 
         }
 
@@ -262,8 +247,9 @@
             document.getElementById('btn-default').className = type === 'default' ? 'sort-btn active' : 'sort-btn';
             document.getElementById('btn-time').className = type === 'time' ? 'sort-btn active' : 'sort-btn';
 
-            if (!rawNewsData || rawNewsData.length === 0) return;
-            let sortedData = [...rawNewsData];
+            // 🔥 修复点：确保即使是空数组也能往下走
+            let sortedData = rawNewsData ? [...rawNewsData] : [];
+
             if (type === 'time') {
                 sortedData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
             }
@@ -293,7 +279,6 @@
             container.innerHTML = html;
         }
 
-        // --- 弹窗逻辑 ---
         function openNewsModal(itemStr) {
             const item = JSON.parse(decodeURIComponent(itemStr));
             const modal = document.getElementById('news-modal');
@@ -308,14 +293,13 @@
         function openCalendarModal() {
             const modal = document.getElementById('calendar-modal');
             modal.style.display = 'flex';
-            renderCalendar(currentDate); // 渲染当前选中的月份
+            renderCalendar(currentDate); 
         }
 
         function closeModal(e, id) {
             if (e.target.id === id) document.getElementById(id).style.display = 'none';
         }
 
-        // --- 日历渲染 ---
         function renderCalendar(baseDate) {
             const grid = document.getElementById('calendar-grid');
             document.getElementById('cal-month-display').innerText = `${baseDate.getFullYear()}年 ${baseDate.getMonth()+1}月`;
@@ -325,26 +309,18 @@
             const daysInMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0).getDate();
             const today = new Date();
 
-            for(let i=0; i<firstDay; i++) {
-                 grid.appendChild(document.createElement('div')); // 空白
-            }
+            for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
 
             for(let i=1; i<=daysInMonth; i++) {
                 const el = document.createElement('div');
                 el.className = 'cal-date';
                 el.innerText = i;
-                
                 const thisDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), i);
-                
                 if(thisDay.toDateString() === today.toDateString()) el.classList.add('today');
-                
-                // 点击日期
                 el.onclick = () => { 
                     currentDate = thisDay; 
-                    // 移除其他选中
                     document.querySelectorAll('.cal-date').forEach(e=>e.classList.remove('active'));
                     el.classList.add('active');
-                    // 加载数据
                     loadNewsByDate(thisDay);
                 };
                 grid.appendChild(el);
