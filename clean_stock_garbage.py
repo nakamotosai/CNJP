@@ -11,7 +11,10 @@ ARCHIVE_DIR = "archive"
 def is_stock_garbage(title):
     if re.search(r'^中国[々〇〻〆一-龯]{2,5}', title):
         return True
-    stock_keywords = ["株価", "上昇", "下落", "決算", "業績", "配当", "中国塗料", "中国電力", "中国工業", "中国汽船", "中国銀行"]
+    stock_keywords =  ["株価", "上昇", "下落", "出来高", "売買高", "決算", "業績", "配当",
+            "中国塗料", "中国電力", "中国工業", "中国汽船", "中国銀行",
+            "NEXT FUNDS", "华夏基金", "中華股票", "上证50",  "中国株式", 
+            "K线", "チャート", "株価チャート", "株式情報"]
     if any(kw in title for kw in stock_keywords):
         return True
     return False

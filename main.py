@@ -88,7 +88,10 @@ def process_entries(entries):
         if re.search(r'^中国[々〇〻〆一-龯]{2,5}', zh_title):
             print(f"已过滤股票垃圾 → {zh_title}")
             continue
-        STOCK_KEYWORDS = ["株価", "上昇", "下落", "決算", "業績", "配当", "ストップ高", "ストップ安", "出来高", "売買高", "中国塗料", "中国電力", "中国工業", "中国汽船", "中国銀行"]
+        STOCK_KEYWORDS = ["株価", "上昇", "下落", "出来高", "売買高", "決算", "業績", "配当",
+            "中国塗料", "中国電力", "中国工業", "中国汽船", "中国銀行",
+            "NEXT FUNDS", "华夏基金", "中華股票", "上证50",  "中国株式", 
+            "K线", "チャート", "株価チャート", "株式情報"]
         if any(kw in zh_title for kw in STOCK_KEYWORDS):
             print(f"已过滤股票垃圾 → {zh_title}")
             continue
