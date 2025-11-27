@@ -135,13 +135,13 @@ def update_news():
         json.dump(final_today_list, f, ensure_ascii=False, indent=2)
     print(f"✅ 今日存档更新 ({len(final_today_list)}条)")
 
-    # 3. 生成首页数据 (聚合过去 7 天)
-    print("🔄 正在聚合近 7 天数据...")
+    # 3. 生成首页数据 (聚合过去 30 天)
+    print("🔄 正在聚合近 30 天数据...")
     home_data = []
     seen_links = set()
 
-    # 倒序遍历过去7天 (今天 -> 7天前)
-    for i in range(7):
+    # 倒序遍历过去 30 天 (今天 -> 30天前)
+    for i in range(30):
         target_date = today - datetime.timedelta(days=i)
         d_str = target_date.strftime("%Y-%m-%d")
         f_path = os.path.join(archive_dir, f"{d_str}.json")

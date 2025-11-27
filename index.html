@@ -3,69 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>日本时报</title>
+    <title>Japan Times</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
-        /* --- 基础设置 --- */
-        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Roboto, Arial, sans-serif; background-color: #F2F2F7; color: #1C1C1E; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; padding-bottom: 80px; }
+        :root {
+            --bg-color: #F9F9F7; /* 米白色/Rice Paper */
+            --card-bg: #FFFFFF;
+            --accent-color: #D64045; /* 柔和低饱和红 */
+            --text-main: #333333;
+            --text-sub: #8E8E93;
+            --border-radius: 16px;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Roboto, Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent; 
+            padding-bottom: 80px; 
+        }
         
         #install-banner { display: none; background: #333; color: white; padding: 10px 15px; font-size: 13px; align-items: center; justify-content: space-between; }
         #install-close { font-size: 18px; padding: 0 10px; cursor: pointer; color: #aaa; }
         
         /* Header */
-        .header { background: rgba(255, 255, 255, 0.96); padding: 12px 0; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #C6C6C8; text-align: center; backdrop-filter: blur(20px); }
-        .header h1 { margin: 0; font-size: 20px; font-weight: 900; font-family: "Times New Roman", serif; letter-spacing: 0.5px; }
-        .header p { margin: 2px 0 0 0; font-size: 10px; color: #8E8E93; text-transform: uppercase; letter-spacing: 1px; }
+        .header { 
+            background: rgba(249, 249, 247, 0.96); 
+            padding: 20px 0 10px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            text-align: center; 
+            backdrop-filter: blur(20px); 
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 24px; 
+            font-weight: 700; 
+            font-family: "Times New Roman", serif; 
+            letter-spacing: 0.5px; 
+            color: var(--text-main);
+        }
+        .header p { 
+            margin: 4px 0 0 0; 
+            font-size: 10px; 
+            color: var(--accent-color); 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            font-weight: 600;
+        }
         
-        .container { padding: 16px; max-width: 500px; margin: 0 auto; }
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
 
         /* 公告栏 */
-        .notice-card { background-color: #E3F2FD; border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; font-size: 13px; color: #0D47A1; cursor: pointer; border: 1px solid rgba(13, 71, 161, 0.1); }
+        .notice-card { 
+            background-color: var(--card-bg); 
+            border-radius: var(--border-radius); 
+            padding: 16px; 
+            margin-bottom: 24px; 
+            font-size: 14px; 
+            color: var(--text-main); 
+            cursor: pointer; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
         .notice-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
-        .notice-arrow { font-size: 10px; opacity: 0.6; transition: transform 0.3s; }
+        .notice-icon { margin-right: 6px; color: var(--accent-color); }
+        .notice-arrow { font-size: 10px; opacity: 0.4; transition: transform 0.3s; }
         .notice-arrow.rotate { transform: rotate(180deg); }
-        .notice-details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(13, 71, 161, 0.1); color: #1565C0; line-height: 1.6; }
+        .notice-details { 
+            display: none; 
+            margin-top: 12px; 
+            padding-top: 12px; 
+            border-top: 1px solid rgba(0,0,0,0.05); 
+            color: var(--text-sub); 
+            line-height: 1.6; 
+            font-size: 13px;
+        }
 
-        /* 日历 */
-        .calendar-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .cal-month-title { font-size: 16px; font-weight: 700; }
-        #date-picker-input { position: absolute; opacity: 0; width: 0; height: 0; }
-        .cal-picker-btn { font-size: 20px; color: #007AFF; cursor: pointer; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 8px; text-align: center; }
-        .cal-date { height: 36px; line-height: 36px; font-size: 15px; border-radius: 50%; cursor: pointer; margin: 0 auto; width: 36px; }
-        .cal-date.active { background-color: #000; color: white; font-weight: 600; }
-        .cal-date.today { border: 1px solid #007AFF; color: #007AFF; }
-        .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 8px; font-size: 11px; color: #8E8E93; }
-
-        /* 排序控制条 */
-        .sort-control { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; }
-        .sort-btn { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: #E5E5EA; color: #8E8E93; cursor: pointer; margin-left: 8px; font-weight: 500; }
-        .sort-btn.active { background: #000; color: white; }
-
-        .section-header { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #3C3C43; margin-bottom: 12px; padding-left: 4px; }
-        .section-title-left { display: flex; align-items: center; }
-        .section-title-left::before { content: ''; width: 4px; height: 14px; background: #FF3B30; margin-right: 8px; border-radius: 2px; }
+        .section-title { 
+            font-size: 18px; 
+            font-weight: 700; 
+            margin-bottom: 16px; 
+            padding-left: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            margin-right: 10px;
+        }
 
         /* 卡片 */
-        .card { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); transition: transform 0.1s; display: flex; flex-direction: column; }
+        .card { 
+            background: var(--card-bg); 
+            border-radius: var(--border-radius); 
+            overflow: hidden; 
+            margin-bottom: 16px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); 
+            transition: transform 0.1s; 
+            display: flex; 
+            flex-direction: column; 
+            border: 1px solid rgba(0,0,0,0.02);
+        }
         .card:active { transform: scale(0.98); }
-        .card-img { width: 100%; height: 160px; object-fit: cover; background: #f0f0f0; display: none; } 
+        .card-img { width: 100%; height: 180px; object-fit: cover; background: #f0f0f0; display: none; } 
         .card-img.show { display: block; }
-        .card-body { padding: 15px; }
-        .card-time { font-size: 11px; color: #8E8E93; font-weight: 600; margin-bottom: 6px; display: inline-block; background: #F2F2F7; padding: 2px 6px; border-radius: 4px; }
-        .card-title { font-size: 17px; font-weight: 700; line-height: 1.4; color: #000; margin-bottom: 6px; }
-        .card-origin { font-size: 12px; color: #8E8E93; }
+        .card-body { padding: 16px; }
+        .card-meta { display: flex; align-items: center; margin-bottom: 8px; }
+        .card-time { 
+            font-size: 11px; 
+            color: var(--accent-color); 
+            font-weight: 600; 
+            background: rgba(214, 64, 69, 0.08); 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            margin-right: 8px;
+        }
+        .card-origin { font-size: 11px; color: var(--text-sub); }
+        .card-title { 
+            font-size: 16px; 
+            font-weight: 700; 
+            line-height: 1.5; 
+            color: var(--text-main); 
+        }
         
+        /* 存档区域 */
+        .archive-section { margin-top: 40px; }
+        .archive-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            cursor: pointer;
+            color: var(--text-sub);
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .archive-list { display: none; margin-top: 16px; }
+        .archive-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+            font-size: 14px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+        .archive-item:last-child { border-bottom: none; }
+        .archive-date { font-size: 12px; color: var(--text-sub); margin-right: 10px; min-width: 80px; }
+        .archive-title { flex: 1; }
+
         /* 弹窗 */
-        #news-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; backdrop-filter: blur(5px); align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 85%; max-width: 400px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s; }
+        #news-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+        .modal-content { background: var(--card-bg); width: 85%; max-width: 400px; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: slideUp 0.3s; }
         .modal-img { width: 100%; height: 200px; object-fit: cover; background: #eee; display: none; }
-        .modal-body { padding: 20px; }
-        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; line-height: 1.4; }
-        .modal-origin-title { font-size: 14px; color: #888; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .modal-btn { display: block; width: 100%; background: #007AFF; color: white; text-align: center; padding: 12px 0; border-radius: 10px; text-decoration: none; font-weight: 600; }
+        .modal-body { padding: 24px; }
+        .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 12px; line-height: 1.4; color: var(--text-main); }
+        .modal-origin-title { font-size: 13px; color: var(--text-sub); margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.05); line-height: 1.5; }
+        .modal-btn { display: block; width: 100%; background: var(--text-main); color: white; text-align: center; padding: 14px 0; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px; transition: opacity 0.2s; }
+        .modal-btn:active { opacity: 0.8; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         #wx-mask { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; color: white; text-align: right; padding: 20px; }
     </style>
@@ -75,41 +182,33 @@
     <div id="install-banner"><span id="install-text">添加到主屏幕，获取最佳体验</span><span id="install-close">×</span></div>
 
     <div class="header">
-        <h1>THE JAPAN TIMES</h1>
+        <h1>Japan Times</h1>
         <p>Focus on China</p>
     </div>
 
     <div class="container">
         <!-- 公告栏 -->
         <div class="notice-card" onclick="toggleNotice()">
-            <div class="notice-header"><div><span class="notice-icon">ℹ️</span> 关于本站</div><div class="notice-arrow" id="n-arrow">▼</div></div>
+            <div class="notice-header"><div><span class="notice-icon">●</span> 关于本站</div><div class="notice-arrow" id="n-arrow">▼</div></div>
             <div class="notice-details" id="n-details">
-                <p>本站由日本华人<b>中本蔡</b>制作，专注聚合<b>日本媒体眼中的中国新闻</b>。首页实时展示<b>近7天</b>的报道，超过7天的历史新闻请通过日历查看。</p>
-                <p style="font-size:12px; opacity:0.8;">*每小时自动抓取，数据源为 Google News 日本版。</p>
+                <p>本站由日本华人制作，建于2025年11月27日（因技术限制无法显示之前的新闻记录）。</p>
+                <p>因为国内亲朋好友无法看到日本新闻，因此本站专注聚合<b>日本媒体眼中的中国新闻</b>。</p>
+                <p>首页实时展示<b>近3天</b>的报道，超过3天的历史新闻会收录进存档永久保存。</p>
+                <p>目前是试运营状态，如果你对这些新闻感兴趣，请把本网页添加到手机主屏幕上。</p>
             </div>
         </div>
 
-        <!-- 日历 -->
-        <div class="calendar-card">
-            <div class="calendar-header">
-                <span class="cal-month-title" id="cal-month-display">...</span>
-                <div class="cal-picker-btn" onclick="document.getElementById('date-picker-input').showPicker()">📅</div>
-                <input type="date" id="date-picker-input" onchange="handleDatePick(this.value)">
-            </div>
-            <div class="calendar-weekdays"><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div>
-            <div class="calendar-grid" id="calendar-grid"></div>
-        </div>
-
-        <!-- 标题 + 排序按钮 -->
-        <div class="section-header">
-            <div class="section-title-left" id="list-title">近7天新闻</div>
-            <div class="sort-control" id="sort-control" style="display:none;">
-                <div class="sort-btn active" onclick="sortNews('default')" id="btn-default">🔥 按热度</div>
-                <div class="sort-btn" onclick="sortNews('time')" id="btn-time">🕒 按时间</div>
-            </div>
-        </div>
-
+        <div class="section-title">Latest News</div>
         <div id="news-list"></div>
+
+        <!-- 存档区域 -->
+        <div class="archive-section" id="archive-section" style="display:none;">
+            <div class="archive-header" onclick="toggleArchive()">
+                <span>📜 历史存档 (超过3天)</span>
+                <span id="archive-arrow">▼</span>
+            </div>
+            <div class="archive-list" id="archive-list"></div>
+        </div>
     </div>
 
     <div id="news-modal" onclick="closeModal(event)">
@@ -124,23 +223,29 @@
     </div>
 
     <script>
-        let currentDate = new Date();
-        let rawNewsData = []; // 存储当前列表的原始数据
+        let rawNewsData = [];
 
         function init() {
             if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wx-mask').style.display = 'block';
             checkPWA();
-            renderCalendar(currentDate);
-            loadNewsByDate(currentDate);
-            document.getElementById('date-picker-input').max = new Date().toISOString().split('T')[0];
+            loadNews();
             document.getElementById('install-close').onclick = () => document.getElementById('install-banner').style.display = 'none';
         }
 
         function toggleNotice() {
             const d = document.getElementById('n-details');
             const a = document.getElementById('n-arrow');
-            d.style.display = d.style.display==='block'?'none':'block';
-            d.style.display==='block'?a.classList.add('rotate'):a.classList.remove('rotate');
+            const isShown = d.style.display === 'block';
+            d.style.display = isShown ? 'none' : 'block';
+            if(isShown) a.classList.remove('rotate'); else a.classList.add('rotate');
+        }
+
+        function toggleArchive() {
+            const list = document.getElementById('archive-list');
+            const arrow = document.getElementById('archive-arrow');
+            const isShown = list.style.display === 'block';
+            list.style.display = isShown ? 'none' : 'block';
+            arrow.innerText = isShown ? '▼' : '▲';
         }
 
         function checkPWA() {
@@ -152,80 +257,69 @@
             }
         }
 
-        function loadNewsByDate(dateObj) {
+        function loadNews() {
             const container = document.getElementById('news-list');
-            const title = document.getElementById('list-title');
-            const sortCtrl = document.getElementById('sort-control');
+            const archiveContainer = document.getElementById('archive-list');
+            const archiveSection = document.getElementById('archive-section');
             
-            container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">加载中...</p>';
+            container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Loading...</p>';
 
-            const y = dateObj.getFullYear();
-            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const d = String(dateObj.getDate()).padStart(2, '0');
-            const dateStr = `${y}-${m}-${d}`;
-            const isToday = (dateObj.toDateString() === new Date().toDateString());
-
-            // 首页读取 data.json (含7天)，历史读取 archive
-            let url = isToday ? `data.json?t=${Date.now()}` : `archive/${dateStr}.json`;
-            
-            if (isToday) {
-                title.innerText = "近7天新闻";
-                sortCtrl.style.display = 'flex'; // 只有首页支持排序
-            } else {
-                title.innerText = `${m}月${d}日 存档`;
-                sortCtrl.style.display = 'none'; // 历史存档通常只有当天的，不用排
-            }
-
-            fetch(url)
+            fetch(`data.json?t=${Date.now()}`)
                 .then(res => {
                     if(!res.ok) throw new Error("No Data");
                     return res.json();
                 })
                 .then(data => {
-                    // 如果是旧数据结构(对象)，尝试提取china字段，如果是新结构(列表)，直接用
-                    if (!Array.isArray(data) && data.china) {
-                         rawNewsData = data.china;
-                    } else if (Array.isArray(data)) {
+                    if (Array.isArray(data)) {
                         rawNewsData = data;
+                    } else if (data.china) {
+                        rawNewsData = data.china;
                     } else {
                         rawNewsData = [];
                     }
                     
-                    // 默认按 "default" (热度/RSS顺序) 渲染
-                    sortNews('default');
+                    processAndRender(rawNewsData);
                 })
                 .catch(err => {
-                    container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">📅 该日期暂无存档</div>';
+                    container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无新闻数据</div>';
                 });
         }
 
-        function sortNews(type) {
-            // 更新按钮状态
-            document.getElementById('btn-default').className = type === 'default' ? 'sort-btn active' : 'sort-btn';
-            document.getElementById('btn-time').className = type === 'time' ? 'sort-btn active' : 'sort-btn';
-
-            if (!rawNewsData || rawNewsData.length === 0) return;
-
-            let sortedData = [...rawNewsData]; // 复制一份
-
-            if (type === 'time') {
-                // 按 timestamp 倒序 (大的在前)
-                sortedData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            } else {
-                // 默认 RSS 顺序 (Google 已按相关性排序)
-            }
-            
-            renderNews(sortedData);
-        }
-
-        function renderNews(list) {
+        function processAndRender(list) {
             const container = document.getElementById('news-list');
+            const archiveList = document.getElementById('archive-list');
+            const archiveSection = document.getElementById('archive-section');
+
             if(!list || list.length === 0) {
                 container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无相关新闻</div>';
                 return;
             }
+
+            // 1. Sort by timestamp desc
+            list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            // 2. Filter logic
+            const now = new Date();
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(now.getDate() - 3);
+            threeDaysAgo.setHours(0, 0, 0, 0); // 3天前的 0点
+
+            const recent = [];
+            const archived = [];
+
+            list.forEach(item => {
+                // item.timestamp is in seconds
+                const itemDate = new Date(item.timestamp * 1000);
+                if (itemDate >= threeDaysAgo) {
+                    recent.push(item);
+                } else {
+                    archived.push(item);
+                }
+            });
+
+            // 3. Render Recent
             let html = '';
-            list.forEach((item) => {
+            recent.forEach((item) => {
                 const imgClass = item.image ? 'card-img show' : 'card-img';
                 const safeItem = encodeURIComponent(JSON.stringify(item));
                 
@@ -233,13 +327,32 @@
                 <div class="card" onclick="openModal('${safeItem}')">
                     <img src="${item.image || ''}" class="${imgClass}">
                     <div class="card-body">
-                        <span class="card-time">${item.time_str}</span>
+                        <div class="card-meta">
+                            <span class="card-time">${item.time_str}</span>
+                            <span class="card-origin">${item.origin.split(' - ')[0]}</span>
+                        </div>
                         <div class="card-title">${item.title}</div>
-                        <div class="card-origin">${item.origin}</div>
                     </div>
                 </div>`;
             });
-            container.innerHTML = html;
+            container.innerHTML = html || '<div style="text-align:center;padding:20px;color:#ccc;">近3天无新闻</div>';
+
+            // 4. Render Archive
+            if (archived.length > 0) {
+                archiveSection.style.display = 'block';
+                let archHtml = '';
+                archived.forEach(item => {
+                    const safeItem = encodeURIComponent(JSON.stringify(item));
+                    archHtml += `
+                    <div class="archive-item" onclick="openModal('${safeItem}')">
+                        <span class="archive-date">${item.time_str.split(' ')[0]}</span>
+                        <span class="archive-title">${item.title}</span>
+                    </div>`;
+                });
+                archiveList.innerHTML = archHtml;
+            } else {
+                archiveSection.style.display = 'none';
+            }
         }
 
         function openModal(itemStr) {
@@ -254,25 +367,6 @@
         }
 
         function closeModal(e) { if (e.target.id === 'news-modal') document.getElementById('news-modal').style.display = 'none'; }
-
-        function renderCalendar(baseDate) {
-            const grid = document.getElementById('calendar-grid');
-            document.getElementById('cal-month-display').innerText = `${baseDate.getFullYear()}年 ${baseDate.getMonth()+1}月`;
-            grid.innerHTML = '';
-            const currentDay = baseDate.getDay(); 
-            const startDate = new Date(baseDate);
-            startDate.setDate(baseDate.getDate() - currentDay); 
-            for(let i=0; i<7; i++) {
-                let d = new Date(startDate); d.setDate(startDate.getDate() + i);
-                const el = document.createElement('div'); el.className = 'cal-date'; el.innerText = d.getDate();
-                if(d.toDateString() === baseDate.toDateString()) el.classList.add('active');
-                if(d.toDateString() === new Date().toDateString()) el.classList.add('today');
-                el.onclick = () => { renderCalendar(d); loadNewsByDate(d); currentDate = d; };
-                grid.appendChild(el);
-            }
-        }
-        
-        function handleDatePick(val) { if(!val) return; const d = new Date(val); renderCalendar(d); loadNewsByDate(d); currentDate = d; }
 
         init();
     </script>
