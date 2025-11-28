@@ -6,16 +6,13 @@ import datetime
 import time
 import requests
 from bs4 import BeautifulSoup
-import re   # ← 新增：用于正则过滤股票
-
+import re
 
 # 设置时区 UTC+9（日本时间）
 JST_OFFSET = datetime.timedelta(hours=9)
 
-
 def get_current_jst_time():
     return datetime.datetime.utcnow() + JST_OFFSET
-
 
 def extract_image(entry):
     # 尝试从 Google News 的 summary/description 中提取图片
@@ -35,7 +32,6 @@ def extract_image(entry):
             pass
     return ""
 
-
 def classify_news(title):
     # 简单的关键词分类
     keywords = {
@@ -51,7 +47,6 @@ def classify_news(title):
         if any(word in title for word in words):
             return category
     return "其他"
-
 
 def fetch_google_china_news():
     print("正在抓取 Google News（日本版 · 中国相关）...")
@@ -69,6 +64,70 @@ def fetch_google_china_news():
         print(f"抓取失败: {e}")
         return []
 
+def process_entries(entries):
+    processed_data = []
+    translator = GoogleTranslator(source='ja', target='zh-CN')
+
+    for entry in entries:
+        title = entry.title
+        link = entry.link
+        published = entry.published_parsed
+        
+        # 过滤掉包含"株"（股票）等无关信息的标题
+        if "株" in title or "市场" in title or "铭柄" in title:
+             # 再次确认是否真的是纯财经行情，如果包含重要政治关键词则保留
+            if not any(k in title for k in ["习近平", "首相", "外交", "军事"]):
+                continue
+
+        # 翻译标题
+        try:
+            title_zh = translator.translate(title)
+        except:
+            title_zh = title
+
+        # 提取摘要并截断
+        summary = ""
+        if 'summary' in entry:
+            # 清理 HTML 标签
+            soup = BeautifulSoup(entry.summary, 'html.parser')
+            text = soup.get_text()
+            # 简单截断 (先取前150字翻译，再截断到50字)
+            try:
+                summary_zh = translator.translate(text[:150])
+                if len(summary_zh) > 50:
+                    summary = summary_zh[:50] + "..."
+                else:
+                    summary = summary_zh
+            except:
+                summary = text[:50] + "..."
+        
+        # 提取图片
+        image_url = extract_image(entry)
+        
+        # 格式化时间
+        timestamp = time.mktime(published)
+        time_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(timestamp))
+        
+        # 分类
+        category = classify_news(title_zh)
+
+        processed_data.append({
+            "title": title_zh,
+            "link": link,
+            "image": image_url,
+            "summary": summary,
+            "category": category,
+            "time_str": time_str,
+            "timestamp": timestamp,
+            "origin": entry.source.title if 'source' in entry else "Google News"
+        })
+    
+    return processed_data
+
+def update_news():
+    entries = fetch_google_china_news()
+    new_data = process_entries(entries)
+    
     # 存档今日数据
     archive_dir = "archive"
     os.makedirs(archive_dir, exist_ok=True)
@@ -115,7 +174,6 @@ def fetch_google_china_news():
         json.dump(home_data, f, ensure_ascii=False, indent=2)
 
     print(f"更新完成！今日 {len(final_today_list)} 条，首页共 {len(home_data)} 条新闻")
-
 
 if __name__ == "__main__":
     update_news()
