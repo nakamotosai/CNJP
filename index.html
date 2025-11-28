@@ -1,503 +1,787 @@
-<div class="nav-btn" id="btn-fav" onclick="toggleSection('fav')">
-    <svg class="heart-icon" viewBox="0 0 24 24">
-        <path
-            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-    </svg>
-    <span>我的收藏</span>
-    <span class="fav-badge" id="fav-badge">0</span>
-</div>
-</div>
-</div>
+<!DOCTYPE html>
+<html lang="zh-CN">
 
-<div class="container">
-    <!-- About Section -->
-    <div class="expandable-section" id="section-about">
-        <div class="notice-content">
-            <p>由于中日两国新闻存在巨大矛盾和争议，因此本网站专注聚合日本媒体发布的中国新闻，尽力消除信息差。每一个小时自动抓取一次日本谷歌新闻中包含"中国"关键字的实时数据，首页展示近3天的记录，超过3天的历史新闻会收录进存档永久保存。经测试目前国内访问没有问题。
-            </p>
-            <p>本网站全程由Gemini制作，部署在cloudflare上，目前试运营状态，还在持续更新优化中。如果你对这些新闻感兴趣，请把本网页添加到手机主屏幕上（用手机自带浏览器按分享后添加到主屏幕上即可）。
-            </p>
-            <p style="font-size: 12px; color: #999; margin-top: 10px;">*因技术原因，网站开通前的历史数据无法抓取，尽请谅解。</p>
-        </div>
-    </div>
-
-    <!-- Favorites Section -->
-    <div class="expandable-section" id="section-fav">
-        <div id="fav-list" class="fav-list-container"></div>
-    </div>
-
-    <!-- Control Bar -->
-    <div class="control-bar">
-        <div class="section-title-group">
-            <div class="section-title" id="list-title">Latest News</div>
-            <button class="back-btn" id="back-btn" onclick="filterByCategory('all')">返回</button>
-        </div>
-        <div class="sort-group">
-            <button class="sort-btn active" id="btn-hot" onclick="sortNews('hot')">🔥 热度</button>
-            <button class="sort-btn" id="btn-time" onclick="sortNews('time')">🕒 最新</button>
-        </div>
-    </div>
-
-    <div id="news-list"></div>
-
-    <!-- Archive Section -->
-    <div class="archive-section" id="archive-section" style="display:none;">
-        <div class="archive-header" onclick="toggleArchive()">
-            <span>📜 历史存档 (超过3天)</span>
-            <span id="archive-arrow">▼</span>
-        </div>
-        <div class="archive-list" id="archive-list"></div>
-    </div>
-</div>
-
-<div id="news-modal" onclick="closeModal(event)">
-    <div class="modal-content">
-        <img src="" class="modal-img" id="m-img">
-        <div class="modal-body">
-            <div class="modal-title" id="m-title"></div>
-            <div class="modal-origin-title" id="m-origin"></div>
-            <a href="#" target="_blank" class="modal-btn" id="m-btn">阅读原文</a>
-        </div>
-    </div>
-</div>
-
-<script>
-    let rawNewsData = [];
-    let favorites = JSON.parse(localStorage.getItem('jt_favorites') || '[]');
-    let currentSort = 'hot';
-    let currentFilter = 'all';
-
-    function init() {
-        if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wx-mask').style.display = 'block';
-        checkPWA();
-        updateFavBadge();
-        loadNews();
-        document.getElementById('install-close').onclick = () => document.getElementById('install-banner').style.display = 'none';
-    }
-
-    function toggleSection(sectionName) {
-        const aboutSec = document.getElementById('section-about');
-        const favSec = document.getElementById('section-fav');
-        const btnAbout = document.getElementById('btn-about');
-        const btnFav = document.getElementById('btn-fav');
-
-        if (sectionName === 'about') {
-            // Toggle About
-            const isOpen = aboutSec.classList.contains('open');
-            if (isOpen) {
-                aboutSec.classList.remove('open');
-                btnAbout.classList.remove('active');
-            } else {
-                // Close Fav if open
-                favSec.classList.remove('open');
-                btnFav.classList.remove('active');
-                // Open About
-                aboutSec.classList.add('open');
-                btnAbout.classList.add('active');
-            }
-        } else if (sectionName === 'fav') {
-            // Toggle Fav
-            const isOpen = favSec.classList.contains('open');
-            if (isOpen) {
-                favSec.classList.remove('open');
-                btnFav.classList.remove('active');
-            } else {
-                // Close About if open
-                aboutSec.classList.remove('open');
-                btnAbout.classList.remove('active');
-                // Open Fav
-                favSec.classList.add('open');
-                btnFav.classList.add('active');
-                renderFavorites();
-            }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>China News from Japan</title>
+    <meta name="description" content="来自日本媒体的中国报道 | 日本メディアによる中国報道">
+    <meta property="og:title" content="China News from Japan">
+    <meta property="og:description" content="来自日本媒体的中国报道 | 日本メディアによる中国報道">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <!-- Noto Sans Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #F9F9F7;
+            --card-bg: #FFFFFF;
+            --accent-color: #D64045;
+            --text-main: #333333;
+            --text-sub: #8E8E93;
+            --border-radius: 16px;
         }
-    }
 
-    function toggleArchive() {
-        const list = document.getElementById('archive-list');
-        const arrow = document.getElementById('archive-arrow');
-        const isShown = list.style.display === 'block';
-        list.style.display = isShown ? 'none' : 'block';
-        arrow.innerText = isShown ? '▼' : '▲';
-    }
-
-    function checkPWA() {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        if (!isStandalone && isIOS) {
-            document.getElementById('install-banner').style.display = 'flex';
-            document.getElementById('install-text').innerText = "点击底部分享按钮，选择“添加到主屏幕” 📲";
+        body {
+            font-family: "Noto Sans", "Noto Sans SC", "Noto Sans JP", -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 80px;
         }
-    }
 
-    function loadNews() {
-        const container = document.getElementById('news-list');
-        container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Loading...</p>';
+        #install-banner {
+            display: none;
+            background: #333;
+            color: white;
+            padding: 10px 15px;
+            font-size: 13px;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-        fetch(`data.json?t=${Date.now()}`)
-            .then(res => {
-                if (!res.ok) throw new Error("No Data");
-                return res.json();
-            })
-            .then(data => {
-                if (Array.isArray(data)) {
-                    rawNewsData = data;
-                } else if (data.china) {
-                    rawNewsData = data.china;
+        #install-close {
+            font-size: 18px;
+            padding: 0 10px;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(249, 249, 247, 0.96);
+            padding: 20px 20px 10px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: "Noto Sans", serif;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+        }
+
+        .header p {
+            margin: 4px 0 0 0;
+            font-size: 10px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* Nav Buttons */
+        .nav-bar {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 600px;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            flex: 1;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 10px 0;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            position: relative;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.98);
+            background: #f5f5f5;
+        }
+
+        .nav-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .nav-btn.active svg path {
+            fill: white;
+            stroke: white;
+        }
+
+        .nav-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Flat Heart Icon SVG */
+        .heart-icon path {
+            fill: none;
+            stroke: var(--accent-color);
+            stroke-width: 2;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active .heart-icon path {
+            fill: white;
+            stroke: white;
+        }
+
+        .fav-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent-color);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: none;
+            border: 2px solid white;
+            font-weight: 700;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Expandable Sections */
+        .expandable-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            opacity: 0;
+            margin-bottom: 0;
+        }
+
+        .expandable-section.open {
+            max-height: 1000px;
+            /* Arbitrary large height */
+            opacity: 1;
+            margin-bottom: 24px;
+        }
+
+        /* Notice Content */
+        .notice-content {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            font-size: 13px;
+            color: var(--text-sub);
+            line-height: 1.6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .notice-content p {
+            margin: 0 0 10px 0;
+        }
+
+        .notice-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Fav View */
+        .fav-list-container {
+            /* No extra styles needed, just a wrapper */
+        }
+
+        /* 控制栏 (标题 + 排序) */
+        .control-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            margin-top: 10px;
+        }
+
+        .section-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        /* Back Button */
+        .back-btn {
+            display: none;
+            font-size: 12px;
+            padding: 4px 10px;
+            background: rgba(214, 64, 69, 0.1);
+            color: var(--accent-color);
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            align-items: center;
+        }
+
+        .back-btn::before {
+            content: '← ';
+            margin-right: 2px;
+        }
+
+        .sort-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sort-btn {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #E5E5EA;
+            color: #8E8E93;
+            cursor: pointer;
+            font-weight: 500;
+            border: none;
+            font-family: "Noto Sans", sans-serif;
+        }
+
+        .sort-btn.active {
+            background: var(--text-main);
+            color: white;
+        }
+
+        /* 卡片 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            transition: transform 0.1s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0, 0, 0, 0.02);
+            position: relative;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #f0f0f0;
+            display: none;
+        }
+
+        .card-img.show {
+            display: block;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag {
+            font-size: 10px;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tag-cat {
+            background: #F0F0F0;
+            color: #555;
+        }
+
+        .tag-time {
+            background: rgba(214, 64, 69, 0.08);
+            color: var(--accent-color);
+        }
+
+        .card-origin {
+            font-size: 11px;
+            color: var(--text-sub);
+            margin-left: auto;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.5;
+            color: var(--text-main);
+            margin-right: 24px;
+            /* Space for fav icon */
+        }
+
+        .card-summary {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-top: 8px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-fav-btn {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .card-fav-btn svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .card-fav-btn path {
+            fill: none;
+            stroke: #ddd;
+            stroke-width: 2;
+            transition: all 0.2s;
+        }
+
+        .card-fav-btn.active path {
+            fill: var(--accent-color);
+            stroke: var(--accent-color);
+        }
+
+        /* 存档区域 */
+        .archive-section {
+            margin-top: 40px;
+        }
+
+        .archive-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            cursor: pointer;
+            color: var(--text-sub);
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .archive-list {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .archive-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+            font-size: 14px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .archive-item:last-child {
+            border-bottom: none;
+        }
+
+        .archive-date {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-right: 10px;
+            min-width: 80px;
+        }
+
+        .archive-title {
+            flex: 1;
+        }
+
+        /* 弹窗 - REMOVED */
+        #news-modal {
+            display: none;
+        }
+
+        #wx-mask {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            color: white;
+            text-align: right;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wx-mask" onclick="this.style.display='none'">
+        <div style="font-size: 40px; margin-right: 15px;">↗</div>
+        <p style="font-size: 18px; font-weight: bold; margin-right: 15px;">请点击右上角 ...</p>
+        <p style="font-size: 16px; margin-right: 15px;">选择在浏览器打开</p>
+    </div>
+    <div id="install-banner"><span id="install-text">添加到主屏幕，获取最佳体验</span><span id="install-close">×</span></div>
+
+    <div class="header">
+        <div class="header-title">
+            <h1>China News from Japan</h1>
+            <p>来自日本媒体的中国报道</p>
+        </div>
+        <div class="nav-bar">
+            <div class="nav-btn" id="btn-about" onclick="toggleSection('about')">
+                <span>关于本站</span>
+            </div>
+            <div class="nav-btn" id="btn-fav" onclick="toggleSection('fav')">
+                <svg class="heart-icon" viewBox="0 0 24 24">
+                    <path
+                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+                <span>我的收藏</span>
+                <span class="fav-badge" id="fav-badge">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- About Section -->
+        <div class="expandable-section" id="section-about">
+            <div class="notice-content">
+                <p>由于中日两国新闻存在巨大矛盾和争议，因此本网站专注聚合日本媒体发布的中国新闻，尽力消除信息差。每一个小时自动抓取一次日本谷歌新闻中包含"中国"关键字的实时数据，首页展示近3天的记录，超过3天的历史新闻会收录进存档永久保存。经测试目前国内访问没有问题。
+                </p>
+                <p>本网站全程由Gemini制作，部署在cloudflare上，目前试运营状态，还在持续更新优化中。如果你对这些新闻感兴趣，请把本网页添加到手机主屏幕上（用手机自带浏览器按分享后添加到主屏幕上即可）。
+                </p>
+                <p style="font-size: 12px; color: #999; margin-top: 10px;">*因技术原因，网站开通前的历史数据无法抓取，尽请谅解。</p>
+            </div>
+        </div>
+
+        <!-- Favorites Section -->
+        <div class="expandable-section" id="section-fav">
+            <div id="fav-list" class="fav-list-container"></div>
+        </div>
+
+        <!-- Control Bar -->
+        <div class="control-bar">
+            <div class="section-title-group">
+                <div class="section-title" id="list-title">Latest News</div>
+                <button class="back-btn" id="back-btn" onclick="filterByCategory('all')">返回</button>
+            </div>
+            <div class="sort-group">
+                <button class="sort-btn active" id="btn-hot" onclick="sortNews('hot')">🔥 热度</button>
+                <button class="sort-btn" id="btn-time" onclick="sortNews('time')">🕒 最新</button>
+            </div>
+        </div>
+
+        <div id="news-list"></div>
+
+        <!-- Archive Section -->
+        <div class="archive-section" id="archive-section" style="display:none;">
+            <div class="archive-header" onclick="toggleArchive()">
+                <span>📜 历史存档 (超过3天)</span>
+                <span id="archive-arrow">▼</span>
+            </div>
+            <div class="archive-list" id="archive-list"></div>
+        </div>
+    </div>
+
+    <div id="news-modal" style="display:none;"></div>
+
+    <script>
+        let rawNewsData = [];
+        let favorites = JSON.parse(localStorage.getItem('jt_favorites') || '[]');
+        let currentSort = 'hot';
+        let currentFilter = 'all';
+
+        function init() {
+            if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wx-mask').style.display = 'block';
+            checkPWA();
+            updateFavBadge();
+            loadNews();
+            document.getElementById('install-close').onclick = () => document.getElementById('install-banner').style.display = 'none';
+        }
+
+        function toggleSection(sectionName) {
+            const aboutSec = document.getElementById('section-about');
+            const favSec = document.getElementById('section-fav');
+            const btnAbout = document.getElementById('btn-about');
+            const btnFav = document.getElementById('btn-fav');
+
+            if (sectionName === 'about') {
+                // Toggle About
+                const isOpen = aboutSec.classList.contains('open');
+                if (isOpen) {
+                    aboutSec.classList.remove('open');
+                    btnAbout.classList.remove('active');
                 } else {
-                    rawNewsData = [];
+                    // Close Fav if open
+                    favSec.classList.remove('open');
+                    btnFav.classList.remove('active');
+                    // Open About
+                    aboutSec.classList.add('open');
+                    btnAbout.classList.add('active');
                 }
-                processAndRender();
-            })
-            .catch(err => {
-                container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无新闻数据</div>';
+            } else if (sectionName === 'fav') {
+                // Toggle Fav
+                const isOpen = favSec.classList.contains('open');
+                if (isOpen) {
+                    favSec.classList.remove('open');
+                    btnFav.classList.remove('active');
+                } else {
+                    // Close About if open
+                    aboutSec.classList.remove('open');
+                    btnAbout.classList.remove('active');
+                    // Open Fav
+                    favSec.classList.add('open');
+                    btnFav.classList.add('active');
+                    renderFavorites();
+                }
+            }
+        }
+
+        function toggleArchive() {
+            const list = document.getElementById('archive-list');
+            const arrow = document.getElementById('archive-arrow');
+            const isShown = list.style.display === 'block';
+            list.style.display = isShown ? 'none' : 'block';
+            arrow.innerText = isShown ? '▼' : '▲';
+        }
+
+        function checkPWA() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            if (!isStandalone && isIOS) {
+                document.getElementById('install-banner').style.display = 'flex';
+                document.getElementById('install-text').innerText = "点击底部分享按钮，选择“添加到主屏幕” 📲";
+            }
+        }
+
+        function loadNews() {
+            const container = document.getElementById('news-list');
+            container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Loading...</p>';
+
+            fetch(`data.json?t=${Date.now()}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("No Data");
+                    return res.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        rawNewsData = data;
+                    } else if (data.china) {
+                        rawNewsData = data.china;
+                    } else {
+                        rawNewsData = [];
+                    }
+                    processAndRender();
+                })
+                .catch(err => {
+                    container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无新闻数据</div>';
+                });
+        }
+
+        function sortNews(type) {
+            currentSort = type;
+            document.getElementById('btn-hot').className = type === 'hot' ? 'sort-btn active' : 'sort-btn';
+            document.getElementById('btn-time').className = type === 'time' ? 'sort-btn active' : 'sort-btn';
+            processAndRender();
+        }
+
+        function filterByCategory(cat) {
+            currentFilter = cat;
+            const title = document.getElementById('list-title');
+            const backBtn = document.getElementById('back-btn');
+
+            if (cat === 'all') {
+                title.innerText = 'Latest News';
+                backBtn.style.display = 'none';
+            } else {
+                title.innerText = `${cat}`;
+                backBtn.style.display = 'flex';
+            }
+            processAndRender();
+        }
+
+        function toggleFavorite(e, itemStr) {
+            e.stopPropagation();
+            const item = JSON.parse(decodeURIComponent(itemStr));
+            const index = favorites.findIndex(f => f.link === item.link);
+
+            if (index > -1) {
+                favorites.splice(index, 1);
+            } else {
+                // Add new favorite, mark as unread (isRead = false)
+                item.isRead = false;
+                favorites.unshift(item);
+            }
+
+            localStorage.setItem('jt_favorites', JSON.stringify(favorites));
+            updateFavBadge();
+            processAndRender(); // Re-render to update heart icon
+            if (document.getElementById('section-fav').classList.contains('open')) renderFavorites();
+        }
+
+        function updateFavBadge() {
+            const b = document.getElementById('fav-badge');
+            // Count unread favorites
+            const unreadCount = favorites.filter(f => !f.isRead).length;
+
+            if (unreadCount > 0) {
+                b.style.display = 'block';
+                b.innerText = unreadCount;
+            } else {
+                b.style.display = 'none';
+            }
+        }
+
+        function renderFavorites() {
+            const container = document.getElementById('fav-list');
+            if (favorites.length === 0) {
+                container.innerHTML = '<div style="text-align:center;color:#ccc;padding:20px;">暂无收藏</div>';
+                return;
+            }
+            let html = '';
+            favorites.forEach(item => {
+                html += createCardHtml(item, true);
             });
-    }
-
-    function sortNews(type) {
-        currentSort = type;
-        document.getElementById('btn-hot').className = type === 'hot' ? 'sort-btn active' : 'sort-btn';
-        document.getElementById('btn-time').className = type === 'time' ? 'sort-btn active' : 'sort-btn';
-        processAndRender();
-    }
-
-    function filterByCategory(cat) {
-        currentFilter = cat;
-        const title = document.getElementById('list-title');
-        const backBtn = document.getElementById('back-btn');
-
-        if (cat === 'all') {
-            title.innerText = 'Latest News';
-            backBtn.style.display = 'none';
-        } else {
-            title.innerText = `${cat}`;
-            backBtn.style.display = 'flex';
-        }
-        processAndRender();
-    }
-
-    function toggleFavorite(e, itemStr) {
-        e.stopPropagation();
-        const item = JSON.parse(decodeURIComponent(itemStr));
-        const index = favorites.findIndex(f => f.link === item.link);
-
-        if (index > -1) {
-            favorites.splice(index, 1);
-        } else {
-            // Add new favorite, mark as unread (isRead = false)
-            item.isRead = false;
-            favorites.unshift(item);
+            container.innerHTML = html;
         }
 
-        localStorage.setItem('jt_favorites', JSON.stringify(favorites));
-        updateFavBadge();
-        processAndRender(); // Re-render to update heart icon
-        if (document.getElementById('section-fav').classList.contains('open')) renderFavorites();
-    }
+        function processAndRender() {
+            const container = document.getElementById('news-list');
+            const archiveList = document.getElementById('archive-list');
+            const archiveSection = document.getElementById('archive-section');
 
-    function updateFavBadge() {
-        const b = document.getElementById('fav-badge');
-        // Count unread favorites
-        const unreadCount = favorites.filter(f => !f.isRead).length;
+            if (!rawNewsData || rawNewsData.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无相关新闻</div>';
+                return;
+            }
 
-        if (unreadCount > 0) {
-            b.style.display = 'block';
-            b.innerText = unreadCount;
-        } else {
-            b.style.display = 'none';
-        }
-    }
+            // 1. Filter
+            let filtered = rawNewsData;
+            if (currentFilter !== 'all') {
+                filtered = rawNewsData.filter(i => (i.category || '其他') === currentFilter);
+            }
 
-    function renderFavorites() {
-        const container = document.getElementById('fav-list');
-        if (favorites.length === 0) {
-            container.innerHTML = '<div style="text-align:center;color:#ccc;padding:20px;">暂无收藏</div>';
-            return;
-        }
-        let html = '';
-        favorites.forEach(item => {
-            html += createCardHtml(item, true);
-        });
-        container.innerHTML = html;
-    }
+            // 2. Sort
+            let sorted = [...filtered];
+            if (currentSort === 'time') {
+                sorted.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            } else {
+                // Hot (Default RSS order) - assuming rawNewsData is already in RSS order
+                // If filtered, we keep relative order
+            }
 
-    function processAndRender() {
-        const container = document.getElementById('news-list');
-        const archiveList = document.getElementById('archive-list');
-        const archiveSection = document.getElementById('archive-section');
+            // 3. Split Recent / Archive
+            const now = new Date();
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(now.getDate() - 3);
+            threeDaysAgo.setHours(0, 0, 0, 0);
 
-        if (!rawNewsData || rawNewsData.length === 0) {
-            container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无相关新闻</div>';
-            return;
-        }
+            const recent = [];
+            const archived = [];
 
-        // 1. Filter
-        let filtered = rawNewsData;
-        if (currentFilter !== 'all') {
-            filtered = rawNewsData.filter(i => (i.category || '其他') === currentFilter);
-        }
-
-        // 2. Sort
-        let sorted = [...filtered];
-        if (currentSort === 'time') {
-            sorted.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        } else {
-            // Hot (Default RSS order) - assuming rawNewsData is already in RSS order
-            // If filtered, we keep relative order
-        }
-
-        // 3. Split Recent / Archive
-        const now = new Date();
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(now.getDate() - 3);
-        threeDaysAgo.setHours(0, 0, 0, 0);
-
-        const recent = [];
-        const archived = [];
-
-        sorted.forEach(item => {
-            const itemDate = new Date(item.timestamp * 1000);
-            if (itemDate >= threeDaysAgo) {
-                recent.push(item);
-                let currentSort = 'hot';
-                let currentFilter = 'all';
-
-                function init() {
-                    if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wx-mask').style.display = 'block';
-                    checkPWA();
-                    updateFavBadge();
-                    loadNews();
-                    document.getElementById('install-close').onclick = () => document.getElementById('install-banner').style.display = 'none';
+            sorted.forEach(item => {
+                const itemDate = new Date(item.timestamp * 1000);
+                if (itemDate >= threeDaysAgo) {
+                    recent.push(item);
+                } else {
+                    archived.push(item);
                 }
+            });
 
-                function toggleSection(sectionName) {
-                    const aboutSec = document.getElementById('section-about');
-                    const favSec = document.getElementById('section-fav');
-                    const btnAbout = document.getElementById('btn-about');
-                    const btnFav = document.getElementById('btn-fav');
+            // 4. Render Recent
+            let html = '';
+            recent.forEach((item) => {
+                html += createCardHtml(item);
+            });
+            container.innerHTML = html || '<div style="text-align:center;padding:20px;color:#ccc;">暂无新闻</div>';
 
-                    if (sectionName === 'about') {
-                        // Toggle About
-                        const isOpen = aboutSec.classList.contains('open');
-                        if (isOpen) {
-                            aboutSec.classList.remove('open');
-                            btnAbout.classList.remove('active');
-                        } else {
-                            // Close Fav if open
-                            favSec.classList.remove('open');
-                            btnFav.classList.remove('active');
-                            // Open About
-                            aboutSec.classList.add('open');
-                            btnAbout.classList.add('active');
-                        }
-                    } else if (sectionName === 'fav') {
-                        // Toggle Fav
-                        const isOpen = favSec.classList.contains('open');
-                        if (isOpen) {
-                            favSec.classList.remove('open');
-                            btnFav.classList.remove('active');
-                        } else {
-                            // Close About if open
-                            aboutSec.classList.remove('open');
-                            btnAbout.classList.remove('active');
-                            // Open Fav
-                            favSec.classList.add('open');
-                            btnFav.classList.add('active');
-                            renderFavorites();
-                        }
-                    }
-                }
-
-                function toggleArchive() {
-                    const list = document.getElementById('archive-list');
-                    const arrow = document.getElementById('archive-arrow');
-                    const isShown = list.style.display === 'block';
-                    list.style.display = isShown ? 'none' : 'block';
-                    arrow.innerText = isShown ? '▼' : '▲';
-                }
-
-                function checkPWA() {
-                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-                    if (!isStandalone && isIOS) {
-                        document.getElementById('install-banner').style.display = 'flex';
-                        document.getElementById('install-text').innerText = "点击底部分享按钮，选择“添加到主屏幕” 📲";
-                    }
-                }
-
-                function loadNews() {
-                    const container = document.getElementById('news-list');
-                    container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Loading...</p>';
-
-                    fetch(`data.json?t=${Date.now()}`)
-                        .then(res => {
-                            if (!res.ok) throw new Error("No Data");
-                            return res.json();
-                        })
-                        .then(data => {
-                            if (Array.isArray(data)) {
-                                rawNewsData = data;
-                            } else if (data.china) {
-                                rawNewsData = data.china;
-                            } else {
-                                rawNewsData = [];
-                            }
-                            processAndRender();
-                        })
-                        .catch(err => {
-                            container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无新闻数据</div>';
-                        });
-                }
-
-                function sortNews(type) {
-                    currentSort = type;
-                    document.getElementById('btn-hot').className = type === 'hot' ? 'sort-btn active' : 'sort-btn';
-                    document.getElementById('btn-time').className = type === 'time' ? 'sort-btn active' : 'sort-btn';
-                    processAndRender();
-                }
-
-                function filterByCategory(cat) {
-                    currentFilter = cat;
-                    const title = document.getElementById('list-title');
-                    const backBtn = document.getElementById('back-btn');
-
-                    if (cat === 'all') {
-                        title.innerText = 'Latest News';
-                        backBtn.style.display = 'none';
-                    } else {
-                        title.innerText = `${cat}`;
-                        backBtn.style.display = 'flex';
-                    }
-                    processAndRender();
-                }
-
-                function toggleFavorite(e, itemStr) {
-                    e.stopPropagation();
-                    const item = JSON.parse(decodeURIComponent(itemStr));
-                    const index = favorites.findIndex(f => f.link === item.link);
-
-                    if (index > -1) {
-                        favorites.splice(index, 1);
-                    } else {
-                        // Add new favorite, mark as unread (isRead = false)
-                        item.isRead = false;
-                        favorites.unshift(item);
-                    }
-
-                    localStorage.setItem('jt_favorites', JSON.stringify(favorites));
-                    updateFavBadge();
-                    processAndRender(); // Re-render to update heart icon
-                    if (document.getElementById('section-fav').classList.contains('open')) renderFavorites();
-                }
-
-                function updateFavBadge() {
-                    const b = document.getElementById('fav-badge');
-                    // Count unread favorites
-                    const unreadCount = favorites.filter(f => !f.isRead).length;
-
-                    if (unreadCount > 0) {
-                        b.style.display = 'block';
-                        b.innerText = unreadCount;
-                    } else {
-                        b.style.display = 'none';
-                    }
-                }
-
-                function renderFavorites() {
-                    const container = document.getElementById('fav-list');
-                    if (favorites.length === 0) {
-                        container.innerHTML = '<div style="text-align:center;color:#ccc;padding:20px;">暂无收藏</div>';
-                        return;
-                    }
-                    let html = '';
-                    favorites.forEach(item => {
-                        html += createCardHtml(item, true);
-                    });
-                    container.innerHTML = html;
-                }
-
-                function processAndRender() {
-                    const container = document.getElementById('news-list');
-                    const archiveList = document.getElementById('archive-list');
-                    const archiveSection = document.getElementById('archive-section');
-
-                    if (!rawNewsData || rawNewsData.length === 0) {
-                        container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无相关新闻</div>';
-                        return;
-                    }
-
-                    // 1. Filter
-                    let filtered = rawNewsData;
-                    if (currentFilter !== 'all') {
-                        filtered = rawNewsData.filter(i => (i.category || '其他') === currentFilter);
-                    }
-
-                    // 2. Sort
-                    let sorted = [...filtered];
-                    if (currentSort === 'time') {
-                        sorted.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                    } else {
-                        // Hot (Default RSS order) - assuming rawNewsData is already in RSS order
-                        // If filtered, we keep relative order
-                    }
-
-                    // 3. Split Recent / Archive
-                    const now = new Date();
-                    const threeDaysAgo = new Date();
-                    threeDaysAgo.setDate(now.getDate() - 3);
-                    threeDaysAgo.setHours(0, 0, 0, 0);
-
-                    const recent = [];
-                    const archived = [];
-
-                    sorted.forEach(item => {
-                        const itemDate = new Date(item.timestamp * 1000);
-                        if (itemDate >= threeDaysAgo) {
-                            recent.push(item);
-                        } else {
-                            archived.push(item);
-                        }
-                    });
-
-                    // 4. Render Recent
-                    let html = '';
-                    recent.forEach((item) => {
-                        html += createCardHtml(item);
-                    });
-                    container.innerHTML = html || '<div style="text-align:center;padding:20px;color:#ccc;">暂无新闻</div>';
-
-                    // 5. Render Archive
-                    if (archived.length > 0 && currentFilter === 'all') { // Only show archive in 'all' view to avoid confusion
-                        archiveSection.style.display = 'block';
-                        let archHtml = '';
-                        archived.forEach(item => {
-                            archHtml += `
+            // 5. Render Archive
+            if (archived.length > 0 && currentFilter === 'all') { // Only show archive in 'all' view to avoid confusion
+                archiveSection.style.display = 'block';
+                let archHtml = '';
+                archived.forEach(item => {
+                    archHtml += `
                     <a href="${item.link}" target="_blank" class="archive-item">
                         <span class="archive-date">${item.time_str.split(' ')[0]}</span>
                         <span class="archive-title">${item.title}</span>
                     </a>`;
-                        });
-                        archiveList.innerHTML = archHtml;
-                    } else {
-                        archiveSection.style.display = 'none';
-                    }
-                }
+                });
+                archiveList.innerHTML = archHtml;
+            } else {
+                archiveSection.style.display = 'none';
+            }
+        }
 
-                function createCardHtml(item, isFavView = false) {
-                    const imgClass = item.image ? 'card-img show' : 'card-img';
-                    const safeItem = encodeURIComponent(JSON.stringify(item));
-                    const isFav = favorites.some(f => f.link === item.link);
-                    const favIconClass = isFav ? 'card-fav-btn active' : 'card-fav-btn';
-                    const category = item.category || '其他';
+        function createCardHtml(item, isFavView = false) {
+            const imgClass = item.image ? 'card-img show' : 'card-img';
+            const safeItem = encodeURIComponent(JSON.stringify(item));
+            const isFav = favorites.some(f => f.link === item.link);
+            const favIconClass = isFav ? 'card-fav-btn active' : 'card-fav-btn';
+            const category = item.category || '其他';
 
-                    // Only show category tag if it's NOT '其他'
-                    const catTagHtml = category !== '其他'
-                        ? `<span class="tag tag-cat" onclick="event.stopPropagation(); filterByCategory('${category}')">${category}</span>`
-                        : '';
+            // Only show category tag if it's NOT '其他'
+            const catTagHtml = category !== '其他'
+                ? `<span class="tag tag-cat" onclick="event.stopPropagation(); filterByCategory('${category}')">${category}</span>`
+                : '';
 
-                    const summaryHtml = item.summary ? `<div class="card-summary">${item.summary}</div>` : '';
+            const summaryHtml = item.summary ? `<div class="card-summary">${item.summary}</div>` : '';
 
-                    return `
+            return `
             <a href="${item.link}" target="_blank" class="card" onclick="handleCardClick(event, '${safeItem}', ${isFavView})">
                 <img src="${item.image || ''}" class="${imgClass}">
                 <div class="card-body">
@@ -515,27 +799,27 @@
                     </div>
                 </div>
             </a>`;
+        }
+
+        function handleCardClick(e, itemStr, isFavView) {
+            // If clicking fav icon or tag, don't do anything (handled by their own listeners)
+            // But since we wrapped in <a>, we might need to prevent default if we wanted to track clicks or something.
+            // For now, just let the <a> tag handle the navigation.
+
+            // If opening from favorites, mark as read
+            if (isFavView) {
+                const item = JSON.parse(decodeURIComponent(itemStr));
+                const index = favorites.findIndex(f => f.link === item.link);
+                if (index > -1 && !favorites[index].isRead) {
+                    favorites[index].isRead = true;
+                    localStorage.setItem('jt_favorites', JSON.stringify(favorites));
+                    updateFavBadge();
                 }
+            }
+        }
 
-                function handleCardClick(e, itemStr, isFavView) {
-                    // If clicking fav icon or tag, don't do anything (handled by their own listeners)
-                    // But since we wrapped in <a>, we might need to prevent default if we wanted to track clicks or something.
-                    // For now, just let the <a> tag handle the navigation.
-
-                    // If opening from favorites, mark as read
-                    if (isFavView) {
-                        const item = JSON.parse(decodeURIComponent(itemStr));
-                        const index = favorites.findIndex(f => f.link === item.link);
-                        if (index > -1 && !favorites[index].isRead) {
-                            favorites[index].isRead = true;
-                            localStorage.setItem('jt_favorites', JSON.stringify(favorites));
-                            updateFavBadge();
-                        }
-                    }
-                }
-
-                init();
-</script>
+        init();
+    </script>
 </body>
 
 </html>
