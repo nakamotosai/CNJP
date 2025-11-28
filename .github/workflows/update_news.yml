@@ -15,6 +15,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
+        # 使用 token 确保有权限拉取和推送
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -32,8 +33,27 @@ jobs:
 
       - name: Commit and push changes
         run: |
+          # 1. 配置 Git 用户信息
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 2. 确保添加了需要提交的文件
+          # 请根据您的实际文件路径调整：如果只有一个数据文件叫 data.json，则只添加 data.json
           git add data.json archive/
-          # 只有在有变动时才提交
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update news data [skip ci]" && git push)
+          
+          # 3. 检查是否有文件更改 (如果文件有变动)
+          if git diff --staged --quiet; then
+            echo "No changes in data to commit. Skipping push."
+          else
+            # 4. 提交更改
+            git commit -m "Update news data [skip ci]"
+            
+            # 5. 【关键修复】在推送前，先拉取远程内容并进行 rebase
+            # 这能解决“远程仓库有新的提交”导致的推送拒绝问题
+            echo "Attempting to pull and rebase before push..."
+            git pull origin main --rebase
+            
+            # 6. 推送更改
+            echo "Pushing changes to main branch..."
+            git push origin main
+          fi
