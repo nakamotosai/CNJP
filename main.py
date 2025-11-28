@@ -50,7 +50,8 @@ def classify_news(title):
 
 def fetch_google_china_news():
     print("正在抓取 Google News（日本版 · 中国相关）...")
-    url = "https://news.google.com/rss/search?q=中国+when:1d&hl=ja&gl=JP&ceid=JP:ja"
+    # 搜索过去 24 小时 ('when:1d') 的新闻，以防中间漏抓。
+    url = "https://news.google.com/rss/search?q=中国+when:1d&hl=ja&gl=JP&ceid=JP:ja" 
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
@@ -144,10 +145,20 @@ def update_news():
             pass
 
     existing_links = {i['link'] for i in final_today_list}
+    new_count = 0 # 统计新增条目
+    
     for item in new_data:
         if item['link'] not in existing_links:
+            # 新发现的文章直接插入到列表头部
             final_today_list.insert(0, item)
+            new_count += 1 
 
+    # -------------------------------------------------------------
+    # 🌟 关键修复：强制按照时间戳倒序排序
+    # 确保最新新闻（时间戳最大的）总在列表最前面。
+    final_today_list.sort(key=lambda x: x['timestamp'], reverse=True)
+    # -------------------------------------------------------------
+    
     with open(archive_path, 'w', encoding='utf-8') as f:
         json.dump(final_today_list, f, ensure_ascii=False, indent=2)
 
@@ -173,6 +184,8 @@ def update_news():
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(home_data, f, ensure_ascii=False, indent=2)
 
+    # 🌟 改进：打印发现的新闻数量，方便在 Actions 日志中确认
+    print(f"发现了 {new_count} 条新文章。")
     print(f"更新完成！今日 {len(final_today_list)} 条，首页共 {len(home_data)} 条新闻")
 
 if __name__ == "__main__":
