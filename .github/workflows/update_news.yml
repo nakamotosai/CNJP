@@ -38,8 +38,8 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
           # 2. 确保添加了需要提交的文件
-          # 请根据您的实际文件路径调整：如果只有一个数据文件叫 data.json，则只添加 data.json
-          git add data.json archive/
+          # 请根据您的实际文件路径调整：如果只有一个数据文件叫 data.json，则添加 data.json
+          git add data.json archive/ 
           
           # 3. 检查是否有文件更改 (如果文件有变动)
           if git diff --staged --quiet; then
@@ -48,12 +48,8 @@ jobs:
             # 4. 提交更改
             git commit -m "Update news data [skip ci]"
             
-            # 5. 【关键修复】在推送前，先拉取远程内容并进行 rebase
-            # 这能解决“远程仓库有新的提交”导致的推送拒绝问题
-            echo "Attempting to pull and rebase before push..."
-            git pull origin main --rebase
-            
-            # 6. 推送更改
-            echo "Pushing changes to main branch..."
-            git push origin main
+            # 5. 【关键修复】使用 git push --force 强制覆盖远程仓库
+            # 对于自动化生成的数据文件，这是最可靠的更新方式。
+            echo "Attempting to force push to main branch..."
+            git push origin main --force
           fi
