@@ -72,6 +72,7 @@ def update_news():
         
         new_data.append({
             "title": title_zh,
+            "title_ja": title_ja,
             "link": link,
             "image": extract_image(entry),
             "summary": "",
@@ -111,7 +112,7 @@ def update_news():
     with open(today_path, 'w', encoding='utf-8') as f:
         json.dump(today_list, f, ensure_ascii=False, indent=2)
     
-    # 首页：只显示今天 + 昨天的新闻
+    # 首页：只显示今天 + 昨天的新闻，最多100条
     cutoff = (get_current_jst_time() - datetime.timedelta(days=1)).timestamp()
     recent_news = []
     seen = set()
@@ -129,13 +130,16 @@ def update_news():
     
     recent_news.sort(key=lambda x: x['timestamp'], reverse=True)
     
-    with open('data.json', 'w', encoding='utf-8') as f:
-        json.dump(recent_news, f, ensure_ascii=False, indent=2)
+    # Limit to 100 items for homepage
+    homepage_news = recent_news[:100]
     
-    print(f"更新完成！今日总计 {len(today_list)} 条，本次新增 {added} 条，更新 {updated} 条，首页显示最近两天共 {len(recent_news)} 条")
+    with open('data.json', 'w', encoding='utf-8') as f:
+        json.dump(homepage_news, f, ensure_ascii=False, indent=2)
+    
+    print(f"更新完成！今日总计 {len(today_list)} 条，本次新增 {added} 条，更新 {updated} 条，首页显示最近两天共 {len(homepage_news)} 条（限制100条）")
     if added > 0 or updated > 0:
         print("最新三条预览：")
-        for item in recent_news[:3]:
+        for item in homepage_news[:3]:
             print(f"  {item['time_str']}  {item['title'][:60]}")
 
 if __name__ == "__main__":

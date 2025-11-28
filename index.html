@@ -278,28 +278,6 @@
             margin-right: 2px;
         }
 
-        .sort-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .sort-btn {
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            background: #E5E5EA;
-            color: #8E8E93;
-            cursor: pointer;
-            font-weight: 500;
-            border: none;
-            font-family: "Noto Sans", sans-serif;
-        }
-
-        .sort-btn.active {
-            background: var(--text-main);
-            color: white;
-        }
-
         /* 卡片 */
         .card {
             background: var(--card-bg);
@@ -374,7 +352,23 @@
             line-height: 1.5;
             color: var(--text-main);
             margin-right: 24px;
-            /* Space for fav icon */
+            margin-bottom: 6px;
+        }
+
+        .card-title-ja {
+            font-size: 12px;
+            color: #999;
+            line-height: 1.4;
+            margin-top: 6px;
+        }
+
+        .card-title-ja a {
+            color: #999;
+            text-decoration: none;
+        }
+
+        .card-title-ja a:hover {
+            text-decoration: underline;
         }
 
         .card-summary {
@@ -477,9 +471,77 @@
             flex: 1;
         }
 
-        /* 弹窗 - REMOVED */
-        #news-modal {
+        /* Modal Styles */
+        .modal-overlay {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .modal-close {
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-body p {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+        }
+
+        .modal-body p:last-child {
+            margin-bottom: 0;
         }
 
         #wx-mask {
@@ -528,41 +590,11 @@
     </div>
 
     <div class="container">
-        <!-- About Section -->
-        <div class="expandable-section" id="section-about">
-            <div class="notice-content">
-                <p>由于中日两国新闻存在巨大矛盾和争议，因此本网站专注聚合日本媒体发布的中国新闻，尽力消除信息差。每一个小时自动抓取一次日本谷歌新闻中包含"中国"关键字的实时数据，首页展示近3天的记录，超过3天的历史新闻会收录进存档永久保存。经测试目前国内访问没有问题。
-                </p>
-                <p>本网站全程由Gemini制作，部署在cloudflare上，目前试运营状态，还在持续更新优化中。如果你对这些新闻感兴趣，请把本网页添加到手机主屏幕上（用手机自带浏览器按分享后添加到主屏幕上即可）。
-                </p>
-                <p style="font-size: 12px; color: #999; margin-top: 10px;">*因技术原因，网站开通前的历史数据无法抓取，尽请谅解。</p>
-
-                <div
-                    style="margin-top: 24px; text-align: center; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 24px;">
-                    <img src="donate.jpg"
-                        style="width: 180px; max-width: 80%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 12px;"
-                        alt="打赏二维码">
-                    <p style="font-size: 13px; color: var(--text-main); line-height: 1.6; margin: 0;">
-                        本网站目前是零成本运营中，如果你希望日后追加更多的功能，可以给作者打赏来凑经费，不论打赏多少钱，作者都非常感激。
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Favorites Section -->
-        <div class="expandable-section" id="section-fav">
-            <div id="fav-list" class="fav-list-container"></div>
-        </div>
-
         <!-- Control Bar -->
         <div class="control-bar">
             <div class="section-title-group">
                 <div class="section-title" id="list-title">Latest News</div>
                 <button class="back-btn" id="back-btn" onclick="filterByCategory('all')">返回</button>
-            </div>
-            <div class="sort-group">
-                <button class="sort-btn active" id="btn-hot" onclick="sortNews('hot')">🔥 热度</button>
-                <button class="sort-btn" id="btn-time" onclick="sortNews('time')">🕒 最新</button>
             </div>
         </div>
 
@@ -571,10 +603,49 @@
         <!-- Archive Section -->
         <div class="archive-section" id="archive-section" style="display:none;">
             <div class="archive-header" onclick="toggleArchive()">
-                <span>📜 历史存档 (超过3天)</span>
+                <span>📜 历史存档 (超过100条)</span>
                 <span id="archive-arrow">▼</span>
             </div>
             <div class="archive-list" id="archive-list"></div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal-overlay" id="modal-about" onclick="closeModal('about')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">关于本站</div>
+                <button class="modal-close" onclick="closeModal('about')">×</button>
+            </div>
+            <div class="modal-body">
+                <p>こんにちは、大家好。由于近日中日两国新闻存在矛盾和争议，必须把两边的新闻合在一起看才能获得完整的信息，因此本网站专注聚合日本媒体发布的中国相关新闻，尽力消除信息差，对一部分人来说是对日媒的一种监督，对另一部分人来说希望能让国内家人看到真实的本土信息报个平安。
+                </p>
+                <p>网站会每小时自动抓取一次日本谷歌新闻中包含“中国”关键字的实时数据，会包含各家日媒发布的网页链接，不做任何修改和挑选，由爬虫自动爬取并按最新发布顺序显示，这些新闻之中可能也会夹杂一些错误抓取的新闻，比如日本本土也有叫“中国”的地区，日本股市里也有带“中国”名称的股票等等，目前还在持续优化中。首页展示最近
+                    100 条记录，超出 100 条后会自动移入最下方存档栏永久保存。目前国内访问正常，手机电脑均可访问，只是可能加载缓慢。</p>
+                <p>本站全程由 Gemini + Antigravity
+                    制作，处于试运营状态，还在持续更新优化中。由于版权问题，因此只能使用机翻来翻译标题，日文正文部分请自行打开查阅，摘录全文会被判定侵权。如果你对这些新闻感兴趣，建议用手机浏览器将本页面添加到主屏幕（点击分享
+                    → “添加到主屏幕”即可获得类App的体验）。如有重大更新，本人会继续发布在这里。</p>
+                <p>本站目前零成本运营，连专属域名都买不起，如果你希望日后增加更多功能让本站更好，可以扫下方二维码给作者打个小赏凑点经费。经费充足的话会考虑集成更多实用功能甚至发布成正式app等等，最后，不论打赏多少金额都非常感谢！これからもよろしくお願いいたします。
+                </p>
+                <p>来自一个不愿透露姓名的热心在日华人，希望中日友好。</p>
+                <div
+                    style="margin-top: 20px; text-align: center; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 20px;">
+                    <img src="donate.jpg"
+                        style="width: 180px; max-width: 80%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);"
+                        alt="打赏二维码">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites Modal -->
+    <div class="modal-overlay" id="modal-fav" onclick="closeModal('fav')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">我的收藏</div>
+                <button class="modal-close" onclick="closeModal('fav')">×</button>
+            </div>
+            <div class="modal-body" id="fav-list-modal"></div>
         </div>
     </div>
 
@@ -583,7 +654,6 @@
     <script>
         let rawNewsData = [];
         let favorites = JSON.parse(localStorage.getItem('jt_favorites') || '[]');
-        let currentSort = 'hot';
         let currentFilter = 'all';
 
         function init() {
@@ -595,40 +665,19 @@
         }
 
         function toggleSection(sectionName) {
-            const aboutSec = document.getElementById('section-about');
-            const favSec = document.getElementById('section-fav');
-            const btnAbout = document.getElementById('btn-about');
-            const btnFav = document.getElementById('btn-fav');
-
             if (sectionName === 'about') {
-                // Toggle About
-                const isOpen = aboutSec.classList.contains('open');
-                if (isOpen) {
-                    aboutSec.classList.remove('open');
-                    btnAbout.classList.remove('active');
-                } else {
-                    // Close Fav if open
-                    favSec.classList.remove('open');
-                    btnFav.classList.remove('active');
-                    // Open About
-                    aboutSec.classList.add('open');
-                    btnAbout.classList.add('active');
-                }
+                document.getElementById('modal-about').classList.add('show');
             } else if (sectionName === 'fav') {
-                // Toggle Fav
-                const isOpen = favSec.classList.contains('open');
-                if (isOpen) {
-                    favSec.classList.remove('open');
-                    btnFav.classList.remove('active');
-                } else {
-                    // Close About if open
-                    aboutSec.classList.remove('open');
-                    btnAbout.classList.remove('active');
-                    // Open Fav
-                    favSec.classList.add('open');
-                    btnFav.classList.add('active');
-                    renderFavorites();
-                }
+                document.getElementById('modal-fav').classList.add('show');
+                renderFavorites();
+            }
+        }
+
+        function closeModal(modalName) {
+            if (modalName === 'about') {
+                document.getElementById('modal-about').classList.remove('show');
+            } else if (modalName === 'fav') {
+                document.getElementById('modal-fav').classList.remove('show');
             }
         }
 
@@ -673,12 +722,7 @@
                 });
         }
 
-        function sortNews(type) {
-            currentSort = type;
-            document.getElementById('btn-hot').className = type === 'hot' ? 'sort-btn active' : 'sort-btn';
-            document.getElementById('btn-time').className = type === 'time' ? 'sort-btn active' : 'sort-btn';
-            processAndRender();
-        }
+
 
         function filterByCategory(cat) {
             currentFilter = cat;
@@ -728,7 +772,7 @@
         }
 
         function renderFavorites() {
-            const container = document.getElementById('fav-list');
+            const container = document.getElementById('fav-list-modal');
             if (favorites.length === 0) {
                 container.innerHTML = '<div style="text-align:center;color:#ccc;padding:20px;">暂无收藏</div>';
                 return;
@@ -756,14 +800,9 @@
                 filtered = rawNewsData.filter(i => (i.category || '其他') === currentFilter);
             }
 
-            // 2. Sort
+            // 2. Sort by timestamp (always newest first)
             let sorted = [...filtered];
-            if (currentSort === 'time') {
-                sorted.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            } else {
-                // Hot (Default RSS order) - assuming rawNewsData is already in RSS order
-                // If filtered, we keep relative order
-            }
+            sorted.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             // 3. Split Recent / Archive
             const now = new Date();
@@ -821,6 +860,9 @@
 
             const summaryHtml = item.summary ? `<div class="card-summary">${item.summary}</div>` : '';
 
+            // Japanese title with link
+            const titleJaHtml = item.title_ja ? `<div class="card-title-ja">原文链接：<a href="${item.link}" target="_blank" onclick="handleLinkClick(event, '${safeItem}', ${isFavView})">${item.title_ja}</a></div>` : '';
+
             return `
             <div class="card">
                 <img src="${item.image || ''}" class="${imgClass}">
@@ -831,8 +873,8 @@
                         <span class="card-origin">${item.origin.split(' - ')[0]}</span>
                     </div>
                     <div class="card-title">${item.title}</div>
+                    ${titleJaHtml}
                     ${summaryHtml}
-                    <a href="${item.link}" target="_blank" class="read-original" onclick="handleLinkClick(event, '${safeItem}', ${isFavView})">阅读日文原文</a>
                     <div class="${favIconClass}" onclick="toggleFavorite(event, '${safeItem}')">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
