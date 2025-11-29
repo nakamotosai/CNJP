@@ -3,10 +3,15 @@ let lastUpdated = '';
 let favorites = JSON.parse(localStorage.getItem('jt_favorites') || '[]');
 let currentFilter = 'all';
 let archiveData = {}; // Store grouped archive data
+let currentCalendarDate = new Date(); // For full calendar navigation
 
 function init() {
     if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wx-mask').style.display = 'block';
     checkPWA();
+
+    // Task 4: Clear "Latest News" text on load
+    const title = document.getElementById('list-title');
+    if (title) title.innerText = '';
 
     fetch('data.json?t=' + Date.now())
         .then(r => r.json())
@@ -15,10 +20,13 @@ function init() {
                 rawNewsData = data.news;
                 lastUpdated = data.last_updated;
 
-                // Display last updated time
+                // Display last updated time with new format (Task 5 + UI Enhancement 1: Split lines)
                 const lastUpdateEl = document.getElementById('last-update-time');
                 if (lastUpdateEl) {
-                    lastUpdateEl.textContent = `最新一次抓取数据时间：东京时间${lastUpdated}`;
+                    // Convert format: "2025年11月29日 10时48分" => "2025/11/29 10:48"
+                    const formattedTime = lastUpdated.replace(/(\d+)年(\d+)月(\d+)日\s+(\d+)时(\d+)分/, '$1/$2/$3 $4:$5');
+                    // Split into two lines and center
+                    lastUpdateEl.innerHTML = `<div style="text-align:center; line-height:1.6;">最新100条日媒发布的中国报道<br>上一次数据抓取时间：东京时间${formattedTime}</div>`;
                 }
             } else {
                 // Fallback for old format
@@ -70,7 +78,7 @@ function filterByCategory(cat) {
     const backBtn = document.getElementById('back-btn');
 
     if (cat === 'all') {
-        title.innerText = 'Latest News';
+        title.innerText = ''; // Task 4: Remove "Latest News" text
         backBtn.style.display = 'none';
     } else {
         title.innerText = `${cat}`;
@@ -156,6 +164,7 @@ function deleteSelectedFavorites() {
         localStorage.setItem('jt_favorites', JSON.stringify(favorites));
         updateFavBadge();
         renderFavorites();
+        processAndRender(); // Task 1: Sync homepage card states
     }
 }
 
@@ -165,6 +174,7 @@ function clearAllFavorites() {
         localStorage.setItem('jt_favorites', JSON.stringify(favorites));
         updateFavBadge();
         renderFavorites();
+        processAndRender(); // Task 1: Sync homepage card states
     }
 }
 
@@ -193,16 +203,24 @@ function renderCalendar() {
         }
     });
 
-    // Generate last 7 days
+    // Generate last 7 days (Task 2a: reversed order for today on right)
     const today = new Date();
     let html = '';
     let hasArchive = false;
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 6; i >= 0; i--) {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        const dayName = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+
+        // UI Enhancement 2: Rename "Today" to "本日" and add highlight class
+        let dayName = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+        let todayClass = '';
+        if (i === 0) {
+            dayName = '本日';
+            todayClass = 'calendar-day-today';
+        }
+
         const count = archiveData[dateStr] ? archiveData[dateStr].length : 0;
 
         if (count > 0) hasArchive = true;
@@ -211,8 +229,8 @@ function renderCalendar() {
         const onClick = count > 0 ? `onclick="showArchiveModal('${dateStr}')"` : '';
 
         html += `
-                    <div class="calendar-day ${isDisabled}" ${onClick}>
-                        <span class="day-name">周${dayName}</span>
+                    <div class="calendar-day ${isDisabled} ${todayClass}" ${onClick}>
+                        <span class="day-name">${i === 0 ? dayName : '周' + dayName}</span>
                         <span class="day-number">${d.getDate()}</span>
                         <span class="day-count">${count}</span>
                     </div>
@@ -247,6 +265,111 @@ function showArchiveModal(dateStr) {
 
     modalBody.innerHTML = html;
     document.getElementById('modal-archive').classList.add('show');
+}
+
+// UI Enhancement 3: Full Calendar with Month Navigation
+function showFullCalendar() {
+    currentCalendarDate = new Date(); // Reset to today
+    renderFullCalendar();
+    document.getElementById('modal-archive').classList.add('show');
+}
+
+function renderFullCalendar() {
+    const modalBody = document.getElementById('archive-modal-body');
+    const modalTitle = document.getElementById('archive-modal-title');
+
+    // Title with Year-Month
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth() + 1;
+    modalTitle.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <button onclick="changeMonth(-1)" style="background:none; border:none; font-size:18px; cursor:pointer; padding:5px;">◀</button>
+            <span>${year}年${month}月</span>
+            <button onclick="changeMonth(1)" style="background:none; border:none; font-size:18px; cursor:pointer; padding:5px;">▶</button>
+        </div>
+    `;
+
+    // Generate Month Grid
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay(); // 0 (Sun) - 6 (Sat)
+
+    let html = '<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 10px;">';
+
+    // Week headers
+    const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+    weekDays.forEach(day => {
+        html += `<div style="text-align:center; font-size:12px; color:#999; padding-bottom:5px;">${day}</div>`;
+    });
+
+    // Empty cells before first day
+    for (let i = 0; i < startDayOfWeek; i++) {
+        html += '<div></div>';
+    }
+
+    // Days
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const count = archiveData[dateStr] ? archiveData[dateStr].length : 0;
+        const isToday = (new Date().toDateString() === new Date(year, month - 1, d).toDateString());
+
+        let bgStyle = 'background: #f5f5f5; color: #ccc;';
+        let cursorStyle = 'cursor: default;';
+        let onClick = '';
+        let countBadge = '';
+
+        if (count > 0) {
+            bgStyle = 'background: white; color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #eee;';
+            cursorStyle = 'cursor: pointer;';
+            onClick = `onclick="showArchiveList('${dateStr}')"`;
+            countBadge = `<div style="font-size: 9px; background: #e3f2fd; color: #1976d2; padding: 1px 4px; border-radius: 4px; margin-top: 2px; display:inline-block;">${count}</div>`;
+        }
+
+        if (isToday) {
+            bgStyle += ' border: 2px solid var(--accent-color);';
+        }
+
+        html += `
+            <div style="border-radius: 8px; padding: 8px 4px; text-align: center; ${bgStyle} ${cursorStyle} min-height: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center;" ${onClick}>
+                <div style="font-size: 14px; font-weight: 500;">${d}</div>
+                ${countBadge}
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    html += '<div id="archive-list-container" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px;"></div>';
+
+    modalBody.innerHTML = html;
+}
+
+function changeMonth(delta) {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+    renderFullCalendar();
+}
+
+function showArchiveList(dateStr) {
+    const items = archiveData[dateStr] || [];
+    const container = document.getElementById('archive-list-container');
+
+    if (items.length === 0) return;
+
+    let html = `<div style="font-weight:bold; margin-bottom:10px; color:var(--accent-color);">${dateStr} 存档 (${items.length}条)</div>`;
+
+    items.forEach(item => {
+        html += `<div style="padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">`;
+        html += `<a href="${item.link}" target="_blank" style="color: var(--text-main); text-decoration: none; font-size: 14px; line-height: 1.5; display: block;">${item.title}</a>`;
+        html += `<div style="font-size: 11px; color: var(--text-sub); margin-top: 4px; display:flex; justify-content:space-between;">`;
+        html += `<span>${item.origin || 'Google News'}</span>`;
+        html += `<span>${item.time_str}</span>`;
+        html += `</div>`;
+        html += `</div>`;
+    });
+
+    container.innerHTML = html;
+    // Scroll to list
+    container.scrollIntoView({ behavior: 'smooth' });
 }
 
 function processAndRender() {

@@ -484,3 +484,34 @@ body {
     text-align: right;
     padding-top: 20px;
 }
+
+/* UI Enhancement: Today Highlight */
+.calendar-day-today {
+    background-color: #e3f2fd !important;
+    border: 2px solid var(--primary-color) !important;
+    transform: scale(1.05);
+}
+
+.calendar-day-today .day-name {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.calendar-day-today .day-number {
+    color: var(--primary-color);
+    font-weight: 900;
+}
+
+/* Full Calendar Styles */
+#archive-modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Mobile optimization for calendar grid */
+@media (max-width: 480px) {
+    .calendar-day {
+        min-width: 45px;
+        /* Ensure touch targets are big enough */
+    }
+}
