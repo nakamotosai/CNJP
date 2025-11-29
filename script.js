@@ -26,7 +26,7 @@ function init() {
                     // Convert format: "2025年11月29日 10时48分" => "2025/11/29 10:48"
                     const formattedTime = lastUpdated.replace(/(\d+)年(\d+)月(\d+)日\s+(\d+)时(\d+)分/, '$1/$2/$3 $4:$5');
                     // Split into two lines and center
-                    lastUpdateEl.innerHTML = `<div style="text-align:center; line-height:1.6;">最新100条日媒发布的中国报道<br>上一次数据抓取时间：东京时间${formattedTime}</div>`;
+                    lastUpdateEl.innerHTML = `<div class="header-section"><h2>最新100条日媒发布的中国报道</h2><p>上一次数据抓取时间:东京时间${formattedTime}</p></div>`;
                 }
             } else {
                 // Fallback for old format

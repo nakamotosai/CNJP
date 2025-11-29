@@ -119,6 +119,18 @@ body {
     padding-bottom: 40px;
 }
 
+  
+/* Header Section */
+.header-section {
+    text-align: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.header-section h2,
+.header-section p {
+    margin: 8px 0;
+}
 /* Control Bar */
 .control-bar {
     display: flex;
