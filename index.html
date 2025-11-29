@@ -11,7 +11,6 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" href="logo.png" type="image/png">
-    <!-- Noto Sans Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -19,172 +18,124 @@
         rel="stylesheet">
     <style>
         :root {
-            --bg-color: #F9F9F7;
-            --card-bg: #FFFFFF;
-            --accent-color: #D64045;
+            --primary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
             --text-main: #333333;
-            --text-sub: #8E8E93;
-            --border-radius: 16px;
+            --text-sub: #7f8c8d;
+            --header-height: 60px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: "Noto Sans", "Noto Sans SC", "Noto Sans JP", -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, Arial, sans-serif;
+            font-family: 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans', sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-main);
             margin: 0;
             padding: 0;
-            -webkit-tap-highlight-color: transparent;
-            padding-bottom: 80px;
-        }
-
-        #install-banner {
-            display: none;
-            background: #333;
-            color: white;
-            padding: 10px 15px;
-            font-size: 13px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        #install-close {
-            font-size: 18px;
-            padding: 0 10px;
-            cursor: pointer;
-            color: #aaa;
+            color: var(--text-main);
+            padding-top: var(--header-height);
+            -webkit-font-smoothing: antialiased;
         }
 
         /* Header */
         .header {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            position: sticky;
+            position: fixed;
             top: 0;
-            z-index: 100;
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .header-content {
+            width: 100%;
             max-width: 600px;
-            margin: 0 auto;
+            padding: 0 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .header-top {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 10px;
         }
 
         .header-logo {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
         }
 
-        .header-title {
-            flex: 1;
-            text-align: center;
-            margin-right: 48px;
-            /* Balance logo width */
-        }
-
-        .header h1 {
+        .header-title h1 {
             margin: 0;
-            font-size: 20px;
-            font-weight: 800;
-            font-family: "Noto Sans", sans-serif;
-            letter-spacing: -0.5px;
-            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary-color);
             line-height: 1.2;
         }
 
-        .header p {
-            margin: 4px 0 0 0;
-            font-size: 11px;
-            color: var(--accent-color);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 600;
-            opacity: 0.9;
+        .header-title p {
+            margin: 0;
+            font-size: 10px;
+            color: var(--text-sub);
+            line-height: 1.2;
         }
 
-        /* Nav Buttons */
         .nav-bar {
             display: flex;
             gap: 12px;
-            width: 100%;
-            max-width: 600px;
-            justify-content: center;
+            align-items: center;
         }
 
         .nav-btn {
-            flex: 1;
-            background: white;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 10px 0;
-            border-radius: 12px;
             font-size: 13px;
-            font-weight: 600;
-            color: var(--text-main);
+            color: var(--primary-color);
             cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 20px;
+            background: #f0f2f5;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: all 0.2s;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-            position: relative;
+            gap: 4px;
+            font-weight: 500;
         }
 
         .nav-btn:active {
-            transform: scale(0.98);
-            background: #f5f5f5;
+            transform: scale(0.96);
+            background: #e1e4e8;
         }
 
-        .nav-btn.active {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
-
-        .nav-btn.active svg path {
-            fill: white;
-            stroke: white;
-        }
-
-        .nav-btn svg {
+        .heart-icon {
             width: 16px;
             height: 16px;
+            fill: var(--accent-color);
         }
 
-        /* Flat Heart Icon SVG */
-        .heart-icon path {
-            fill: none;
-            stroke: var(--accent-color);
-            stroke-width: 2;
-            transition: all 0.2s;
-        }
-
-        .nav-btn.active .heart-icon path {
-            fill: white;
-            stroke: white;
-        }
-
-        .fav-count {
-            color: var(--accent-color);
-            font-weight: 700;
-        }
-
+        /* Container */
         .container {
-            padding: 20px;
             max-width: 600px;
             margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 40px;
         }
 
         /* Control Bar */
@@ -193,76 +144,63 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
-            margin-top: 10px;
+            padding: 0 4px;
         }
 
         .section-title-group {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            flex-direction: column;
         }
 
         .section-title {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
+            color: var(--primary-color);
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
-        .section-title::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background: var(--accent-color);
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-
-        /* Back Button */
         .back-btn {
             display: none;
-            font-size: 12px;
-            padding: 4px 10px;
-            background: rgba(214, 64, 69, 0.1);
-            color: var(--accent-color);
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            border: none;
             align-items: center;
+            padding: 4px 10px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 14px;
+            font-size: 12px;
+            border: none;
+            margin-top: 4px;
+            width: fit-content;
+            cursor: pointer;
         }
 
-        .back-btn::before {
-            content: '← ';
-            margin-right: 2px;
-        }
-
-        /* Card */
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-            transition: transform 0.1s;
+        /* Card List */
+        #news-list {
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(0, 0, 0, 0.02);
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
             position: relative;
             cursor: pointer;
-            text-decoration: none;
+            border: 1px solid rgba(0, 0, 0, 0.03);
         }
 
         .card:active {
-            transform: scale(0.98);
+            transform: scale(0.99);
         }
 
         .card-img {
             width: 100%;
-            height: 180px;
+            height: 160px;
             object-fit: cover;
-            background: #f0f0f0;
             display: none;
         }
 
@@ -272,210 +210,298 @@
 
         .card-body {
             padding: 16px;
+            padding-right: 40px;
+            /* Space for fav icon */
         }
 
         .card-meta {
             display: flex;
             align-items: center;
+            gap: 8px;
             margin-bottom: 8px;
             flex-wrap: wrap;
-            gap: 6px;
         }
 
         .tag {
             font-size: 10px;
-            padding: 3px 6px;
+            padding: 2px 6px;
             border-radius: 4px;
             font-weight: 600;
-            cursor: pointer;
+            text-transform: uppercase;
         }
 
         .tag-cat {
-            background: #F0F0F0;
-            color: #555;
+            background: #e3f2fd;
+            color: #1976d2;
         }
 
         .tag-time {
-            background: rgba(214, 64, 69, 0.08);
-            color: var(--accent-color);
+            background: #f5f5f5;
+            color: #666;
         }
 
         .card-origin {
             font-size: 11px;
-            color: var(--text-sub);
+            color: #999;
             margin-left: auto;
+            margin-right: 30px;
+            /* Avoid overlap with fav icon */
         }
 
         .card-title {
             font-size: 16px;
             font-weight: 700;
             line-height: 1.5;
-            color: var(--text-main);
-            margin-right: 24px;
             margin-bottom: 6px;
+            color: var(--text-main);
         }
 
         .card-title-ja {
             font-size: 12px;
-            color: #999;
+            color: var(--text-sub);
+            margin-top: 4px;
             line-height: 1.4;
-            margin-top: 6px;
         }
 
         .card-title-ja a {
-            color: #999;
+            color: var(--text-sub);
             text-decoration: none;
-        }
-
-        .card-title-ja a:hover {
-            text-decoration: underline;
         }
 
         .card-summary {
             font-size: 13px;
-            color: var(--text-sub);
+            color: #666;
             margin-top: 8px;
             line-height: 1.5;
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
 
+        /* Favorite Button on Card */
         .card-fav-btn {
             position: absolute;
+            top: 16px;
             right: 16px;
-            bottom: 16px;
-            width: 20px;
-            height: 20px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            z-index: 10;
+            z-index: 2;
         }
 
         .card-fav-btn svg {
-            width: 100%;
-            height: 100%;
+            width: 18px;
+            height: 18px;
+            fill: #ccc;
+            transition: fill 0.2s;
         }
 
-        .card-fav-btn path {
-            fill: none;
-            stroke: #ddd;
-            stroke-width: 2;
-            transition: all 0.2s;
-        }
-
-        .card-fav-btn.active path {
+        .card-fav-btn.active svg {
             fill: var(--accent-color);
-            stroke: var(--accent-color);
         }
 
         /* Archive Section */
         .archive-section {
-            margin-top: 40px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #ddd;
         }
 
         .archive-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
-            cursor: pointer;
-            color: var(--text-sub);
+            justify-content: space-between;
+            padding: 10px 4px;
             font-weight: 600;
+            color: var(--text-sub);
             font-size: 14px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: 10px;
         }
 
-        .archive-list {
-            display: none;
-            margin-top: 16px;
+        /* Calendar Styles */
+        .calendar-week {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-bottom: 20px;
         }
 
-        /* Modal Styles */
+        .calendar-day {
+            background: white;
+            border-radius: 8px;
+            padding: 8px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: transform 0.1s, background 0.1s;
+        }
+
+        .calendar-day:active {
+            transform: scale(0.95);
+        }
+
+        .calendar-day.disabled {
+            background: #f0f0f0;
+            opacity: 0.6;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .day-name {
+            font-size: 10px;
+            color: #999;
+            margin-bottom: 2px;
+        }
+
+        .day-number {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .day-count {
+            font-size: 9px;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 1px 4px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+
+        /* Modals */
         .modal-overlay {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            z-index: 2000;
+            display: none;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
         .modal-overlay.show {
             display: flex;
+            opacity: 1;
         }
 
         .modal-content {
             background: white;
-            border-radius: 16px;
-            max-width: 500px;
-            width: 100%;
+            width: 90%;
+            max-width: 400px;
             max-height: 80vh;
-            overflow-y: auto;
-            position: relative;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+            overflow: hidden;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
         }
 
         .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 16px;
+            border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: white;
+            z-index: 10;
         }
 
         .modal-title {
             font-size: 18px;
             font-weight: 700;
-            color: var(--text-main);
         }
 
         .modal-close {
+            background: none;
+            border: none;
             font-size: 24px;
             color: #999;
             cursor: pointer;
-            background: none;
-            border: none;
             padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            line-height: 1;
         }
 
         .modal-body {
-            padding: 20px;
+            padding: 16px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            /* Modern Scrollbar for Modal */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
         }
 
-        .modal-body p {
-            font-size: 14px;
-            line-height: 1.8;
-            color: var(--text-sub);
-            margin-bottom: 12px;
+        .modal-body::-webkit-scrollbar {
+            width: 4px;
         }
 
-        .modal-body p:last-child {
-            margin-bottom: 0;
+        .modal-body::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        #wx-mask {
+        .modal-body::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        /* Install Banner */
+        #install-banner {
             display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 16px;
+            z-index: 3000;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #install-close {
+            font-size: 20px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        /* WX Mask */
+        #wx-mask {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.8);
             z-index: 9999;
-            color: white;
+            display: none;
+            color: #fff;
             text-align: right;
-            padding: 20px;
+            padding-top: 20px;
         }
     </style>
 </head>
@@ -527,11 +553,12 @@
 
         <!-- Archive Section -->
         <div class="archive-section" id="archive-section" style="display:none;">
-            <div class="archive-header" onclick="toggleArchive()">
-                <span>📜 历史存档 (超过100条)</span>
-                <span id="archive-arrow">▼</span>
+            <div class="archive-header">
+                <span>📅 历史存档 (最近7天)</span>
             </div>
-            <div class="archive-list" id="archive-list"></div>
+            <div class="calendar-week" id="calendar-week">
+                <!-- Calendar days will be rendered here -->
+            </div>
         </div>
     </div>
 
@@ -574,11 +601,23 @@
         </div>
     </div>
 
+    <!-- Archive Modal -->
+    <div class="modal-overlay" id="modal-archive" onclick="closeModal('archive')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="archive-modal-title">历史存档</div>
+                <button class="modal-close" onclick="closeModal('archive')">×</button>
+            </div>
+            <div class="modal-body" id="archive-modal-body"></div>
+        </div>
+    </div>
+
     <script>
         let rawNewsData = [];
         let lastUpdated = '';
         let favorites = JSON.parse(localStorage.getItem('jt_favorites') || '[]');
         let currentFilter = 'all';
+        let archiveData = {}; // Store grouped archive data
 
         function init() {
             if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wx-mask').style.display = 'block';
@@ -602,6 +641,7 @@
                     }
                     processAndRender();
                     updateFavBadge();
+                    renderCalendar(); // Render calendar after data load
                 })
                 .catch(e => {
                     console.error('Failed to load news:', e);
@@ -625,15 +665,9 @@
                 document.getElementById('modal-about').classList.remove('show');
             } else if (modalName === 'fav') {
                 document.getElementById('modal-fav').classList.remove('show');
+            } else if (modalName === 'archive') {
+                document.getElementById('modal-archive').classList.remove('show');
             }
-        }
-
-        function toggleArchive() {
-            const list = document.getElementById('archive-list');
-            const arrow = document.getElementById('archive-arrow');
-            const isShown = list.style.display === 'block';
-            list.style.display = isShown ? 'none' : 'block';
-            arrow.innerText = isShown ? '▼' : '▲';
         }
 
         function checkPWA() {
@@ -757,10 +791,81 @@
             }
         }
 
+        function renderCalendar() {
+            const weekContainer = document.getElementById('calendar-week');
+            const archiveSection = document.getElementById('archive-section');
+
+            // Group news by date (YYYY-MM-DD)
+            archiveData = {};
+            rawNewsData.forEach(item => {
+                // Use time_str "MM-DD" to group, but we need full date. 
+                // Assuming timestamp is available.
+                if (item.timestamp) {
+                    const date = new Date(item.timestamp * 1000);
+                    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    if (!archiveData[dateStr]) archiveData[dateStr] = [];
+                    archiveData[dateStr].push(item);
+                }
+            });
+
+            // Generate last 7 days
+            const today = new Date();
+            let html = '';
+            let hasArchive = false;
+
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const dayName = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+                const count = archiveData[dateStr] ? archiveData[dateStr].length : 0;
+
+                if (count > 0) hasArchive = true;
+
+                const isDisabled = count === 0 ? 'disabled' : '';
+                const onClick = count > 0 ? `onclick="showArchiveModal('${dateStr}')"` : '';
+
+                html += `
+                    <div class="calendar-day ${isDisabled}" ${onClick}>
+                        <span class="day-name">周${dayName}</span>
+                        <span class="day-number">${d.getDate()}</span>
+                        <span class="day-count">${count}</span>
+                    </div>
+                `;
+            }
+
+            weekContainer.innerHTML = html;
+
+            // Show archive section if there is any data
+            if (hasArchive) {
+                archiveSection.style.display = 'block';
+            }
+        }
+
+        function showArchiveModal(dateStr) {
+            const items = archiveData[dateStr] || [];
+            const modalBody = document.getElementById('archive-modal-body');
+            const modalTitle = document.getElementById('archive-modal-title');
+
+            modalTitle.textContent = `${dateStr} 存档 (${items.length}条)`;
+
+            let html = '';
+            items.forEach(item => {
+                html += `<div style="padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">`;
+                html += `<a href="${item.link}" target="_blank" style="color: var(--text-main); text-decoration: none; font-size: 14px; line-height: 1.6; display: block; font-weight: 500;">${item.title}</a>`;
+                html += `<div style="font-size: 11px; color: var(--text-sub); margin-top: 4px; display:flex; justify-content:space-between;">`;
+                html += `<span>${item.origin || 'Google News'}</span>`;
+                html += `<span>${item.time_str}</span>`;
+                html += `</div>`;
+                html += `</div>`;
+            });
+
+            modalBody.innerHTML = html;
+            document.getElementById('modal-archive').classList.add('show');
+        }
+
         function processAndRender() {
             const container = document.getElementById('news-list');
-            const archiveList = document.getElementById('archive-list');
-            const archiveSection = document.getElementById('archive-section');
 
             if (!rawNewsData || rawNewsData.length === 0) {
                 container.innerHTML = '<div style="text-align:center;padding:30px;color:#ccc;">暂无相关新闻</div>';
@@ -777,9 +882,8 @@
             let sorted = [...filtered];
             sorted.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-            // 3. Split by 100-item limit
+            // 3. Split by 100-item limit for Homepage
             const recent = sorted.slice(0, 100);
-            const archived = sorted.slice(100);
 
             // 4. Render Recent
             let html = '';
@@ -787,77 +891,37 @@
                 html += createCardHtml(item);
             });
             container.innerHTML = html || '<div style="text-align:center;padding:20px;color:#ccc;">暂无新闻</div>';
-
-            // 5. Render Archive (simple text list)
-            if (archived.length > 0) {
-                archiveSection.style.display = 'block';
-                let archHtml = '';
-                archived.forEach(item => {
-                    archHtml += `<div style="padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">`;
-                    archHtml += `<a href="${item.link}" target="_blank" style="color: var(--text-main); text-decoration: none; font-size: 14px; line-height: 1.6; display: block;">${item.title}</a>`;
-                    archHtml += `<div style="font-size: 11px; color: var(--text-sub); margin-top: 4px;">${item.time_str}</div>`;
-                    archHtml += `</div>`;
-                });
-                archiveList.innerHTML = archHtml;
-            } else {
-                archiveSection.style.display = 'none';
-            }
         }
 
-        function createCardHtml(item, isFavView = false) {
-            const imgClass = item.image ? 'card-img show' : 'card-img';
-            const safeItem = encodeURIComponent(JSON.stringify(item));
+        function createCardHtml(item) {
             const isFav = favorites.some(f => f.link === item.link);
-            const favIconClass = isFav ? 'card-fav-btn active' : 'card-fav-btn';
-            const category = item.category || '其他';
-
-            // Only show category tag if it's NOT '其他'
-            const catTagHtml = category !== '其他'
-                ? `<span class="tag tag-cat" onclick="event.stopPropagation(); filterByCategory('${category}')">${category}</span>`
-                : '';
-
-            const summaryHtml = item.summary ? `<div class="card-summary">${item.summary}</div>` : '';
+            const favClass = isFav ? 'active' : '';
+            const itemStr = encodeURIComponent(JSON.stringify(item));
 
             // Japanese title with link
-            const titleJaHtml = item.title_ja ? `<div class="card-title-ja">原文链接：<a href="${item.link}" target="_blank" onclick="handleLinkClick(event, '${safeItem}', ${isFavView})">${item.title_ja}</a></div>` : '';
+            const titleJaHtml = item.title_ja ? `<div class="card-title-ja"><a href="${item.link}" target="_blank">🇯🇵 ${item.title_ja}</a></div>` : '';
 
             return `
-            <div class="card">
-                <img src="${item.image || ''}" class="${imgClass}">
+            <div class="card" onclick="window.open('${item.link}', '_blank')">
+                <div class="card-fav-btn ${favClass}" onclick="toggleFavorite(event, '${itemStr}')">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </div>
                 <div class="card-body">
                     <div class="card-meta">
+                        <span class="tag tag-cat" onclick="event.stopPropagation(); filterByCategory('${item.category}')">${item.category}</span>
                         <span class="tag tag-time">${item.time_str}</span>
-                        ${catTagHtml}
-                        <span class="card-origin">${item.origin.split(' - ')[0]}</span>
+                        <span class="card-origin">${item.origin}</span>
                     </div>
                     <div class="card-title">${item.title}</div>
                     ${titleJaHtml}
-                    ${summaryHtml}
-                    <div class="${favIconClass}" onclick="toggleFavorite(event, '${safeItem}')">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
-                    </div>
                 </div>
-            </div>`;
+            </div>
+            `;
         }
 
-        function handleLinkClick(e, itemStr, isFavView) {
-            e.stopPropagation(); // Prevent bubbling just in case
-
-            // If opening from favorites, mark as read
-            if (isFavView) {
-                const item = JSON.parse(decodeURIComponent(itemStr));
-                const index = favorites.findIndex(f => f.link === item.link);
-
-                if (index > -1 && !favorites[index].isRead) {
-                    favorites[index].isRead = true;
-                    localStorage.setItem('jt_favorites', JSON.stringify(favorites));
-                    updateFavBadge();
-                }
-            }
-        }
-
+        // Init
         init();
     </script>
 </body>
