@@ -7,12 +7,13 @@ import { zhCN, zhTW } from "date-fns/locale";
 
 export interface NewsItem {
   title: string;
+  title_tc?: string; // 新增：JSON里的繁体标题
+  title_ja?: string; // 新增：JSON里的日文标题
   link: string;
   timestamp?: number;
   time_str?: string;
   origin?: string;
   category?: string;
-  original_title?: string; // 新增：日文原标题字段
 }
 
 interface NewsCardProps {
@@ -65,10 +66,24 @@ export default function NewsCard({
 
   const rawCategory = item.category || "其他";
   const categoryColor = CATEGORY_COLORS[rawCategory] || CATEGORY_COLORS["其他"];
+  
+  // 分类标签繁简切换
   let displayCategory = rawCategory.substring(0, 2);
   if (settings.lang === "tc") {
     displayCategory = SC_TO_TC_CATEGORY[displayCategory] || displayCategory;
   }
+
+  // 大标题繁简切换
+  // 如果是繁体模式且有 title_tc，优先用 title_tc，否则用 title
+  const displayTitle = (settings.lang === "tc" && item.title_tc) 
+    ? item.title_tc 
+    : item.title;
+
+  // 底部日文文本构建
+  // 使用 title_ja 字段
+  const japaneseText = item.title_ja 
+    ? `JP ${item.origin} : ${item.title_ja}`
+    : `JP ${item.origin}`;
 
   return (
     <div className="w-full bg-white dark:bg-[#1e1e1e] p-4 rounded-2xl shadow-sm border border-black/5 dark:border-white/5 hover:shadow-md transition-all duration-300">
@@ -121,25 +136,31 @@ export default function NewsCard({
             </span>
           </div>
 
-          {/* 标题：不可点击，纯展示 */}
+          {/* 
+             中文大标题 
+             1. 不可点击 (div)
+             2. 使用 displayTitle 自动适配繁简
+          */}
           <div
             style={fontStyleObj}
-            className="text-[17px] font-bold text-[var(--text-main)] leading-snug tracking-normal line-clamp-2 cursor-text"
+            className="text-[17px] font-bold text-[var(--text-main)] leading-snug tracking-normal line-clamp-2 cursor-text select-text"
           >
-            {item.title}
+            {displayTitle}
           </div>
 
-          {/* 底部：来源链接 (唯一可点击区域) */}
+          {/* 
+             底部：来源链接 
+             显示格式：JP 来源 : 日文标题
+          */}
           <div className="flex items-center justify-start mt-1">
              <a 
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={fontStyleObj}
-                className="text-[11px] text-[var(--text-sub)] font-medium hover:text-[var(--primary)] underline decoration-1 underline-offset-2 block truncate transition-colors"
-                title={item.original_title} // 鼠标悬停显示完整日文标题
+                className="text-[11px] text-[var(--text-sub)] font-medium hover:text-[var(--primary)] underline decoration-1 underline-offset-2 block leading-relaxed transition-colors text-left"
              >
-                JP {item.origin} {item.original_title ? `: ${item.original_title}` : ""}
+                {japaneseText}
              </a>
           </div>
         </div>
