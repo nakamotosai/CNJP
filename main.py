@@ -6,9 +6,59 @@ import os
 import datetime
 import time
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
-# 日本时间
+# 日本时间 (UTC+9)
 JST = datetime.timezone(datetime.timedelta(hours=9))
+
+# === 媒体映射表 (与 fix_logos 保持一致) ===
+MEDIA_DOMAIN_MAP = {
+    "Yahoo": "news.yahoo.co.jp",
+    "雅虎": "news.yahoo.co.jp",
+    "日本経済新聞": "www.nikkei.com",
+    "日経": "www.nikkei.com",
+    "Nikkei": "www.nikkei.com",
+    "NHK": "www3.nhk.or.jp",
+    "TBS": "newsdig.tbs.co.jp",
+    "JNN": "newsdig.tbs.co.jp",
+    "FNN": "www.fnn.jp",
+    "フジテレビ": "www.fnn.jp",
+    "富士": "www.fnn.jp",
+    "日テレ": "news.ntv.co.jp",
+    "日本テレビ": "news.ntv.co.jp",
+    "NNN": "news.ntv.co.jp",
+    "テレ朝": "news.tv-asahi.co.jp",
+    "テレビ朝日": "news.tv-asahi.co.jp",
+    "ANN": "news.tv-asahi.co.jp",
+    "毎日新聞": "mainichi.jp",
+    "朝日新聞": "www.asahi.com",
+    "読売新聞": "www.yomiuri.co.jp",
+    "産経": "www.sankei.com",
+    "Sankei": "www.sankei.com",
+    "共同": "www.kyodo.co.jp",
+    "Kyodo": "www.kyodo.co.jp",
+    "時事": "www.jiji.com",
+    "Jiji": "www.jiji.com",
+    "東洋経済": "toyokeizai.net",
+    "現代ビジネス": "gendai.media",
+    "Diamond": "diamond.jp",
+    "ダイヤモンド": "diamond.jp",
+    "JBpress": "jbpress.ismedia.jp",
+    "Newsweek": "www.newsweekjapan.jp",
+    "CNN": "www.cnn.co.jp",
+    "BBC": "www.bbc.com",
+    "Bloomberg": "www.bloomberg.co.jp",
+    "Reuters": "jp.reuters.com",
+    "路透": "jp.reuters.com",
+    "Record China": "www.recordchina.co.jp",
+    "サーチナ": "searchina.net",
+    "北海道新聞": "www.hokkaido-np.co.jp",
+    "東京新聞": "www.tokyo-np.co.jp",
+    "西日本新聞": "www.nishinippon.co.jp",
+    "中日新聞": "www.chunichi.co.jp",
+    "沖縄タイムス": "www.okinawatimes.co.jp",
+    "琉球新報": "ryukyushimpo.jp"
+}
 
 def get_current_jst_time():
     return datetime.datetime.now(JST)
@@ -23,6 +73,27 @@ def extract_image(entry):
                 return img['src']
         except:
             pass
+    return ""
+
+# 获取新闻源 Logo (优先映射，其次RSS Source，最后Link)
+def get_source_logo(entry):
+    # 1. 尝试从 source title 匹配映射表
+    if hasattr(entry, 'source') and 'title' in entry.source:
+        origin_name = entry.source['title']
+        for key, domain in MEDIA_DOMAIN_MAP.items():
+            if key in origin_name:
+                return f"https://www.google.com/s2/favicons?domain={domain}&sz=128"
+
+    # 2. 尝试从 source href 获取域名
+    try:
+        if hasattr(entry, 'source') and 'href' in entry.source:
+            domain_url = entry.source['href']
+            domain = urlparse(domain_url).netloc
+            if "google" not in domain:
+                return f"https://www.google.com/s2/favicons?domain={domain}&sz=128"
+    except:
+        pass
+        
     return ""
 
 def classify_news(title):
@@ -54,95 +125,145 @@ def fetch_all_china_news():
     print(f"本次从 RSS 抓到 {len(entries)} 条新闻")
     return [e[1] for e in entries]
 
+def get_clean_title_key(full_title):
+    if not full_title:
+        return ""
+    if " - " in full_title:
+        return full_title.rsplit(" - ", 1)[0].strip()
+    return full_title.strip()
+
 def update_news():
     new_entries = fetch_all_china_news()
-    new_data = []
+    
+    news_by_date = {}
+    preview_items = []
+    
     translator_sc = GoogleTranslator(source='ja', target='zh-CN')
     translator_tc = GoogleTranslator(source='ja', target='zh-TW')
     
-    for entry in new_entries:
+    print("开始处理并翻译新闻...")
+    
+    for i, entry in enumerate(new_entries):
         link = entry.link
         title_ja = entry.title
         
-        # 简体中文翻译
+        if i > 0 and i % 10 == 0:
+            print(f"已处理 {i} 条，休息 1 秒...")
+            time.sleep(1)
+
         try:
             title_zh = translator_sc.translate(title_ja)
-        except:
+        except Exception as e:
+            print(f"简体翻译失败: {e}")
             title_zh = title_ja
             
-        # 繁体中文翻译 (直接从日文翻译)
         try:
             title_tc = translator_tc.translate(title_ja)
-        except:
+        except Exception as e:
+            print(f"繁体翻译失败: {e}")
             title_tc = title_ja
         
         timestamp = calendar.timegm(entry.published_parsed)
-        time_str = datetime.datetime.fromtimestamp(timestamp, JST).strftime("%m-%d %H:%M")
+        news_datetime = datetime.datetime.fromtimestamp(timestamp, JST)
+        news_date_str = news_datetime.strftime("%Y-%m-%d")
+        time_str = news_datetime.strftime("%m-%d %H:%M")
         
-        new_data.append({
+        logo_url = get_source_logo(entry)
+
+        news_item = {
             "title": title_zh,
-            "title_tc": title_tc, # 新增繁体中文标题
+            "title_tc": title_tc,
             "title_ja": title_ja,
             "link": link,
             "image": extract_image(entry),
+            "logo": logo_url,
             "summary": "",
             "category": classify_news(title_zh),
             "time_str": time_str,
             "timestamp": timestamp,
             "origin": entry.source.title if hasattr(entry, 'source') else "Google News"
-        })
-    
-    # 今日存档
+        }
+        
+        if news_date_str not in news_by_date:
+            news_by_date[news_date_str] = []
+        news_by_date[news_date_str].append(news_item)
+
+        if len(preview_items) < 5:
+            preview_items.append(news_item)
+
+    # Archive 更新
     archive_dir = "public/archive"
     os.makedirs(archive_dir, exist_ok=True)
-    today_str = get_current_jst_time().strftime("%Y-%m-%d")
-    today_path = os.path.join(archive_dir, f"{today_str}.json")
     
-    today_list = []
-    if os.path.exists(today_path):
-        with open(today_path, 'r', encoding='utf-8') as f:
-            today_list = json.load(f)
+    total_updated = 0
+    total_added = 0
+    total_ignored = 0
+
+    for date_key, items in news_by_date.items():
+        file_path = os.path.join(archive_dir, f"{date_key}.json")
+        
+        existing_list = []
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as f:
+                existing_list = json.load(f)
+        
+        data_map = {}
+        for item in existing_list:
+            raw_title = item.get('title_ja') or item.get('original_title') or item.get('title') or ""
+            clean_key = get_clean_title_key(raw_title)
             
-    # Update existing items and add new ones
-    today_dict = {item['link']: item for item in today_list}
-    
-    added = 0
-    updated = 0
-    for item in new_data:
-        if item['link'] in today_dict:
-            today_dict[item['link']].update(item)
-            updated += 1
-        else:
-            today_dict[item['link']] = item
-            added += 1
+            # 补全旧数据格式
+            if not item.get('title_ja') and item.get('original_title'):
+                item['title_ja'] = item['original_title']
+                
+            data_map[clean_key] = item
+        
+        for new_item in items:
+            new_clean_key = get_clean_title_key(new_item['title_ja'])
             
-    today_list = list(today_dict.values())
-    today_list.sort(key=lambda x: x['timestamp'], reverse=True)
+            if new_clean_key in data_map:
+                existing_item = data_map[new_clean_key]
+                if existing_item['link'] == new_item['link']:
+                    data_map[new_clean_key].update(new_item)
+                    total_updated += 1
+                else:
+                    total_ignored += 1
+            else:
+                data_map[new_clean_key] = new_item
+                total_added += 1
+        
+        final_list = list(data_map.values())
+        final_list.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(final_list, f, ensure_ascii=False, indent=2)
+            
+        print(f"[{date_key}] 存档更新: 总{len(final_list)}条 (忽略重复{total_ignored}条)")
+
+    # data.json 更新
+    homepage_news = []
+    seen_titles = set()
     
-    with open(today_path, 'w', encoding='utf-8') as f:
-        json.dump(today_list, f, ensure_ascii=False, indent=2)
+    today = get_current_jst_time()
+    target_dates = [
+        today.strftime("%Y-%m-%d"),
+        (today - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    ]
     
-    # 首页：只显示今天 + 昨天的新闻，最多100条
-    cutoff = (get_current_jst_time() - datetime.timedelta(days=1)).timestamp()
-    recent_news = []
-    seen = set()
-    
-    for delta in [0, 1]:
-        date = (get_current_jst_time() - datetime.timedelta(days=delta)).strftime("%Y-%m-%d")
-        path = os.path.join(archive_dir, f"{date}.json")
+    for date_str in target_dates:
+        path = os.path.join(archive_dir, f"{date_str}.json")
         if os.path.exists(path):
             with open(path, 'r', encoding='utf-8') as f:
                 day_data = json.load(f)
                 for item in day_data:
-                    if item['link'] not in seen:
-                        recent_news.append(item)
-                        seen.add(item['link'])
+                    raw_title = item.get('title_ja') or item.get('original_title') or item.get('title') or ""
+                    clean_key = get_clean_title_key(raw_title)
+                    
+                    if clean_key not in seen_titles:
+                        homepage_news.append(item)
+                        seen_titles.add(clean_key)
     
-    recent_news.sort(key=lambda x: x['timestamp'], reverse=True)
-    
-    # Limit to 100 items for homepage - REMOVED LIMIT to allow frontend to handle archive
-    # homepage_news = recent_news[:100]
-    homepage_news = recent_news
+    homepage_news.sort(key=lambda x: x['timestamp'], reverse=True)
     
     output_data = {
         "last_updated": get_current_jst_time().strftime("%Y年%m月%d日 %H时%M分"),
@@ -152,11 +273,14 @@ def update_news():
     with open('public/data.json', 'w', encoding='utf-8') as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
     
-    print(f"更新完成！今日总计 {len(today_list)} 条，本次新增 {added} 条，更新 {updated} 条，首页显示最近两天共 {len(homepage_news)} 条（限制100条）")
-    if added > 0 or updated > 0:
-        print("最新三条预览：")
-        for item in homepage_news[:3]:
-            print(f"  {item['time_str']}  {item['title'][:60]}")
+    print(f"全部完成！本次新增 {total_added} 条，更新 {total_updated} 条，忽略重复 {total_ignored} 条。")
+    print(f"首页数据 data.json 已包含 {len(homepage_news)} 条新闻。")
+
+    if preview_items:
+        print("\n======== 最新抓取的 5 条新闻预览 ========")
+        for i, item in enumerate(preview_items):
+            print(f"{i+1}. [{item['time_str']}] {item['title']}")
+        print("=========================================\n")
 
 if __name__ == "__main__":
     update_news()

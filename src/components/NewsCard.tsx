@@ -7,13 +7,14 @@ import { zhCN, zhTW } from "date-fns/locale";
 
 export interface NewsItem {
   title: string;
-  title_tc?: string; // 新增：JSON里的繁体标题
-  title_ja?: string; // 新增：JSON里的日文标题
+  title_tc?: string;
+  title_ja?: string;
   link: string;
   timestamp?: number;
   time_str?: string;
   origin?: string;
   category?: string;
+  logo?: string; // 新增字段：Logo URL
 }
 
 interface NewsCardProps {
@@ -66,21 +67,15 @@ export default function NewsCard({
 
   const rawCategory = item.category || "其他";
   const categoryColor = CATEGORY_COLORS[rawCategory] || CATEGORY_COLORS["其他"];
-  
-  // 分类标签繁简切换
   let displayCategory = rawCategory.substring(0, 2);
   if (settings.lang === "tc") {
     displayCategory = SC_TO_TC_CATEGORY[displayCategory] || displayCategory;
   }
 
-  // 大标题繁简切换
-  // 如果是繁体模式且有 title_tc，优先用 title_tc，否则用 title
   const displayTitle = (settings.lang === "tc" && item.title_tc) 
     ? item.title_tc 
     : item.title;
 
-  // 底部日文文本构建
-  // 使用 title_ja 字段
   const japaneseText = item.title_ja 
     ? `JP ${item.origin} : ${item.title_ja}`
     : `JP ${item.origin}`;
@@ -136,11 +131,7 @@ export default function NewsCard({
             </span>
           </div>
 
-          {/* 
-             中文大标题 
-             1. 不可点击 (div)
-             2. 使用 displayTitle 自动适配繁简
-          */}
+          {/* 标题 */}
           <div
             style={fontStyleObj}
             className="text-[17px] font-bold text-[var(--text-main)] leading-snug tracking-normal line-clamp-2 cursor-text select-text"
@@ -148,19 +139,32 @@ export default function NewsCard({
             {displayTitle}
           </div>
 
-          {/* 
-             底部：来源链接 
-             显示格式：JP 来源 : 日文标题
-          */}
+          {/* 底部：来源链接 (Logo + 文字) */}
           <div className="flex items-center justify-start mt-1">
              <a 
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={fontStyleObj}
-                className="text-[11px] text-[var(--text-sub)] font-medium hover:text-[var(--primary)] underline decoration-1 underline-offset-2 block leading-relaxed transition-colors text-left"
+                className="group flex items-center gap-1.5 text-[11px] text-[var(--text-sub)] font-medium hover:text-[var(--primary)] transition-colors text-left"
              >
-                {japaneseText}
+                {/* 
+                   显示 Logo
+                   1. 检查 item.logo 是否存在
+                   2. 使用 object-contain 确保图标完整
+                */}
+                {item.logo && (
+                  <img 
+                    src={item.logo} 
+                    alt="logo" 
+                    className="w-3.5 h-3.5 rounded-sm object-contain opacity-80 group-hover:opacity-100"
+                    onError={(e) => e.currentTarget.style.display = 'none'} // 加载失败隐藏
+                  />
+                )}
+                
+                <span className="underline decoration-1 underline-offset-2 leading-relaxed">
+                  {japaneseText}
+                </span>
              </a>
           </div>
         </div>

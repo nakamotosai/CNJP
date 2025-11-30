@@ -9,7 +9,8 @@
     "category": "社会",
     "time_str": "11-30 21:46",
     "timestamp": 1764506817,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国跟团游改去俄罗斯、欧洲、亚洲；游轮也前往韩国和东南亚 - 产经新闻",
@@ -21,7 +22,8 @@
     "category": "其他",
     "time_str": "11-30 21:44",
     "timestamp": 1764506650,
-    "origin": "産経ニュース"
+    "origin": "産経ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=www.sankei.com&sz=128"
   },
   {
     "title": "中国对日本、美国、韩国等四国非法销售树脂事件再次展开调查（共同社） - 雅虎！消息",
@@ -33,7 +35,8 @@
     "category": "其他",
     "time_str": "11-30 21:38",
     "timestamp": 1764506292,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国旅行禁令半个月后，旅游业冷静接受部分地区影响，是摆脱对中国依赖的关键（产经新闻） - 雅虎！消息",
@@ -45,7 +48,8 @@
     "category": "社会",
     "time_str": "11-30 21:22",
     "timestamp": 1764505357,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国旅行禁令半个月后，旅游业冷静接受部分地区影响——摆脱对中国依赖的关键 - 产经新闻",
@@ -57,7 +61,8 @@
     "category": "社会",
     "time_str": "11-30 21:06",
     "timestamp": 1764504384,
-    "origin": "産経ニュース"
+    "origin": "産経ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=www.sankei.com&sz=128"
   },
   {
     "title": "山口大学在中国四国学生接力赛中获得第六名后落泪 - 中国新闻数字",
@@ -69,7 +74,8 @@
     "category": "社会",
     "time_str": "11-30 20:20",
     "timestamp": 1764501600,
-    "origin": "中国新聞デジタル"
+    "origin": "中国新聞デジタル",
+    "logo": "https://www.google.com/s2/favicons?domain=www.chugoku-np.co.jp&sz=128"
   },
   {
     "title": "【高市自民党】激怒中国的高市首相“圣莫尼”寺岛“说这是日美黄金时代，就跳进去了”，但认为这是日美对抗中国的只有日本。特朗普“不想保护台湾。”承认他们处于两个大国之间的山谷（每日体育） - 雅虎！消息",
@@ -81,11 +87,12 @@
     "category": "时政",
     "time_str": "11-30 20:13",
     "timestamp": 1764501188,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
-    "title": "【高市自民党】周日中午X暴：“这就是大使馆的工作吗？”“总领事道歉了吗？”中国驻东京大使馆 → 假期连续发9条帖子批评高市“日本军国主义幽灵”超过1000条反驳：“他们干涉内政”“高市首相没有错” （每日体育）- 雅虎！消息",
-    "title_tc": "【高市自民黨】週日中午X暴：“這就是大使館的工作嗎？”“總領事道歉了嗎？”中國駐東京大使館 → 假期連續發9條帖子批評高市“日本軍國主義幽靈”超過1000條反駁：“他們干涉內政”“高市首相沒有錯” （每日體育）- 雅虎！消息",
+    "title": "【高市自民党】周日中午X暴风：“那是大使馆的工作吗？”“总领事道歉了吗？”中国驻东京大使馆 → 假期连续发9条帖子批评高市“日本军国主义的幽灵”超过1000条反驳：“他们干涉内政”“高市首相没有错” （每日体育）- 雅虎！消息",
+    "title_tc": "【高市自民黨】週日中午X暴風：“那是大使館的工作嗎？”“總領事道歉了嗎？”中國駐東京大使館 → 假期連續發9條帖子批評高市“日本軍國主義的幽靈”超過1000條反駁：“他們干涉內政”“高市首相沒有錯” （每日體育）- 雅虎！消息",
     "title_ja": "【高市自民】日曜昼にＸ荒れる「それが大使館の仕事か」「総領事の謝罪まだ？」在東京の中国大使館→休日に高市批判投稿を９連投「日本軍国主義の亡霊」と 千件超の反論「そっちが内政干渉」「高市首相は間違ってない」（デイリースポーツ） - Yahoo!ニュース",
     "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE50a3JKcEx0ajBfb0U3MDJycHRWZzkxbF9NRVotbUoxcGFYSjRkTGVSUmhsZTYwUkVnNXRFWjJsdE5xY0I2RXpDS21wQnFsNHJ5T0pPR1h3aVI0cFlPVmNYR3VlanZaWUVyb2EyeEIyaG42WTdlbDI5OUE4RTdyVEU?oc=5",
     "image": "",
@@ -93,7 +100,8 @@
     "category": "时政",
     "time_str": "11-30 19:35",
     "timestamp": 1764498935,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "奥运会新项目“乒乓球混合”世界杯为何要由日本队与澳大利亚队进行揭幕战？在中国成都开业（Sponichi 附楼） - 雅虎！消息",
@@ -105,6 +113,20 @@
     "category": "体育",
     "time_str": "11-30 19:25",
     "timestamp": 1764498344,
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
+  },
+  {
+    "title": "【高市自民党】高市的言论实际上对日本私营部门有害。 “我很生气，我会弥补损失。” 古市典久 → 反驳高市的支持者 “有人批评中国，还对中国感觉良好。” 国家利益正在受到损害。还有其他方法可以做到这一点。 （每日体育）- 雅虎！消息",
+    "title_tc": "【高市自民黨】高市的言論實際上對日本私營部門有害。 “我很生氣，我會彌補損失。” 古市典久 → 反駁高市的支持者 “有人批評中國，還對中國感覺良好。” 國家利益正在受到損害。還有其他方法可以做到這一點。 （每日體育）- 雅虎！消息",
+    "title_ja": "【高市自民】日本民間に実害の高市発言「損をどうしてくれる、怒りある」古市憲寿氏→高市支持派に反論「中国批判して気持ちよくなってる人いるけど」国益損なってる、他にやり方あったよね（デイリースポーツ） - Yahoo!ニュース",
+    "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBaWWZ4dDJfaTVVMlptTTYyazE3SXROdkJIVFNXbjBvNW5pNVFyZC0wWktsZDRBckVyUUcwZEtSaDhodXplN09ZZzEwMUQzWGxDR2JWV0ExS0VUbWpnQnhPTExpQnlaSjJzUGZCeEpmbTlVT1lpTDQwb2p6Q1BSMnc?oc=5",
+    "image": "",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128",
+    "summary": "",
+    "category": "时政",
+    "time_str": "11-30 19:22",
+    "timestamp": 1764498123,
     "origin": "Yahoo!ニュース"
   },
   {
@@ -117,7 +139,8 @@
     "category": "其他",
     "time_str": "11-30 19:12",
     "timestamp": 1764497566,
-    "origin": "毎日新聞"
+    "origin": "毎日新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=mainichi.jp&sz=128"
   },
   {
     "title": "[社论]中国不再赴日，请不要惊慌并重新考虑旅游政策 - 日本经济新闻",
@@ -129,7 +152,8 @@
     "category": "时政",
     "time_str": "11-30 19:05",
     "timestamp": 1764497100,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "【中国“极端岗位”掀起轩然大波后自卫队仍与中国军队进行防务交流】特朗普政府重视日本/废除5型有“被用于战争”的风险/自卫队人员短缺/如何看待“大米政策”？ [青山和宏的政治观（小泉进次郎）] - 东洋经济在线",
@@ -141,7 +165,8 @@
     "category": "时政",
     "time_str": "11-30 19:01",
     "timestamp": 1764496860,
-    "origin": "東洋経済オンライン"
+    "origin": "東洋経済オンライン",
+    "logo": "https://www.google.com/s2/favicons?domain=toyokeizai.net&sz=128"
   },
   {
     "title": "滨崎步中国上海巡演前一天取消，“不知道澳门还好吗？”最后一场中国演出（SmartFLASH）备受关注 - 雅虎！消息",
@@ -153,10 +178,11 @@
     "category": "其他",
     "time_str": "11-30 19:00",
     "timestamp": 1764496834,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
-    "title": "布莱顿为三间薰的照片道歉，中国媒体也报道“更离谱的是……”（东京体育网） - 雅虎！消息",
+    "title": "布莱顿就三间薰的照片道歉，中国媒体也报道“更离谱的是……”（东京体育网） - 雅虎！消息",
     "title_tc": "布萊頓就三間薰的照片道歉，中國媒體也報導“更離譜的是……”（東京體育網） - 雅虎！消息",
     "title_ja": "三笘薫の写真巡りブライトンが謝罪 中国メディアも続々報道「さらに言語道断なのは…」（東スポWEB） - Yahoo!ニュース",
     "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE1nM0NaLTUzR0VGS25Fb2pRMWthc2hMLW9tZkUxbGFldjZYTkxESWFmSE05V01NeWJUTjdlaV9NSTdkVVJOeWhIc296cFRuYU9uUEhKRXg1cUJKM3lHZXNpeFZUNXVqTjVpaGZRRWNvUlFITXYwanpWQjdXbVNPY3c?oc=5",
@@ -165,19 +191,8 @@
     "category": "体育",
     "time_str": "11-30 18:50",
     "timestamp": 1764496225,
-    "origin": "Yahoo!ニュース"
-  },
-  {
-    "title": "洪都拉斯总统选举的议题是“虾”。与台湾断交并与中国建交，但会因出口减少而失去就业机会。中国还是台湾，你会选择哪一个？ - TBS 新闻挖掘",
-    "title_tc": "洪都拉斯總統選舉的議題是“蝦”。與台灣斷交並與中國建交，但會因出口減少而失去就業機會。中國還是台灣，你會選擇哪一個？ - TBS 新聞挖掘",
-    "title_ja": "ホンジュラス大統領選 争点は“エビ” 台湾と外交を断ち中国と国交樹立も輸出減で雇用喪失 中国と台湾 どちらを選ぶ？ - TBS NEWS DIG",
-    "link": "https://news.google.com/rss/articles/CBMidEFVX3lxTFBOSjJsUGg2TkgxU2NqMnVFZ2VSVWRRYXBRX1NzNXJEaTFiWFZMaWkwZUNiZ3p5dDZ1b0IwcjhPSkwteFVPSk9tUXRwVVlBeFYzcEE0UHBsWG1mVkJOWm55SllDakdJbXdMVHlpXzI2cU5NSUhm?oc=5",
-    "image": "",
-    "summary": "",
-    "category": "时政",
-    "time_str": "11-30 18:23",
-    "timestamp": 1764494601,
-    "origin": "TBS NEWS DIG"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "洪都拉斯总统选举的议题是“虾”。与台湾断交并与中国建交，但会因出口减少而失去就业机会。中国还是台湾，你会选择哪一个？ -雅虎！消息",
@@ -189,7 +204,8 @@
     "category": "时政",
     "time_str": "11-30 18:20",
     "timestamp": 1764494405,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "菲律宾海军和日本海上自卫队举行联合训练，加强中国“胁迫行动”重演的南海防务合作 - 雅虎！消息",
@@ -201,7 +217,8 @@
     "category": "时政",
     "time_str": "11-30 18:15",
     "timestamp": 1764494123,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "香港公寓火灾的新室内照片；中国政府警惕“批评” - 朝日电视台新闻",
@@ -213,7 +230,8 @@
     "category": "时政",
     "time_str": "11-30 18:05",
     "timestamp": 1764493545,
-    "origin": "テレ朝NEWS"
+    "origin": "テレ朝NEWS",
+    "logo": "https://www.google.com/s2/favicons?domain=news.tv-asahi.co.jp&sz=128"
   },
   {
     "title": "“每年这个时候在中国演出？”菲菲对上海“被迫停歌”事件的“委屈”引发热议（SmartFLASH） - 雅虎！消息",
@@ -225,11 +243,12 @@
     "category": "其他",
     "time_str": "11-30 18:02",
     "timestamp": 1764493342,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "平均放大倍数达98倍……就业困难严重，中国国家公务员考试处于前所未有的“窄门” - TBS NEWS DIG",
-    "title_tc": "平均放大倍數98倍……就業困難嚴重，中國國家公務員考試成為前所未有的“窄門” - TBS NEWS DIG",
+    "title_tc": "平均放大倍數達98倍……就業困難嚴重，中國國家公務員考試處於前所未有的“窄門” - TBS NEWS DIG",
     "title_ja": "平均倍率は98倍… 中国で国家公務員試験 深刻な就職難で空前の“狭き門”に - TBS NEWS DIG",
     "link": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE04UDlZOEtRd1h6cmhDWjRmM3NnNGdsRzFmWmFBdFdGWWdRLVpVV0lqZGFYWE5leExaVG1NMlRBNlgtejhSZm1vcGg5M1hRbmhmWk9nRF9Tbw?oc=5",
     "image": "",
@@ -237,7 +256,8 @@
     "category": "经济",
     "time_str": "11-30 17:52",
     "timestamp": 1764492742,
-    "origin": "TBS NEWS DIG"
+    "origin": "TBS NEWS DIG",
+    "logo": "https://www.google.com/s2/favicons?domain=newsdig.tbs.co.jp&sz=128"
   },
   {
     "title": "中国董事视察日本企业基地 中中会谈后立即表达“安心做生意” - 日本经济新闻",
@@ -249,7 +269,21 @@
     "category": "时政",
     "time_str": "11-30 17:25",
     "timestamp": 1764491127,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
+  },
+  {
+    "title": "中国制造业采购经理指数连续8个月低于里程碑 - TV Tokyo BIZ",
+    "title_tc": "中國製造業採購經理指數連續8個月低於里程碑 - TV Tokyo BIZ",
+    "title_ja": "中国 製造業購買担当者指数 8カ月連続で節目下回る - テレ東BIZ",
+    "link": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQZHB5OTBndDFTYmxYMTllMUNwcUNrQ2sxWjhPaEdjMVlha2xrc1VMU1hXRy02RVhGWnN1RGxMYV9CQVMtOTlZQXJLU3pIS1phM05vbzRSWGpsajZUN0FRUHVQUFlFNWdWRndyNjZzR29IQnItOU9NRHhublNvWjRJajc3dFFiYWRTS3NfeVN6ZjQzS2dIdGc?oc=5",
+    "image": "",
+    "logo": "https://www.google.com/s2/favicons?domain=txbiz.tv-tokyo.co.jp&sz=128",
+    "summary": "",
+    "category": "经济",
+    "time_str": "11-30 17:20",
+    "timestamp": 1764490800,
+    "origin": "テレ東BIZ"
   },
   {
     "title": "中国加强对日制裁 - arabnews.jp",
@@ -261,7 +295,8 @@
     "category": "时政",
     "time_str": "11-30 17:11",
     "timestamp": 1764490272,
-    "origin": "arabnews.jp"
+    "origin": "arabnews.jp",
+    "logo": "https://www.google.com/s2/favicons?domain=www.arabnews.jp&sz=128"
   },
   {
     "title": "愤怒的背后是“过去的记忆”。中国政府向国际社会传播的“故事”是什么？修复日中关系的线索在哪里？ [周日上午] - 雅虎！消息",
@@ -273,7 +308,8 @@
     "category": "时政",
     "time_str": "11-30 16:36",
     "timestamp": 1764488178,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "石破茂被批“中国棋子”真相：中国使馆剪裁传播日中外交言论，虚假信息也传播 - 雅虎！消息",
@@ -285,7 +321,8 @@
     "category": "时政",
     "time_str": "11-30 15:00",
     "timestamp": 1764482400,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国11月商业信心跌破49.2，连续8个月“经济判断拐点”“非制造业PMI”约3年来首次跌破里程碑，需求下滑更加严重 - TBS NEWS DIG",
@@ -297,7 +334,8 @@
     "category": "经济",
     "time_str": "11-30 14:41",
     "timestamp": 1764481280,
-    "origin": "TBS NEWS DIG"
+    "origin": "TBS NEWS DIG",
+    "logo": "https://www.google.com/s2/favicons?domain=newsdig.tbs.co.jp&sz=128"
   },
   {
     "title": "三名中国男女因涉嫌闯入10户私人住宅盗窃现金和手表而被捕并被送交检察官……他们来日本的目的是盗窃吗？ （读卖新闻在线）- 雅虎！消息",
@@ -309,7 +347,8 @@
     "category": "其他",
     "time_str": "11-30 14:39",
     "timestamp": 1764481175,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "随着中国的活动纷纷取消，桥本彻再次批评首相高市早苗“没有策略的胡言乱语”：“这种气氛是你不能抱怨的，不。” （中日体育） - 雅虎！消息",
@@ -321,7 +360,8 @@
     "category": "时政",
     "time_str": "11-30 14:35",
     "timestamp": 1764480953,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "11月中国制造业PMI连续第8个月跌破50；非制造业三年来首次萎缩 - 路透中文网",
@@ -333,7 +373,8 @@
     "category": "经济",
     "time_str": "11-30 14:18",
     "timestamp": 1764479880,
-    "origin": "Reuters"
+    "origin": "Reuters",
+    "logo": "https://www.google.com/s2/favicons?domain=jp.reuters.com&sz=128"
   },
   {
     "title": "广岛经济大学两年来首次赢得中国四国学生接力赛 - 中国新闻数字",
@@ -345,7 +386,8 @@
     "category": "经济",
     "time_str": "11-30 13:18",
     "timestamp": 1764476280,
-    "origin": "中国新聞デジタル"
+    "origin": "中国新聞デジタル",
+    "logo": "https://www.google.com/s2/favicons?domain=www.chugoku-np.co.jp&sz=128"
   },
   {
     "title": "中国11月制造业活动再次萎缩——历史上最长的衰退 - Bloomberg.co.jp",
@@ -357,7 +399,8 @@
     "category": "经济",
     "time_str": "11-30 13:17",
     "timestamp": 1764476236,
-    "origin": "Bloomberg.co.jp"
+    "origin": "Bloomberg.co.jp",
+    "logo": "https://www.google.com/s2/favicons?domain=www.bloomberg.co.jp&sz=128"
   },
   {
     "title": "中国业主疯狂抛售房产！？中日紧张局势对公寓市场有何影响？ （每周新闻前） - 雅虎！消息",
@@ -369,7 +412,8 @@
     "category": "经济",
     "time_str": "11-30 13:00",
     "timestamp": 1764475200,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "永旺继续在中国开店，“辉煌家族”成员冈田克也知道“不和李一起矫正皇冠吗？” 媒体观察皆川刚志 - 产经新闻",
@@ -381,7 +425,21 @@
     "category": "其他",
     "time_str": "11-30 13:00",
     "timestamp": 1764475200,
-    "origin": "産経ニュース"
+    "origin": "産経ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=www.sankei.com&sz=128"
+  },
+  {
+    "title": "鬼头正树律师表示，“情况与日本战后一样……” 对于取消滨崎步上海演出，“言论自由尚未建立” 对中国现实的个人看法 - 雅虎！消息",
+    "title_tc": "鬼頭正樹律師表示，“情況與戰後的日本一樣……”對於取消濱崎步在上海的演出，“言論自由尚未建立” 對中國現實的個人看法 - 雅虎！消息",
+    "title_ja": "紀藤正樹弁護士、「日本の戦後と同じ状況…」浜崎あゆみの上海公演中止巡り『表現の自由が確立していない』中国の実態に私見 - Yahoo!ニュース",
+    "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE0yYmRJWGl1aldJVmRuWjcxR0tVWllaS1NmN2VXYWF4a1NJeDZKMkMwR2MwM1hOSUF0eGhlS3c5ckUxUnBjb3E5bENOaTBMSThTRXc5ekh5cjFqUEpYQ0Q5RnV6N3lvaFlnZlJESFRFYXZfamhGd3dOaHBGcjhBWVE?oc=5",
+    "image": "",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128",
+    "summary": "",
+    "category": "社会",
+    "time_str": "11-30 12:50",
+    "timestamp": 1764474653,
+    "origin": "Yahoo!ニュース"
   },
   {
     "title": "中国商业信心连续八个月跌破50，为历史最长时间；由于国内需求不足，汽车和其他物品的订单锐减 - 日本经济新闻",
@@ -393,7 +451,8 @@
     "category": "经济",
     "time_str": "11-30 12:48",
     "timestamp": 1764474537,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "滨崎步上海演出取消，中国粉丝道歉并感慨，“如果可以的话……”回应她无观众无留言的演出 - Oricon News",
@@ -405,7 +464,8 @@
     "category": "其他",
     "time_str": "11-30 12:47",
     "timestamp": 1764474420,
-    "origin": "オリコンニュース"
+    "origin": "オリコンニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=www.oricon.co.jp&sz=128"
   },
   {
     "title": "中国在入侵台湾期间模拟“电子战”破坏星链（新闻周刊日本版） - 雅虎！消息",
@@ -417,7 +477,8 @@
     "category": "时政",
     "time_str": "11-30 11:52",
     "timestamp": 1764471165,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "“达1500吨”……中国陆续发现超大型黄金储量（《中央日报》日文版） - 雅虎！消息",
@@ -429,7 +490,8 @@
     "category": "其他",
     "time_str": "11-30 11:51",
     "timestamp": 1764471100,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国基于历史意识接近韩国，对日本施压，李明博政府谨慎（共同社） - 雅虎！消息",
@@ -441,11 +503,12 @@
     "category": "时政",
     "time_str": "11-30 11:50",
     "timestamp": 1764471000,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "日本震惊上海唱“强制终止”，迅速成为网红，“跳舞的习近平”意外亮相（J-CAST新闻） - 雅虎！消息",
-    "title_tc": "日本震驚上海演唱《被迫終止》，迅速成為網紅，“跳舞的習近平”意外現身（J-CAST新聞） - 雅虎！消息",
+    "title_tc": "日本震驚上海唱“強制終止”，迅速成為網紅，“跳舞的習近平”意外亮相（J-CAST新聞） - 雅虎！消息",
     "title_ja": "上海で日本人歌唱「強制終了」の衝撃 早くもミーム化、まさかの「ダンシング習近平」登場（J-CASTニュース） - Yahoo!ニュース",
     "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9IZ3FrTFNZMlpUWWtLM3E4ZjFhUGt1X09TZW5WSC1ZMTlTeGZFWTJzcVFnd1hIMUw4Yk5pNk9ZX1VmSVllWXhtYTBtUnlxSFlLcENkVEJoTXZPMVRkcDY0M0xLZGpaM1hxcG9VVHQxN0ZlMENIQlpUSUhHYmJfTEE?oc=5",
     "image": "",
@@ -453,7 +516,8 @@
     "category": "时政",
     "time_str": "11-30 11:15",
     "timestamp": 1764468900,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "外务省反击中国在SNS上的宣传战，压制言论以避免升级（共同社） - 雅虎！消息",
@@ -465,7 +529,8 @@
     "category": "其他",
     "time_str": "11-30 11:10",
     "timestamp": 1764468600,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "由于中国的旅行限制，大阪酒店面临起起落落，许多酒店取消预订和“新发展”（日刊体育） - 雅虎！消息",
@@ -477,7 +542,8 @@
     "category": "体育",
     "time_str": "11-30 11:00",
     "timestamp": 1764468006,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "Sanmoni 专家：“日本是唯一愿意共同应对中国威胁的国家。”“我很兴奋。”（日刊体育）- 雅虎！消息",
@@ -489,7 +555,8 @@
     "category": "体育",
     "time_str": "11-30 10:24",
     "timestamp": 1764465849,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "滨崎步尽管取消了中国上海的演出，但在没有观众的情况下“我能够完美地表演舞台” - 太阳体育",
@@ -501,7 +568,8 @@
     "category": "体育",
     "time_str": "11-30 10:18",
     "timestamp": 1764465497,
-    "origin": "サンスポ"
+    "origin": "サンスポ",
+    "logo": "https://www.google.com/s2/favicons?domain=www.sanspo.com&sz=128"
   },
   {
     "title": "与对手不起作用的谈判技巧：为何特朗普与中国和俄罗斯关系不佳 - 日本经济新闻",
@@ -513,7 +581,8 @@
     "category": "时政",
     "time_str": "11-30 10:00",
     "timestamp": 1764464400,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "《人民日报》撰文称，中国驻日本大使“立即撤回”高市首相的回应 - 日本经济新闻",
@@ -525,7 +594,8 @@
     "category": "时政",
     "time_str": "11-30 09:14",
     "timestamp": 1764461699,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "中国的日期限制更加严格...飞往日本的904个航班被暂停（中央日报日文版） - 雅虎！消息",
@@ -537,7 +607,8 @@
     "category": "社会",
     "time_str": "11-30 08:59",
     "timestamp": 1764460758,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "在中国上海的演出取消后，“这太棒了”。网上称赞滨崎步的“神圣回应”：“太酷了”和“女主角是不同的。”(ENCOUNT) - 雅虎！消息",
@@ -549,7 +620,8 @@
     "category": "其他",
     "time_str": "11-30 08:48",
     "timestamp": 1764460123,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "日本队能否在洛杉矶奥运会首次采用的混合团体比赛中超越中国队取得首胜？ ？ [乒乓球混合团体世界杯] - tv-tokyo.co.jp",
@@ -561,7 +633,8 @@
     "category": "体育",
     "time_str": "11-30 08:06",
     "timestamp": 1764457582,
-    "origin": "tv-tokyo.co.jp"
+    "origin": "tv-tokyo.co.jp",
+    "logo": "https://www.google.com/s2/favicons?domain=www.tv-tokyo.co.jp&sz=128"
   },
   {
     "title": "演出期间...日本歌手被迫离开中国 人物活动突然取消 (TBS NEWS DIG Powered by JNN) - 雅虎！消息",
@@ -573,7 +646,8 @@
     "category": "其他",
     "time_str": "11-30 06:35",
     "timestamp": 1764452100,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "“中国人正在购买一切，认为‘便宜，便宜’”“总有一天日本人会消失”芦屋，关西最高档的住宅区之一，目前正处于“危机状况” - 东洋经济在线",
@@ -585,7 +659,8 @@
     "category": "经济",
     "time_str": "11-30 06:30",
     "timestamp": 1764451800,
-    "origin": "東洋経済オンライン"
+    "origin": "東洋経済オンライン",
+    "logo": "https://www.google.com/s2/favicons?domain=toyokeizai.net&sz=128"
   },
   {
     "title": "当人们不再去日本旅游时，风会吹向哪里？ 2000名中国游客搭乘今年最后一艘游轮抵达金泽港 |社会|石川新闻 - 日本新闻",
@@ -597,7 +672,8 @@
     "category": "社会",
     "time_str": "11-30 05:00",
     "timestamp": 1764446400,
-    "origin": "北國新聞"
+    "origin": "北國新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.hokkoku.co.jp&sz=128"
   },
   {
     "title": "中方采取强硬立场的原因是为了将民众的不满情绪发泄出去吗？随着通货紧缩压力的增加，中国本地报道（朝日电视台 (ANN)） - 雅虎！消息",
@@ -609,7 +685,21 @@
     "category": "其他",
     "time_str": "11-30 02:12",
     "timestamp": 1764436336,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
+  },
+  {
+    "title": "“虚假信息正在激起人们对香港政府的不满”，中国政府机构处于戒备状态；一些人要求政府对香港公寓火灾负责 - TBS NEWS DIG",
+    "title_tc": "“虛假信息正在激起人們對香港政府的不滿”，中國政府機構處於戒備狀態；一些人要求政府對香港公寓火災負責 - TBS NEWS DIG",
+    "title_ja": "「虚偽情報で香港政府への恨み煽り立てている」中国政府の出先機関が警戒感 香港のマンション火災で政府の責任問う声も - TBS NEWS DIG",
+    "link": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE1kWlJhTmpqdUN1eFdiYkdsVG0tQlhBUURadnhoM2o0dzdoTjBHLTVrMW93b0dJckM0TWptZGVvbEdBcGFISUlIbWZaYlRFa2pCejV3UW1ybw?oc=5",
+    "image": "",
+    "logo": "https://www.google.com/s2/favicons?domain=newsdig.tbs.co.jp&sz=128",
+    "summary": "",
+    "category": "时政",
+    "time_str": "11-30 01:32",
+    "timestamp": 1764433940,
+    "origin": "TBS NEWS DIG"
   },
   {
     "title": "中国2800万问题青年在“教育强国”的阴影下患上抑郁症（共同社） - 雅虎！消息",
@@ -621,7 +711,8 @@
     "category": "社会",
     "time_str": "11-30 00:23",
     "timestamp": 1764429798,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国安全机构警告不要批评香港当局；乘火者将受到法律制裁 - 日本经济新闻",
@@ -633,7 +724,8 @@
     "category": "时政",
     "time_str": "11-29 21:49",
     "timestamp": 1764420588,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "《ONE PIECE》、Momoclo、Ayu...演艺界冲突后一系列日本演出在中国被取消（产经新闻） - 雅虎！消息",
@@ -645,7 +737,8 @@
     "category": "其他",
     "time_str": "11-29 21:16",
     "timestamp": 1764418601,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国以历史意识接近韩国；李明博政府对向日本施压持谨慎态度 - 雅虎！消息",
@@ -657,7 +750,8 @@
     "category": "时政",
     "time_str": "11-29 20:17",
     "timestamp": 1764415072,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "歌手大月真希在中国演出期间音乐停止，被要求离开……她在SNS上收到许多“侮辱歌手”等评论 - 读卖新闻在线",
@@ -669,7 +763,8 @@
     "category": "娱乐",
     "time_str": "11-29 18:53",
     "timestamp": 1764409980,
-    "origin": "読売新聞オンライン"
+    "origin": "読売新聞オンライン",
+    "logo": "https://www.google.com/s2/favicons?domain=www.yomiuri.co.jp&sz=128"
   },
   {
     "title": "外交部利用SNS反击中国的宣传战 - 雅虎！消息",
@@ -681,7 +776,8 @@
     "category": "时政",
     "time_str": "11-29 18:26",
     "timestamp": 1764408391,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国熟人铃木修接到家乡姐姐的电话，意识到日中关系的恶化：“就在我面前……”（Sponichi 附件） - 雅虎！消息",
@@ -693,7 +789,8 @@
     "category": "其他",
     "time_str": "11-29 18:09",
     "timestamp": 1764407387,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国将争议地区的人员滞留，导致与印度的新冲突（共同社） - 雅虎！消息",
@@ -705,7 +802,8 @@
     "category": "其他",
     "time_str": "11-29 18:01",
     "timestamp": 1764406870,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "将“我不知道”翻译为“我不能说”......“Miyanya”对中国游客的采访在SNS上引起涟漪，被认为“明显误导”（女性本人） - 雅虎！消息",
@@ -717,7 +815,8 @@
     "category": "其他",
     "time_str": "11-29 17:10",
     "timestamp": 1764403855,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "一位精通中国的记者回应高市首相关于台湾紧急情况的言论：“没有必要悔恨或收回……我一直在等待这种外交”（Sponichi附件） - 雅虎！消息",
@@ -729,7 +828,8 @@
     "category": "时政",
     "time_str": "11-29 16:41",
     "timestamp": 1764402071,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国大使馆在X上发表防卫军发言人的评论：“日本对军事干预台湾海峡的妄想，正在犯军国主义的错误”（日刊体育） - 雅虎！消息",
@@ -741,7 +841,8 @@
     "category": "时政",
     "time_str": "11-29 15:36",
     "timestamp": 1764398167,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "日本歌手被迫停止在​​中国演出 - 雅虎！消息",
@@ -753,7 +854,8 @@
     "category": "其他",
     "time_str": "11-29 15:32",
     "timestamp": 1764397968,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国外长就高市首相的言论寻求英国支持；外交攻势继续“解释在日本问题上的立场”（产经新闻） - 雅虎！消息",
@@ -765,7 +867,8 @@
     "category": "时政",
     "time_str": "11-29 13:23",
     "timestamp": 1764390234,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "大阪府议会通过决议，要求中国总领事道歉 中国大使馆发布前首相石破茂的言论（朝日电视台（ANN）） - 雅虎！消息",
@@ -777,7 +880,8 @@
     "category": "时政",
     "time_str": "11-29 12:48",
     "timestamp": 1764388095,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "大月真希在中国上海被迫停止演唱动漫歌曲，导致班南活动取消 - 日本经济新闻",
@@ -789,7 +893,8 @@
     "category": "经济",
     "time_str": "11-29 12:43",
     "timestamp": 1764387806,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "中国大使馆",
@@ -801,7 +906,8 @@
     "category": "时政",
     "time_str": "11-29 12:34",
     "timestamp": 1764387267,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "日本歌手演出被迫停止，动漫活动取消，文化排斥如火如荼 - 中国 - 时事网",
@@ -813,7 +919,8 @@
     "category": "娱乐",
     "time_str": "11-29 11:15",
     "timestamp": 1764382500,
-    "origin": "時事ドットコム"
+    "origin": "時事ドットコム",
+    "logo": "https://www.google.com/s2/favicons?domain=www.jiji.com&sz=128"
   },
   {
     "title": "中国要求不要旅行两周后，我去了京都市只园、清水寺和锦市场 - Rocket News 24",
@@ -825,7 +932,8 @@
     "category": "经济",
     "time_str": "11-29 10:00",
     "timestamp": 1764378022,
-    "origin": "ロケットニュース24"
+    "origin": "ロケットニュース24",
+    "logo": "https://www.google.com/s2/favicons?domain=news.google.com&sz=128"
   },
   {
     "title": "在中国取消一系列音乐会后，歌手们对首相高市感到愤怒：“别闭嘴。”生气吧。抗议。”“中国经济陷入三重困境。”这不是对雅虎声明的简单反应 - 雅虎！消息",
@@ -837,7 +945,8 @@
     "category": "时政",
     "time_str": "11-29 09:10",
     "timestamp": 1764375016,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国的内部问题是把年轻人变成“老鼠人”，不爱、不结婚、不工作，变得昏昏欲睡、不活跃#专家话题 - 雅虎！消息",
@@ -849,7 +958,8 @@
     "category": "其他",
     "time_str": "11-29 09:05",
     "timestamp": 1764374714,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国驻日本大使",
@@ -861,7 +971,8 @@
     "category": "时政",
     "time_str": "11-29 08:03",
     "timestamp": 1764370986,
-    "origin": "nikkansports.com"
+    "origin": "nikkansports.com",
+    "logo": "https://www.google.com/s2/favicons?domain=news.google.com&sz=128"
   },
   {
     "title": "中国驻日本大使",
@@ -873,7 +984,8 @@
     "category": "时政",
     "time_str": "11-29 08:02",
     "timestamp": 1764370923,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国正在出现什么“反日态度”？以高市早苗首相“台湾紧急应对”为起点的中日冲突 - 记者谈“信息战”幕后[edge23]（TBS NEWS DIG Powered by JNN） - 雅虎！消息",
@@ -885,7 +997,8 @@
     "category": "时政",
     "time_str": "11-29 07:00",
     "timestamp": 1764367235,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "高市首相被称赞“做得很好”，但随着“中国游客”涌入韩国，大规模示威活动频频发生（周刊Jojo PRIME） - 雅虎！消息",
@@ -897,7 +1010,8 @@
     "category": "时政",
     "time_str": "11-29 07:00",
     "timestamp": 1764367235,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国外长要求英法在台湾问题上支持，向日本施压（时事社） - 雅虎！消息",
@@ -909,7 +1023,8 @@
     "category": "时政",
     "time_str": "11-29 06:09",
     "timestamp": 1764364173,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国外长要求英法支持台湾问题向日本施压 - 时事网",
@@ -921,7 +1036,8 @@
     "category": "时政",
     "time_str": "11-29 06:05",
     "timestamp": 1764363900,
-    "origin": "時事ドットコム"
+    "origin": "時事ドットコム",
+    "logo": "https://www.google.com/s2/favicons?domain=www.jiji.com&sz=128"
   },
   {
     "title": "Nexperia 拟退出，批评中国母公司供应网络 - 路透中文网",
@@ -933,7 +1049,8 @@
     "category": "其他",
     "time_str": "11-29 05:00",
     "timestamp": 1764360022,
-    "origin": "Reuters"
+    "origin": "Reuters",
+    "logo": "https://www.google.com/s2/favicons?domain=jp.reuters.com&sz=128"
   },
   {
     "title": "中国航空公司减少飞往日本的航班超过900架次，占总航班数的16%，主要集中在关西国际机场 - 日本经济新闻",
@@ -945,7 +1062,8 @@
     "category": "经济",
     "time_str": "11-29 05:00",
     "timestamp": 1764360000,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "社论：批评中国总理：舆论战日本决不能落后 - 读卖新闻在线",
@@ -957,7 +1075,8 @@
     "category": "其他",
     "time_str": "11-29 05:00",
     "timestamp": 1764360000,
-    "origin": "読売新聞オンライン"
+    "origin": "読売新聞オンライン",
+    "logo": "https://www.google.com/s2/favicons?domain=www.yomiuri.co.jp&sz=128"
   },
   {
     "title": "中方为何对高一的言论如此愤怒？首先有不同的解读 - QuickTake - Bloomberg.co.jp",
@@ -969,7 +1088,8 @@
     "category": "其他",
     "time_str": "11-29 02:56",
     "timestamp": 1764352560,
-    "origin": "Bloomberg.co.jp"
+    "origin": "Bloomberg.co.jp",
+    "logo": "https://www.google.com/s2/favicons?domain=www.bloomberg.co.jp&sz=128"
   },
   {
     "title": "中国外长请求英国在台湾问题上提供支持 - 向英国高级官员解释对日立场 - 彭博社 - Bloomberg.co.jp",
@@ -981,7 +1101,8 @@
     "category": "时政",
     "time_str": "11-29 01:50",
     "timestamp": 1764348600,
-    "origin": "Bloomberg.co.jp"
+    "origin": "Bloomberg.co.jp",
+    "logo": "https://www.google.com/s2/favicons?domain=www.bloomberg.co.jp&sz=128"
   },
   {
     "title": "法国官员就中日冲突提及“中国尤其应避免局势恶化” - 《朝日新闻》",
@@ -993,7 +1114,8 @@
     "category": "其他",
     "time_str": "11-28 21:30",
     "timestamp": 1764333000,
-    "origin": "朝日新聞"
+    "origin": "朝日新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.asahi.com&sz=128"
   },
   {
     "title": "中国因台湾紧急应对问题与欧洲展开外交战争；现实依然紧张 -每日新闻",
@@ -1005,7 +1127,8 @@
     "category": "时政",
     "time_str": "11-28 19:51",
     "timestamp": 1764327084,
-    "origin": "毎日新聞"
+    "origin": "毎日新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=mainichi.jp&sz=128"
   },
   {
     "title": "中国赴日游客减少或能抵消“1.79万亿日元经济损失” 来自台湾、韩国、欧美的游客正在增加，日本人也在国内旅游 - 雅虎！消息",
@@ -1017,7 +1140,8 @@
     "category": "时政",
     "time_str": "11-28 19:10",
     "timestamp": 1764324600,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "“约80%的案件被取消” 京都一家四星级酒店因中国政府“限制旅行”的呼吁而感到困惑 “损失达2000万日元” 某些案件无法索赔取消费用（文春在线） - 雅虎！消息",
@@ -1029,7 +1153,8 @@
     "category": "时政",
     "time_str": "11-28 17:12",
     "timestamp": 1764317537,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "“日本人并不把台湾和中国等同起来，也明白台湾人和中国人是不同的。”台湾外交联络站致谢（日刊体育） - 雅虎！消息",
@@ -1041,7 +1166,8 @@
     "category": "时政",
     "time_str": "11-28 16:10",
     "timestamp": 1764313832,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中国外长批评高一首相言论并与法国总统顾问通电话 - 路透",
@@ -1053,7 +1179,8 @@
     "category": "时政",
     "time_str": "11-28 12:50",
     "timestamp": 1764301800,
-    "origin": "Reuters"
+    "origin": "Reuters",
+    "logo": "https://www.google.com/s2/favicons?domain=jp.reuters.com&sz=128"
   },
   {
     "title": "中国政府27日批评日本称，如果在台湾越线，国防部将“付出惨重代价”（路透社） - 雅虎！消息",
@@ -1065,7 +1192,8 @@
     "category": "时政",
     "time_str": "11-28 11:50",
     "timestamp": 1764298219,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "为何中国“取消54万张机票”的报复措施对日本经济损害不大 - 钻石在线",
@@ -1077,7 +1205,8 @@
     "category": "经济",
     "time_str": "11-28 09:00",
     "timestamp": 1764288000,
-    "origin": "ダイヤモンド・オンライン"
+    "origin": "ダイヤモンド・オンライン",
+    "logo": "https://www.google.com/s2/favicons?domain=diamond.jp&sz=128"
   },
   {
     "title": "“中国应该离开！”韩国“反华示威”扩大……不满团体游客免签中国游客增多，示威者还称“羡慕日本” - FNN Prime Online",
@@ -1089,7 +1218,8 @@
     "category": "其他",
     "time_str": "11-28 07:00",
     "timestamp": 1764280800,
-    "origin": "FNNプライムオンライン"
+    "origin": "FNNプライムオンライン",
+    "logo": "https://www.google.com/s2/favicons?domain=www.fnn.jp&sz=128"
   },
   {
     "title": "中国驻日本大使在X上发表发言人的评论：“在日本，针对包括台湾同胞在内的游客的袭击事件接连发生”（日刊体育） - 雅虎！消息",
@@ -1101,7 +1231,8 @@
     "category": "时政",
     "time_str": "11-28 06:55",
     "timestamp": 1764280500,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "因中国经济胁迫挪威需6年时间恢复关系；澳大利亚向世贸组织提起诉讼 - 日本经济新闻",
@@ -1113,7 +1244,8 @@
     "category": "经济",
     "time_str": "11-28 05:00",
     "timestamp": 1764273600,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "中国外长请求法国在台湾问题上提供支持 - 日本首相高市的言论是“挑衅性的”（彭博社） - 雅虎！消息",
@@ -1125,7 +1257,8 @@
     "category": "时政",
     "time_str": "11-27 23:50",
     "timestamp": 1764255027,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "“中国人应该离开！”韩国反华示威蔓延……有人说“我嫉妒日本”。团体游客免签增加了中国游客数量 - 雅虎！消息",
@@ -1137,7 +1270,8 @@
     "category": "其他",
     "time_str": "11-27 19:24",
     "timestamp": 1764239069,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "美国外交杂志指出，“高市早苗实际上可能正在享受与中国的冲突”（Courier Japon） - 雅虎！消息",
@@ -1149,7 +1283,8 @@
     "category": "时政",
     "time_str": "11-27 19:00",
     "timestamp": 1764237600,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "“员工现在正在休假。”由于日中关系恶化，许多中国团体旅游被取消。 “由于政府命令，团体旅游已被取消。”专家（爱知电视台）- 雅虎！消息",
@@ -1161,7 +1296,8 @@
     "category": "时政",
     "time_str": "11-27 14:57",
     "timestamp": 1764223021,
-    "origin": "Yahoo!ニュース"
+    "origin": "Yahoo!ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128"
   },
   {
     "title": "中方呼吁美国遏制日本；人民日报就首相高市涉台言论发表评论 - 路透",
@@ -1173,7 +1309,8 @@
     "category": "时政",
     "time_str": "11-27 11:27",
     "timestamp": 1764210420,
-    "origin": "Reuters"
+    "origin": "Reuters",
+    "logo": "https://www.google.com/s2/favicons?domain=jp.reuters.com&sz=128"
   },
   {
     "title": "美国报纸报道特朗普总统建议高市首相不要激怒中国 - 朝日新闻",
@@ -1185,7 +1322,8 @@
     "category": "时政",
     "time_str": "11-27 10:48",
     "timestamp": 1764208080,
-    "origin": "朝日新聞"
+    "origin": "朝日新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.asahi.com&sz=128"
   },
   {
     "title": "中国驻日本大使馆发帖敦促人们不要前往日本，“日本公共安全持续恶化”，但未提及具体病例或病例数量 - 产经新闻",
@@ -1197,7 +1335,8 @@
     "category": "时政",
     "time_str": "11-27 10:00",
     "timestamp": 1764205223,
-    "origin": "産経ニュース"
+    "origin": "産経ニュース",
+    "logo": "https://www.google.com/s2/favicons?domain=www.sankei.com&sz=128"
   },
   {
     "title": "特朗普建议日本首相高市不要在台湾问题上激怒中国 = WSJ - 路透",
@@ -1209,7 +1348,8 @@
     "category": "时政",
     "time_str": "11-27 09:07",
     "timestamp": 1764202020,
-    "origin": "Reuters"
+    "origin": "Reuters",
+    "logo": "https://www.google.com/s2/favicons?domain=jp.reuters.com&sz=128"
   },
   {
     "title": "中国再次警告不要前往日本“据报道有数人因侮辱和袭击而受伤” - 路透中文网",
@@ -1221,7 +1361,8 @@
     "category": "其他",
     "time_str": "11-27 00:46",
     "timestamp": 1764171974,
-    "origin": "Reuters"
+    "origin": "Reuters",
+    "logo": "https://www.google.com/s2/favicons?domain=jp.reuters.com&sz=128"
   },
   {
     "title": "【中国观察】中国“也将对日本采取军事行动” ◇在台湾问题上采取全面对抗姿态 - 时事网",
@@ -1233,7 +1374,8 @@
     "category": "时政",
     "time_str": "11-26 12:00",
     "timestamp": 1764126000,
-    "origin": "時事ドットコム"
+    "origin": "時事ドットコム",
+    "logo": "https://www.google.com/s2/favicons?domain=www.jiji.com&sz=128"
   },
   {
     "title": "中国的胁迫有多强？经济和军事竞争牌取决于国内政治 - 日本经济新闻",
@@ -1245,7 +1387,8 @@
     "category": "时政",
     "time_str": "11-26 05:00",
     "timestamp": 1764100800,
-    "origin": "日本経済新聞"
+    "origin": "日本経済新聞",
+    "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128"
   },
   {
     "title": "高市首相“一句话”为何让中国愤怒……“三个严重情况”将习近平逼入绝境 - 钻石在线",
@@ -1257,7 +1400,8 @@
     "category": "时政",
     "time_str": "11-26 04:00",
     "timestamp": 1764097200,
-    "origin": "ダイヤモンド・オンライン"
+    "origin": "ダイヤモンド・オンライン",
+    "logo": "https://www.google.com/s2/favicons?domain=diamond.jp&sz=128"
   },
   {
     "title": "中国共产党的悼念 - 佳能全球研究所",
@@ -1269,7 +1413,8 @@
     "category": "时政",
     "time_str": "11-25 16:46",
     "timestamp": 1764056805,
-    "origin": "キヤノングローバル戦略研究所"
+    "origin": "キヤノングローバル戦略研究所",
+    "logo": "https://www.google.com/s2/favicons?domain=news.google.com&sz=128"
   },
   {
     "title": "为什么中国核电站成本低？ - 佳能全球研究所",
@@ -1281,6 +1426,7 @@
     "category": "社会",
     "time_str": "11-25 13:11",
     "timestamp": 1764043905,
-    "origin": "キヤノングローバル戦略研究所"
+    "origin": "キヤノングローバル戦略研究所",
+    "logo": "https://www.google.com/s2/favicons?domain=news.google.com&sz=128"
   }
 ]
