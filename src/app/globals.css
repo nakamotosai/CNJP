@@ -1,23 +1,6 @@
-@import "tailwindcss";
-
-/* Force class-based dark mode */
-@variant dark (&:where(.dark, .dark *));
-
-/* 2. 在这里配置主题 (替代了以前的 tailwind.config.ts) */
-@theme {
-  /* 颜色映射：把 CSS 变量映射为 Tailwind 类名 */
-  --color-primary: var(--primary);
-  --color-accent: var(--accent);
-  --color-background: var(--background);
-  --color-card: var(--card);
-  --color-text-main: var(--text-main);
-  --color-text-sub: var(--text-sub);
-  --color-border: var(--border);
-
-  /* 字体映射：默认指向 SC 字体 (与 layout.tsx 统一) */
-  --font-sans: var(--font-noto-sans-sc), sans-serif;
-  --font-serif: var(--font-noto-serif-sc), serif;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* 3. 定义 CSS 变量的具体值 */
 :root {
@@ -58,6 +41,10 @@
 
   --cat-all-bg: #333333;
   --cat-all-text: #ffffff;
+
+  /* 字体 */
+  --font-sans: -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: Georgia, serif;
 }
 
 /* Dark Mode (深色模式变量，需要搭配 html/.dark 类使用) */
@@ -94,61 +81,58 @@
 body {
   background-color: var(--background);
   color: var(--text-main);
-  /* 默认字体，会被 ThemeContext 动态覆盖 */
   font-family: var(--font-serif);
   transition: background-color 0.3s, color 0.3s;
 }
 
 /* 5. 工具类扩展 */
-/* 实用程序：定义简单的类 */
-.tag-cat-politics {
-  background-color: var(--cat-politics-bg);
-  color: var(--cat-politics-text);
-}
+@layer components {
+  .tag-cat-politics {
+    background-color: var(--cat-politics-bg);
+    color: var(--cat-politics-text);
+  }
 
-.tag-cat-economy {
-  background-color: var(--cat-economy-bg);
-  color: var(--cat-economy-text);
-}
+  .tag-cat-economy {
+    background-color: var(--cat-economy-bg);
+    color: var(--cat-economy-text);
+  }
 
-.tag-cat-society {
-  background-color: var(--cat-society-bg);
-  color: var(--cat-society-text);
-}
+  .tag-cat-society {
+    background-color: var(--cat-society-bg);
+    color: var(--cat-society-text);
+  }
 
-.tag-cat-military {
-  background-color: var(--cat-military-bg);
-  color: var(--cat-military-text);
-}
+  .tag-cat-military {
+    background-color: var(--cat-military-bg);
+    color: var(--cat-military-text);
+  }
 
-.tag-cat-tech {
-  background-color: var(--cat-tech-bg);
-  color: var(--cat-tech-text);
-}
+  .tag-cat-tech {
+    background-color: var(--cat-tech-bg);
+    color: var(--cat-tech-text);
+  }
 
-.tag-cat-sports {
-  background-color: var(--cat-sports-bg);
-  color: var(--cat-sports-text);
-}
+  .tag-cat-sports {
+    background-color: var(--cat-sports-bg);
+    color: var(--cat-sports-text);
+  }
 
-.tag-cat-other {
-  background-color: var(--cat-other-bg);
-  color: var(--cat-other-text);
-}
+  .tag-cat-other {
+    background-color: var(--cat-other-bg);
+    color: var(--cat-other-text);
+  }
 
-.tag-cat-all {
-  background-color: var(--cat-all-bg);
-  color: var(--cat-all-text);
-}
+  .tag-cat-all {
+    background-color: var(--cat-all-bg);
+    color: var(--cat-all-text);
+  }
 
-/* 3D Shadow Utilities */
-@utility shadow-3d {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
+  .shadow-3d {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
 
-@utility shadow-3d-hover {
-  &:hover {
+  .shadow-3d:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.02);
   }
@@ -160,10 +144,10 @@ body {
     /* 针对 IE and Edge */
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
 
-    /* 针对 WebKit 浏览器 (Chrome, Safari) */
-    &::-webkit-scrollbar {
-      display: none;
-    }
+  /* 针对 WebKit 浏览器 (Chrome, Safari) */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
