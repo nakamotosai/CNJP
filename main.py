@@ -87,6 +87,19 @@ def update_news():
             "image": extract_image(entry),
             "summary": "",
             "category": classify_news(title_zh),
+            "time_str": time_str,
+            "timestamp": timestamp,
+            "origin": entry.source.title if hasattr(entry, 'source') else "Google News"
+        })
+    
+    # 今日存档
+    archive_dir = "public/archive"
+    os.makedirs(archive_dir, exist_ok=True)
+    today_str = get_current_jst_time().strftime("%Y-%m-%d")
+    today_path = os.path.join(archive_dir, f"{today_str}.json")
+    
+    today_list = []
+    if os.path.exists(today_path):
         with open(today_path, 'r', encoding='utf-8') as f:
             today_list = json.load(f)
             
