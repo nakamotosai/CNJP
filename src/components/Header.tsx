@@ -26,7 +26,6 @@ export default function Header({
   const [showBadge, setShowBadge] = useState(false);
 
   useEffect(() => {
-    // Check if we should show the badge
     const today = new Date().toDateString();
     const lastClicked = localStorage.getItem("about_badge_date");
     if (lastClicked !== today) {
@@ -35,7 +34,6 @@ export default function Header({
   }, []);
 
   const handleAboutClick = () => {
-    // Save today's date to hide badge until tomorrow
     const today = new Date().toDateString();
     localStorage.setItem("about_badge_date", today);
     setShowBadge(false);
@@ -48,18 +46,36 @@ export default function Header({
       : "var(--font-noto-sans-tc), var(--font-noto-sans-sc), sans-serif",
   };
 
+  // 立体文字阴影：一层深色投影 + 一层浅色环境光，营造厚度感
+  const text3DStyle = {
+    textShadow: "0 2px 1px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)"
+  };
+
+  // 立体图标阴影：更深的投影
+  const icon3DStyle = {
+    filter: "drop-shadow(0 4px 3px rgba(0,0,0,0.15)) drop-shadow(0 2px 1px rgba(0,0,0,0.1))"
+  };
+
+  // 英文副标题拆分逻辑
+  const englishText = "CHINA NEWS FROM JAPAN";
+
   return (
-    <header className="w-full bg-white dark:bg-[#121212] z-50 shadow-sm">
+    <header className="w-full bg-white dark:bg-[#121212] z-50 shadow-sm transition-colors duration-300">
       <div className="max-w-[600px] mx-auto px-4 pt-3 pb-2">
         {/* Top Row: Logo & Icons */}
         <div className="flex items-center justify-between mb-3">
-          {/* Logo & Titles - Click to Refresh */}
+          
+          {/* --- Logo Area --- */}
           <button
             onClick={onRefresh}
-            className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity active:scale-95 duration-200"
+            className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity active:scale-95 duration-200 group"
             title={settings.lang === "sc" ? "点击刷新" : "點擊刷新"}
           >
-            <div className="relative w-10 h-10 rounded-lg overflow-hidden shadow-md">
+            {/* Logo Image */}
+            <div 
+              className="relative w-10 h-10 rounded-lg overflow-hidden transition-all"
+              style={icon3DStyle} // 应用立体阴影
+            >
               <Image
                 src="/logo.png"
                 alt="Logo"
@@ -67,40 +83,43 @@ export default function Header({
                 className="object-cover"
               />
             </div>
-            <div className="flex flex-col justify-center" style={{ width: 'fit-content' }}>
+
+            {/* Title Text Container */}
+            <div className="flex flex-col justify-center w-fit">
+              {/* Chinese Title */}
               <h1
                 style={{
                   ...fontStyleObj,
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  ...text3DStyle // 应用文字立体阴影
                 }}
-                className="text-lg font-bold tracking-wide text-[var(--text-main)] leading-tight"
+                className="text-lg font-bold tracking-wide text-[var(--text-main)] leading-none whitespace-nowrap"
               >
                 {settings.lang === "sc" ? "从日本看中国" : "從日本看中國"}
               </h1>
-              <span
-                className="text-gray-400 font-medium uppercase select-none block"
-                style={{
-                  fontSize: '7.5px',
-                  lineHeight: '1.2',
-                  textShadow: '0 0.5px 1px rgba(0,0,0,0.08)',
-                  letterSpacing: '0.42em',
-                  width: '100%',
-                  textAlign: 'left'
-                }}
+
+              {/* English Subtitle - Flexbox Split Character Mode */}
+              {/* 核心修改：使用 flex justify-between 让每一个字符（包括空格）均匀分布 */}
+              <div 
+                className="w-full flex justify-between text-[0.42em] text-gray-400 font-sans mt-[3px] select-none font-medium"
+                style={{ textShadow: "0 1px 1px rgba(0,0,0,0.1)" }}
               >
-                China News From Japan
-              </span>
+                {englishText.split('').map((char, index) => (
+                  <span key={index} className={char === ' ' ? 'w-[0.5em]' : ''}>
+                    {char === ' ' ? '\u00A0' : char}
+                  </span>
+                ))}
+              </div>
             </div>
           </button>
 
-          {/* Right Icons */}
+          {/* --- Right Icons Area --- */}
           <div className="flex items-center gap-1">
-            {/* Favorites */}
+            {/* Favorites Button */}
             <button
               onClick={onOpenFav}
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative group"
               title={settings.lang === "sc" ? "收藏" : "收藏"}
-              style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.05))' }}
+              style={icon3DStyle} // 应用立体阴影
             >
               <Heart className="w-5 h-5 text-[var(--text-main)]" />
               {favCount > 0 && (
@@ -108,15 +127,14 @@ export default function Header({
               )}
             </button>
 
-            {/* About */}
+            {/* About Button */}
             <button
               onClick={handleAboutClick}
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative"
               title={settings.lang === "sc" ? "关于本站" : "關於本站"}
-              style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.05))' }}
+              style={icon3DStyle} // 应用立体阴影
             >
               <Info className="w-5 h-5 text-[var(--text-main)]" />
-              {/* Exclamation badge for new users */}
               {showBadge && (
                 <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 pointer-events-none">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -125,19 +143,19 @@ export default function Header({
               )}
             </button>
 
-            {/* Settings */}
+            {/* Settings Button */}
             <button
               onClick={onOpenSettings}
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200"
               title={settings.lang === "sc" ? "设置" : "設置"}
-              style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.05))' }}
+              style={icon3DStyle} // 应用立体阴影
             >
               <Settings className="w-5 h-5 text-[var(--text-main)]" />
             </button>
           </div>
         </div>
 
-        {/* Utility Bar (Search & Archive) - Passed as children */}
+        {/* Utility Bar (Search & Archive) */}
         {children}
       </div>
     </header>
