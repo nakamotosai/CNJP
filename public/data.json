@@ -1,6 +1,123 @@
 {
-  "last_updated": "2025年12月02日 05时13分",
+  "last_updated": "2025年12月02日 06时11分",
   "news": [
+    {
+      "title": "小米在中国的汽车业务在7-9月期间首次实现盈利。尽管价格竞争，利润率仍处于行业领先，但明年智能手机和电动汽车的盈利能力将下降 - 东洋经济在线",
+      "title_tc": "小米在中國的汽車業務在7-9月期間首次實現盈利。儘管價格競爭，利潤率仍處於行業領先，但明年智能手機和電動汽車的盈利能力將下降 - 東洋經濟在線",
+      "title_ja": "中国シャオミの自動車事業が7～9月期に初の黒字化。価格競争尻目に業界トップ級の利益率だが､来年はスマホもEVも採算低下へ - 東洋経済オンライン",
+      "link": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5Hd2F0VEVsVU9xdHVTWkZsTm80aFFGU1JfbHplS1RpdTZkbm12X2lWYnpQbFYyNjVYWmUwcXJ0Wnd3QXRmQnZ3MFRhc2w0RkRnU1E?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=toyokeizai.net&sz=128",
+      "summary": "",
+      "category": "经济",
+      "time_str": "12-02 06:02",
+      "timestamp": 1764622927,
+      "origin": "東洋経済オンライン"
+    },
+    {
+      "title": "“想卖日本塔楼的中国人增加了。”移民日本的人不少，但是……我们真的已经过了高峰了吗？ - 东京新闻数码",
+      "title_tc": "“想賣日本塔樓的中國人增加了。”移民日本的人不少，但是……我們真的已經過了高峰了嗎？ - 東京新聞數碼",
+      "title_ja": "「日本のタワマンを売りたい中国人が増えた」 移住してくる人は少なくないけど…実はピークを過ぎている？ - 東京新聞デジタル",
+      "link": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE43MERaeUdrWkZJTjUyRFh0NDJWSlpQcUpqT2tmM3Y4Z0FaTDBHTHNOTzg2ekY0RWJQUmZtaTNRSVZvQngxVUJVZFVxQm1CeG5oYmhn?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=www.tokyo-np.co.jp&sz=128",
+      "summary": "",
+      "category": "社会",
+      "time_str": "12-02 06:00",
+      "timestamp": 1764622800,
+      "origin": "東京新聞デジタル"
+    },
+    {
+      "title": "今年第29天，中国船只侵入尖阁诸岛领海 - 北海道新闻数字版",
+      "title_tc": "今年第29天，中國船隻侵入尖閣諸島領海 - 北海道新聞數字版",
+      "title_ja": "中国船が領海侵入 尖閣周辺、今年29日目 - 北海道新聞デジタル",
+      "link": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFA0ZU1TVEkxLXFzSUQ0d25VVlpvdUU3cmpabEV6MjNwbnhrVjd0RXR1WngyMGlwaXFJcnlUX1JKSkpKU0pDTXdLWjNSNG5tWTl6MjRJTEZqbkdvQQ?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=www.hokkaido-np.co.jp&sz=128",
+      "summary": "",
+      "category": "时政",
+      "time_str": "12-02 05:41",
+      "timestamp": 1764621673,
+      "origin": "北海道新聞デジタル"
+    },
+    {
+      "title": "欧盟在世贸组织立陶宛争端中撤回对中国的诉讼 - 北海道新闻数字",
+      "title_tc": "歐盟在世貿組織立陶宛爭端中撤回對中國的訴訟 - 北海道新聞數字",
+      "title_ja": "EU、対中国の訴え撤回 リトアニア巡るWTO紛争 - 北海道新聞デジタル",
+      "link": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFB1ZndkTDM4UW5LbzFTUmFGaG1SZFV5MFE2bXBiRW9VeWJRSS1Bc2wydEhLOHFnaFpNWkRtc1MwS2VxeXFsdy1GbzhSdl9mYXFENGQ0Z1NLbjdkZw?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=www.hokkaido-np.co.jp&sz=128",
+      "summary": "",
+      "category": "其他",
+      "time_str": "12-02 05:35",
+      "timestamp": 1764621356,
+      "origin": "北海道新聞デジタル"
+    },
+    {
+      "title": "【投稿】中国对日“制裁”，经济胁迫死灰复燃 - 钻石在线",
+      "title_tc": "【投稿】中國對日“制裁”，經濟脅迫死灰復燃 - 鑽石在線",
+      "title_ja": "【寄稿】中国の対日「制裁」 経済的威圧が復活 - ダイヤモンド・オンライン",
+      "link": "https://news.google.com/rss/articles/CBMiTEFVX3lxTE5rT0NvbjRsSFhhQW5vV0xLdWVwcWtINlYycTkzcnFxaDR6ZTNSM0Z4SnBCTy1STEYyVUl2Y3g2c2N3MkN4a0lreG4yTUQ?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=diamond.jp&sz=128",
+      "summary": "",
+      "category": "时政",
+      "time_str": "12-02 05:35",
+      "timestamp": 1764621300,
+      "origin": "ダイヤモンド・オンライン"
+    },
+    {
+      "title": "中国船只闯入领海 - 福井新闻",
+      "title_tc": "中國船隻闖入領海 - 福井新聞",
+      "title_ja": "中国船が領海侵入 - 福井新聞社",
+      "link": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE15V2R1WEZaYklmc1RONzg5UGk4XzBqbHJNRzZXbTE4ZlNpVUFsVHFyVTVCV0x1QlVLeVNXVWZCakZHZFp0dnU1czhDVWFkZi1UUzdtd2hSXzQ1N2hnRGc?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=www.fukuishimbun.co.jp&sz=128",
+      "summary": "",
+      "category": "其他",
+      "time_str": "12-02 05:34",
+      "timestamp": 1764621285,
+      "origin": "福井新聞社"
+    },
+    {
+      "title": "香港火灾捐款600亿日元，中国企业也捐款不少 - 东京新闻数字版",
+      "title_tc": "香港火災捐款600億日元，中國企業也捐款不少 - 東京新聞數字版",
+      "title_ja": "香港火災に寄付６００億円 中国系企業からも多額 - 東京新聞デジタル",
+      "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE1jTlZIaFQzN2U0QjJMc2xFOTBhNHRPYmhhV09RTmx4OUhYZmpDcVVEdTRDYjczVWxqaFZVSTgwakJmNDYtaVc3TjRXdmU2MmtiZHd2VEZXMTF1dnRYSkh3Sw?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=www.tokyo-np.co.jp&sz=128",
+      "summary": "",
+      "category": "时政",
+      "time_str": "12-02 05:34",
+      "timestamp": 1764621261,
+      "origin": "東京新聞デジタル"
+    },
+    {
+      "title": "欧盟在世贸组织立陶宛争端中撤回对中国的诉讼 - nnn.co.jp",
+      "title_tc": "歐盟在世貿組織立陶宛爭端中撤回對中國的訴訟 - nnn.co.jp",
+      "title_ja": "ＥＵ、対中国の訴え撤回 リトアニア巡るＷＴＯ紛争 - nnn.co.jp",
+      "link": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE5ySHkxM1N5VlRKbTVMOU00NmdvQmFxcEtJZTNWaVpwcGdndk9vVFVyYXI4V24yNHhSNEIwM050dEw2c3pIU2h5Qk5UckVfQW9Y?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=www.nnn.co.jp&sz=128",
+      "summary": "",
+      "category": "其他",
+      "time_str": "12-02 05:30",
+      "timestamp": 1764621003,
+      "origin": "nnn.co.jp"
+    },
+    {
+      "title": "中国不访日以保护“和平产业” - 中日新闻网",
+      "title_tc": "中國不訪日以保護“和平產業” - 中日新聞網",
+      "title_ja": "中国の訪日自粛 「平和産業」守るために - 中日新聞Web",
+      "link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE5DeTZPMmZFWVFyRkFlSUR1QmJiY2MzWTh2TUxaN2ozZE1FVFFncjBELUVCREljc2o4SlRDRkFzeGhWelVlLXJXd2dvZkNnMVE3SmFfM2k2N24tQWZEblFFV2ZMUTE?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=www.chunichi.co.jp&sz=128",
+      "summary": "",
+      "category": "经济",
+      "time_str": "12-02 05:05",
+      "timestamp": 1764619500,
+      "origin": "中日新聞Web"
+    },
     {
       "title": "美国国会报告称美国未能对中国稀土法规做出回应 - 日经商业在线版",
       "title_tc": "美國國會報告稱美國未能對中國稀土法規做出回應 - 日經商業在線版",
@@ -13,6 +130,19 @@
       "time_str": "12-02 05:00",
       "timestamp": 1764619200,
       "origin": "日経ビジネス電子版"
+    },
+    {
+      "title": "中国地方债务激增至2900万亿日元，创25年来最大规模债券发行，加剧通货紧缩 - 日本经济新闻",
+      "title_tc": "中國地方債務激增至2900萬億日元，創25年來最大規模債券發行，加劇通貨緊縮 - 日本經濟新聞",
+      "title_ja": "中国で膨らむ地方債務2900兆円 25年の債券発行最大、デフレを助長 - 日本経済新聞",
+      "link": "https://news.google.com/rss/articles/CBMibEFVX3lxTFBiV3ZnZ1hsZlBTYkZ0ekQwTmdqUGMtYTV2YWV6Qm1PRlE5YzJNTzNPOGpwVWRWUEIyazBvbmhZZzJZSlRzd2dSR3RzZ0pOZjQ3YWFQVFVPYnJ6UU9GVVdVLWItNDZjaG53SXRkSQ?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=www.nikkei.com&sz=128",
+      "summary": "",
+      "category": "经济",
+      "time_str": "12-02 05:00",
+      "timestamp": 1764619200,
+      "origin": "日本経済新聞"
     },
     {
       "title": "两艘中国船只侵入领海（共同社） - 雅虎！消息",
@@ -51,6 +181,19 @@
       "category": "时政",
       "time_str": "12-02 02:06",
       "timestamp": 1764608764,
+      "origin": "Yahoo!ニュース"
+    },
+    {
+      "title": "日中议会联合会会见中国大使并传达年内访华意向（共同社） - 雅虎！消息",
+      "title_tc": "日中議會聯合會會見中國大使並傳達年內訪華意向（共同社） - 雅虎！消息",
+      "title_ja": "日中議連、中国大使と面会 年内の訪中意向を伝達（共同通信） - Yahoo!ニュース",
+      "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE44U3R0ZmozSEJzVUhtUEhZc1gzRW1CSW1ScFJyY0laWUVBZThMcTBJZU81dkI0bUU0ODcxZE5GQU0zSEwwdUthcTVlS1pJV0RLdS0xSExuRUwxbVhpRE9KbU95YWlHTEZsNGFhLUxicmg0SUoyTmlxei1ZYUpBSEE?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=news.yahoo.co.jp&sz=128",
+      "summary": "",
+      "category": "时政",
+      "time_str": "12-02 02:02",
+      "timestamp": 1764608549,
       "origin": "Yahoo!ニュース"
     },
     {
@@ -169,6 +312,19 @@
       "time_str": "12-01 23:20",
       "timestamp": 1764598806,
       "origin": "Yahoo!ニュース"
+    },
+    {
+      "title": "韩国连胜排名靠前的中国...日本也开门红/世界杯亚洲区预选赛窗口1 - 篮球王",
+      "title_tc": "韓國連勝排名靠前的中國...日本也開門紅/世界杯亞洲區預選賽窗口1 - 籃球王",
+      "title_ja": "韓国が格上中国に連勝…日本も好スタート／W杯アジア地区予選Window1 - バスケットボールキング",
+      "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE1rNkVpTnRxVHB0SzdtMk8ycW55Yk1xaVZfLW94OG8yTG5jZlprb2wwbUVtY0hwd0tUQjJ3RmRFVF9FaDNRWjVkOGlEbHJJUmtvRjQwc2JZaW83WlpYaU0tcVFoYy1wcDhY?oc=5",
+      "image": "",
+      "logo": "https://www.google.com/s2/favicons?domain=basketballking.jp&sz=128",
+      "summary": "",
+      "category": "体育",
+      "time_str": "12-01 23:20",
+      "timestamp": 1764598806,
+      "origin": "バスケットボールキング"
     },
     {
       "title": "日产在中国推出新款PHV“N6”，增加220万日元起的低价车型 - 日本经济新闻",
@@ -470,8 +626,8 @@
       "origin": "Yahoo!ニュース"
     },
     {
-      "title": "“这个时候来中国演出？”菲菲“投诉”上海“强制停歌”事件引发热议（SmartFLASH） - 雅虎！消息",
-      "title_tc": "“這個時候來中國演出？”菲菲“投訴”上海“強制停歌”事件引發熱議（SmartFLASH） - 雅虎！消息",
+      "title": "“这个时候来中国演出？”菲菲对上海“被迫停歌”事件的“委屈”引发热议（SmartFLASH） - 雅虎！消息",
+      "title_tc": "“這個時候來中國演出？”菲菲對上海“被迫停歌”事件的“委屈”引發熱議（SmartFLASH） - 雅虎！消息",
       "title_ja": "「この時期に中国でパフォーマンスって」フィフィ、上海でおきた「歌唱強制中断」騒動への“苦言”に議論沸騰（SmartFLASH） - Yahoo!ニュース",
       "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE5qaFRjcThsZXNQZWlmUUVzN3diRE82SWVodUJXMV9sU0RpMFJ1Nl9kMVJYaTRTUDBXbThoSlRVeE92bVBlMVljeWZ0cGZrQWpMbWJIUmJZN1p4RDBXTWpXR0RaSkdBQ2hQRVdkb01LclViWTNSb21DcE5sdmZFdkE?oc=5",
       "image": "",
@@ -1235,19 +1391,6 @@
       "time_str": "12-01 14:12",
       "timestamp": 1764565937,
       "origin": "Yahoo!ニュース"
-    },
-    {
-      "title": "【投稿】中国对日本的“制裁”；经济胁迫死灰复燃 - 华尔街日报日本版",
-      "title_tc": "【投稿】中國對日本的“制裁”；經濟脅迫死灰復燃 - 華爾街日報日本版",
-      "title_ja": "【寄稿】中国の対日「制裁」 経済的威圧が復活 - WSJ日本版",
-      "link": "https://news.google.com/rss/articles/CBMijAFBVV95cUxNc3VxOUhlSkdqbTRtZzF3eGQycjNETXdMS3ZCYzNMTzc1bXlLd0gzRjV6ZWluaDdIbDZYN0k2UFQ3SldoS2ozQUZaZFlOaU1uWEt1Tk15b29Eam1MTG1wNERGV1Y1QlNnU3c2YnF3ZFdmQUNydFJyNXYtX1ZUUnR0ZDJtUFhCQTBreUNLbA?oc=5",
-      "image": "",
-      "logo": "https://www.google.com/s2/favicons?domain=jp.wsj.com&sz=128",
-      "summary": "",
-      "category": "时政",
-      "time_str": "12-01 14:12",
-      "timestamp": 1764565920,
-      "origin": "WSJ日本版"
     },
     {
       "title": "打压中国娱乐圈：滨崎步无观众事件引发愤怒，大月真希被迫停赛（第1/5页） - zakⅡ",
@@ -2056,8 +2199,8 @@
       "origin": "Yahoo!ニュース"
     },
     {
-      "title": "特朗普称中国更加看好俄罗斯的绥靖政策 - 日本经济新闻",
-      "title_tc": "特朗普稱中國更加看好俄羅斯的綏靖政策 - 日本經濟新聞",
+      "title": "特朗普先生，俄罗斯绥靖之病，中国也更看好 - 日本经济新闻",
+      "title_tc": "特朗普先生，俄羅斯綏靖之病，中國也更看好 - 日本經濟新聞",
       "title_ja": "トランプ氏、ロシア宥和の病 中国もさらに強気に - 日本経済新聞",
       "link": "https://news.google.com/rss/articles/CBMibEFVX3lxTE53OGJkeXZfQk1DSF9wNDhkUFdib01vLXdzTjY0NlMwRFh6S2JRZFdOYUdPcnVRNGc4VHdvMDJsekZycS02V3I2Z1dYWTlOT3RwQzZldHJiX3N0XzNIalBISTNKZGE0Zkxsd1ZTNw?oc=5",
       "image": "",
@@ -2225,8 +2368,8 @@
       "origin": "Yahoo!ニュース"
     },
     {
-      "title": "提交请愿书要求成立香港火灾独立调查委员会的男子……因涉嫌叛国罪在中国被捕（中国中央日报日文版） - 雅虎！消息",
-      "title_tc": "提交請願書要求成立香港火災獨立調查委員會的男子……因涉嫌叛國罪在中國被捕（中國中央日報日文版） - 雅虎！消息",
+      "title": "提交请愿书要求成立香港火灾独立调查委员会的男子...因叛国罪在中国被捕（中国中央日报日文版） - 雅虎！消息",
+      "title_tc": "提交請願書要求成立香港火災獨立調查委員會的男子...因叛國罪在中國被捕（中國中央日報日文版） - 雅虎！消息",
       "title_ja": "「香港火災独立調査委設置」請願上げた男性…中国、反逆容疑で逮捕（中央日報日本語版） - Yahoo!ニュース",
       "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9mXzRoX2VfTC1vVWszVlVRQXFxbWJBdV9DSm9vLUpxZ3RrU3hhMEsxSzNWUGFYRTZwd1o2d0tQekctemw5QUZENXQ1RmNKTzZhYmJYeVFBSVcxbHVZbkpRZDJRdFcxbENnTkMxZ05HS2NkaDlPWE1aS1FLdHNocU0?oc=5",
       "image": "",
@@ -2264,8 +2407,8 @@
       "origin": "Yahoo!ニュース"
     },
     {
-      "title": "“双手插口袋”羞辱他的中国外长拥抱日本企业并说“安息吧”（《中央日报》日文版） - 雅虎！消息",
-      "title_tc": "“雙手插口袋”羞辱他的中國外長擁抱日本企業並說“安息吧”（《中央日報》日文版） - 雅虎！消息",
+      "title": "被“双手插口袋”羞辱的中国外长拥抱日本企业并说“安息吧”（《中央日报》日文版） - 雅虎！消息",
+      "title_tc": "被“雙手插口袋”羞辱的中國外長擁抱日本企業並說“安息吧”（《中央日報》日文版） - 雅虎！消息",
       "title_ja": "「ポケットに手」で屈辱与えた中国外交局長、日本企業抱擁し「安心して」（中央日報日本語版） - Yahoo!ニュース",
       "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9aTm54aDdqXzBJM1NhWFlIMTNaalY0endIUlBPOE5FSHc5Qmd5MlltWnhLbVFYQXpCdjBYNE84aE1DQ2NIN0JIMXkzUlFiY05mRlg5bmp1Z2Y2S3FnWXROVE9zUU1kYkxCWUhFZFAzUnU5cE1jdC1RbEJYaUdkOTQ?oc=5",
       "image": "",
