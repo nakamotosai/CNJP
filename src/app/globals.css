@@ -2,152 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 3. 定义 CSS 变量的具体值 */
+/* 
+  IGNORE "Unknown at rule @tailwind" warnings. 
+  This is a standard Tailwind CSS directive and is valid.
+*/
+
 :root {
-  /* Light Mode (默认的亮色配色) */
+  /* Light Mode */
   --primary: #c62828;
   --accent: #d32f2f;
   --background: #f5f7fa;
   --card: #ffffff;
   --text-main: #333333;
   --text-sub: #666666;
+  --text-aux: #999999;
   --border: #eeeeee;
 
-  /* 动态字体缩放变量 */
-  --font-scale: 1;
-
-  /* 分类颜色 (Light - Rainbow Palette) */
-  /* 时政 - 赤 (Red) */
-  --cat-politics-bg: #FFEBEE;
-  --cat-politics-text: #C62828;
-  /* 经济 - 橙 (Orange) */
-  --cat-economy-bg: #FFF3E0;
-  --cat-economy-text: #EF6C00;
-  /* 社会 - 黄 (Yellow) */
-  --cat-society-bg: #FFFDE7;
-  --cat-society-text: #F9A825;
-  /* 军事 - 绿 (Green) */
-  --cat-military-bg: #E8F5E9;
-  --cat-military-text: #2E7D32;
-  /* 科技 - 青 (Cyan) */
-  --cat-tech-bg: #E0F7FA;
-  --cat-tech-text: #00838F;
-  /* 体育 - 蓝 (Blue) */
-  --cat-sports-bg: #E3F2FD;
-  --cat-sports-text: #1565C0;
-  /* 其他 - 紫 (Purple) */
-  --cat-other-bg: #F3E5F5;
-  --cat-other-text: #6A1B9A;
-
-  --cat-all-bg: #333333;
-  --cat-all-text: #ffffff;
-
-  /* 字体 */
-  --font-sans: -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: Georgia, serif;
+  /* Fonts */
+  --font-sans: 'Noto Sans SC', sans-serif;
+  --font-serif: 'Noto Serif SC', serif;
+  --font-noto-sans-sc: 'Noto Sans SC', sans-serif;
+  --font-noto-serif-sc: 'Noto Serif SC', serif;
+  --font-noto-sans-tc: 'Noto Sans TC', sans-serif;
+  --font-noto-serif-tc: 'Noto Serif TC', serif;
 }
 
-/* Dark Mode (深色模式变量，需要搭配 html/.dark 类使用) */
 .dark {
+  /* Dark Mode */
+  --primary: #ef5350;
+  --accent: #ffcdd2;
   --background: #121212;
   --card: #1e1e1e;
-  --text-main: #ffffff;
-  --text-sub: #cccccc;
+  --text-main: #e0e0e0;
+  --text-sub: #b0b0b0;
+  --text-aux: #757575;
   --border: #333333;
-  --primary: #e74c3c;
-
-  /* 分类颜色 (Dark - Muted Rainbow) */
-  --cat-politics-bg: #3E2723;
-  --cat-politics-text: #EF9A9A;
-  --cat-economy-bg: #3E2723;
-  /* Dark Orange-ish */
-  --cat-economy-text: #FFCC80;
-  --cat-society-bg: #333300;
-  --cat-society-text: #FFF59D;
-  --cat-military-bg: #1B5E20;
-  --cat-military-text: #A5D6A7;
-  --cat-tech-bg: #006064;
-  --cat-tech-text: #80DEEA;
-  --cat-sports-bg: #0D47A1;
-  --cat-sports-text: #90CAF9;
-  --cat-other-bg: #4A148C;
-  --cat-other-text: #CE93D8;
-
-  --cat-all-bg: #555555;
-  --cat-all-text: #ffffff;
 }
 
-/* 4. 通用样式 */
 body {
   background-color: var(--background);
   color: var(--text-main);
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* 5. 工具类扩展 */
-@layer components {
-  .tag-cat-politics {
-    background-color: var(--cat-politics-bg);
-    color: var(--cat-politics-text);
-  }
-
-  .tag-cat-economy {
-    background-color: var(--cat-economy-bg);
-    color: var(--cat-economy-text);
-  }
-
-  .tag-cat-society {
-    background-color: var(--cat-society-bg);
-    color: var(--cat-society-text);
-  }
-
-  .tag-cat-military {
-    background-color: var(--cat-military-bg);
-    color: var(--cat-military-text);
-  }
-
-  .tag-cat-tech {
-    background-color: var(--cat-tech-bg);
-    color: var(--cat-tech-text);
-  }
-
-  .tag-cat-sports {
-    background-color: var(--cat-sports-bg);
-    color: var(--cat-sports-text);
-  }
-
-  .tag-cat-other {
-    background-color: var(--cat-other-bg);
-    color: var(--cat-other-text);
-  }
-
-  .tag-cat-all {
-    background-color: var(--cat-all-bg);
-    color: var(--cat-all-text);
-  }
-
-  .shadow-3d {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-
-  .shadow-3d:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.02);
-  }
-}
-
-/* 修复后的滚动条实用程序：确保语法正确 */
 @layer utilities {
-  .scrollbar-none {
-    /* 针对 IE and Edge */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
-  }
-
-  /* 针对 WebKit 浏览器 (Chrome, Safari) */
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
   }
 }

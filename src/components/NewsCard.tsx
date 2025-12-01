@@ -1,9 +1,11 @@
 "use client";
 
 import { useTheme } from "./ThemeContext";
-import { ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN, zhTW } from "date-fns/locale";
+import { useState } from "react";
+import Modal from "./Modal";
+import { CATEGORY_MAP, CATEGORY_DOT_COLORS } from "@/lib/constants";
 
 export interface NewsItem {
   title: string;
@@ -12,9 +14,10 @@ export interface NewsItem {
   link: string;
   timestamp?: number;
   time_str?: string;
-  origin?: string;
+  origin: string;
   category?: string;
-  logo?: string; // 新增字段：Logo URL
+  logo?: string;
+  description?: string;
 }
 
 interface NewsCardProps {
@@ -25,18 +28,8 @@ interface NewsCardProps {
 }
 
 const SC_TO_TC_CATEGORY: Record<string, string> = {
-  "时政": "時政", "经济": "經濟", "社会": "社會", "军事": "軍事",
+  "时政": "時政", "经济": "經濟", "社会": "社會", "娱乐": "娛樂",
   "科技": "科技", "体育": "體育", "其他": "其他",
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  "时政": "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400",
-  "经济": "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400",
-  "社会": "bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400",
-  "军事": "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
-  "科技": "bg-cyan-50 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400",
-  "体育": "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400",
-  "其他": "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400",
 };
 
 export default function NewsCard({
@@ -46,6 +39,7 @@ export default function NewsCard({
   onFilterCategory,
 }: NewsCardProps) {
   const { settings } = useTheme();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fontStyleObj = {
     fontFamily: settings.fontStyle === "serif"
@@ -66,109 +60,143 @@ export default function NewsCard({
   }
 
   const rawCategory = item.category || "其他";
-  const categoryColor = CATEGORY_COLORS[rawCategory] || CATEGORY_COLORS["其他"];
   let displayCategory = rawCategory.substring(0, 2);
   if (settings.lang === "tc") {
     displayCategory = SC_TO_TC_CATEGORY[displayCategory] || displayCategory;
   }
 
-  const displayTitle = (settings.lang === "tc" && item.title_tc) 
-    ? item.title_tc 
+  const categoryKey = CATEGORY_MAP[rawCategory] || "other";
+  const dotColor = CATEGORY_DOT_COLORS[categoryKey] || "bg-gray-400";
+
+  const displayTitle = (settings.lang === "tc" && item.title_tc)
+    ? item.title_tc
     : item.title;
 
-  const japaneseText = item.title_ja 
-    ? `JP ${item.origin} : ${item.title_ja}`
-    : `JP ${item.origin}`;
-
   return (
-    <div className="w-full bg-white dark:bg-[#1e1e1e] p-4 rounded-2xl shadow-sm border border-black/5 dark:border-white/5 hover:shadow-md transition-all duration-300">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 flex flex-col gap-2 min-w-0">
-          
-          {/* 顶部信息栏 */}
-          <div className="flex items-center gap-2">
-            {onToggleFav && (
-              <button
-                onClick={(e) => onToggleFav(e, item)}
-                className="group p-0.5 -ml-1"
-                aria-label="Toggle Favorite"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill={isFav ? "var(--primary)" : "currentColor"}
-                  className={`w-4 h-4 transition-all ${
-                    isFav 
-                      ? "text-[var(--primary)] scale-110" 
-                      : "text-gray-300 dark:text-gray-600 group-hover:text-[var(--primary)]"
-                  }`}
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            )}
-
-            <span
+    <>
+      <div
+        onClick={() => setIsModalOpen(true)}
+        className="w-full bg-white dark:bg-[#1e1e1e] p-4 rounded-xl shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer border border-transparent group relative overflow-hidden"
+      >
+        {/* Top Row: Category | Source • Time ... Fav */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 text-[11px]">
+            {/* Category Tag */}
+            <button
               onClick={(e) => {
                 e.stopPropagation();
-                onFilterCategory?.(rawCategory);
+                if (onFilterCategory && item.category) {
+                  const catKey = CATEGORY_MAP[item.category] || "other";
+                  onFilterCategory(catKey);
+                }
               }}
-              style={fontStyleObj}
-              className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-tight cursor-pointer hover:opacity-80 transition-opacity ${categoryColor}`}
+              className="flex items-center gap-1.5 group/cat"
             >
-              {displayCategory}
-            </span>
+              <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+              <span className="text-gray-500 dark:text-gray-400 group-hover/cat:text-gray-900 dark:group-hover/cat:text-gray-200 transition-colors font-medium">
+                {displayCategory}
+              </span>
+            </button>
 
-            <span 
-               style={fontStyleObj}
-               className="text-[11px] text-[var(--text-sub)] bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded-md opacity-80"
-            >
+            <span className="text-gray-300 dark:text-gray-700">|</span>
+
+            {/* Source */}
+            <div className="flex items-center gap-1.5">
+              {item.logo && (
+                <img
+                  src={item.logo}
+                  alt="logo"
+                  className="w-3 h-3 object-contain opacity-60 grayscale"
+                  onError={(e) => e.currentTarget.style.display = 'none'}
+                />
+              )}
+              <span className="text-[var(--text-aux)] font-medium tracking-wide">
+                {item.origin}
+              </span>
+            </div>
+
+            <span className="text-[var(--text-aux)] opacity-60">•</span>
+
+            {/* Time */}
+            <span className="text-[var(--text-aux)] tracking-wide opacity-80">
               {timeDisplay}
             </span>
           </div>
 
-          {/* 标题 */}
-          <div
-            style={fontStyleObj}
-            className="text-[17px] font-bold text-[var(--text-main)] leading-snug tracking-normal line-clamp-2 cursor-text select-text"
+          {/* Star Icon */}
+          <button
+            onClick={(e) => onToggleFav && onToggleFav(e, item)}
+            className={`p-1 rounded-full transition-colors ${isFav
+                ? "text-[var(--primary)] bg-red-50 dark:bg-red-900/20"
+                : "text-gray-300 hover:text-[var(--primary)] hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
           >
-            {displayTitle}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill={isFav ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Title */}
+        <h3
+          style={fontStyleObj}
+          className="text-[16px] font-bold leading-[1.5] text-[var(--text-main)] line-clamp-2 group-hover:text-[var(--primary)] transition-colors"
+        >
+          {displayTitle}
+        </h3>
+      </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={displayTitle}
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between text-sm text-[var(--text-sub)] border-b border-gray-100 dark:border-gray-800 pb-4">
+            <div className="flex items-center gap-3">
+              <span className="font-medium text-[var(--text-main)]">{item.origin}</span>
+              <span>{timeDisplay}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+              <span>{displayCategory}</span>
+            </div>
           </div>
 
-          {/* 底部：来源链接 (Logo + 文字) */}
-          <div className="flex items-center justify-start mt-1">
-             <a 
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={fontStyleObj}
-                className="group flex items-center gap-1.5 text-[11px] text-[var(--text-sub)] font-medium hover:text-[var(--primary)] transition-colors text-left"
-             >
-                {/* 
-                   显示 Logo
-                   1. 检查 item.logo 是否存在
-                   2. 使用 object-contain 确保图标完整
-                */}
-                {item.logo && (
-                  <img 
-                    src={item.logo} 
-                    alt="logo" 
-                    className="w-3.5 h-3.5 rounded-sm object-contain opacity-80 group-hover:opacity-100"
-                    onError={(e) => e.currentTarget.style.display = 'none'} // 加载失败隐藏
-                  />
-                )}
-                
-                <span className="underline decoration-1 underline-offset-2 leading-relaxed">
-                  {japaneseText}
-                </span>
-             </a>
+          <div
+            style={fontStyleObj}
+            className="text-[16px] leading-relaxed text-[var(--text-main)] whitespace-pre-wrap"
+          >
+            {item.description || (settings.lang === "sc" ? "暂无摘要" : "暫無摘要")}
+          </div>
+
+          <div className="pt-4 flex justify-end">
+            <a
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[var(--primary)] text-white rounded-full text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-red-500/20"
+            >
+              {settings.lang === "sc" ? "阅读原文" : "閱讀原文"}
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
           </div>
         </div>
-      </div>
-    </div>
+      </Modal>
+    </>
   );
 }

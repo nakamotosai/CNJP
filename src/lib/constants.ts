@@ -3,7 +3,7 @@ export const CATEGORIES = [
     { key: "politics", label: "时政", color: "politics" },
     { key: "economy", label: "经济", color: "economy" },
     { key: "society", label: "社会", color: "society" },
-    { key: "military", label: "军事", color: "military" },
+    { key: "entertainment", label: "娱乐", color: "entertainment" },
     { key: "tech", label: "科技", color: "tech" },
     { key: "sports", label: "体育", color: "sports" },
     { key: "other", label: "其他", color: "other" },
@@ -15,10 +15,21 @@ export const CATEGORY_MAP: Record<string, string> = {
     '时政': 'politics', '政治': 'politics',
     '经济': 'economy',
     '社会': 'society',
-    '军事': 'military',
+    '娱乐': 'entertainment',
     '科技': 'tech', 'IT': 'tech',
     '体育': 'sports',
     '其他': 'other'
+};
+
+export const CATEGORY_DOT_COLORS: Record<string, string> = {
+    "politics": "bg-red-500",
+    "economy": "bg-emerald-500",
+    "society": "bg-amber-500",
+    "entertainment": "bg-pink-500",
+    "tech": "bg-sky-500",
+    "sports": "bg-indigo-500",
+    "other": "bg-gray-400",
+    "all": "bg-gray-900" // Default for 'all' if needed, though usually hidden or special
 };
 
 export const MEDIA_LOGOS: Record<string, string> = {

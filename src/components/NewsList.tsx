@@ -2,10 +2,12 @@
 
 import React, { Fragment } from "react";
 import NewsCard, { NewsItem } from "./NewsCard";
-import ArchiveBar from "./ArchiveBar";
+import NewsCardSkeleton from "./NewsCardSkeleton";
+import { useTheme } from "./ThemeContext";
 
 interface NewsListProps {
   news: NewsItem[];
+  isLoading: boolean;
   onToggleFav: (e: React.MouseEvent, item: NewsItem) => void;
   favorites: NewsItem[];
   onShowArchive: (dateStr: string) => void;
@@ -15,20 +17,43 @@ interface NewsListProps {
 
 export default function NewsList({
   news,
+  isLoading,
   onToggleFav,
   favorites,
   onShowArchive,
   onFilterCategory,
   archiveData
 }: NewsListProps) {
-  if (!news || news.length === 0) {
+  const { settings } = useTheme();
+
+  // Show skeleton when loading
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-[var(--text-sub)]">
-        <p>暂无新闻数据</p>
+      <div className="w-full px-4 space-y-4 pb-8">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <NewsCardSkeleton key={index} />
+        ))}
       </div>
     );
   }
 
+  // Show friendly empty state when no data (and not loading)
+  if (!news || news.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-[var(--text-sub)]">
+        <div className="text-center space-y-2">
+          <p className="text-lg">
+            {settings.lang === "sc" ? "正在连接东京塔..." : "正在連接東京塔..."}
+          </p>
+          <p className="text-sm opacity-60">
+            {settings.lang === "sc" ? "暂无新闻数据" : "暫無新聞數據"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show actual news cards
   return (
     <div className="w-full px-4 space-y-4 pb-8">
       {news.map((item, index) => (
@@ -39,22 +64,6 @@ export default function NewsList({
             onToggleFav={onToggleFav}
             onFilterCategory={onFilterCategory}
           />
-
-          {/* 在第 5 条新闻之后插入 ArchiveBar */}
-          {index === 4 && (
-            // 使用 -mx-4 抵消父容器的 padding，让 ArchiveBar 能够全宽显示
-            <div className="-mx-4 my-2">
-              <div className="px-4 mb-2 text-left">
-                <span className="inline-block bg-[#FFEBEE] dark:bg-[#3E2723] text-[var(--primary)] text-xs font-bold px-2 py-1 rounded-md shadow-sm">
-                  ↓点击查看新闻存档日历，红色数字为新闻数
-                </span>
-              </div>
-              <ArchiveBar
-                onShowArchive={onShowArchive}
-                archiveData={archiveData}
-              />
-            </div>
-          )}
         </Fragment>
       ))}
     </div>

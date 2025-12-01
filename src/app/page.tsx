@@ -9,9 +9,11 @@ import SettingsModal from "@/components/modals/SettingsModal";
 import AboutModal from "@/components/modals/AboutModal";
 import FavModal from "@/components/modals/FavModal";
 import ArchiveModal from "@/components/modals/ArchiveModal";
-import { Search } from "lucide-react";
+import ArchiveDrawer from "@/components/ArchiveDrawer";
+import BackToTop from "@/components/BackToTop";
+import { Search, Loader2 } from "lucide-react";
 import { useTheme } from "@/components/ThemeContext";
-import { CATEGORY_MAP } from "@/lib/constants";
+import { CATEGORY_MAP, CATEGORIES } from "@/lib/constants";
 
 export default function Home() {
   const { settings } = useTheme();
@@ -22,12 +24,14 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState("");
   const [favorites, setFavorites] = useState<NewsItem[]>([]);
   const [archiveData, setArchiveData] = useState<Record<string, NewsItem[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // UI State
   const [currentFilter, setCurrentFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(25);
-  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  const [showArchiveDrawer, setShowArchiveDrawer] = useState(false);
 
   // Modals
   const [showSettings, setShowSettings] = useState(false);
@@ -35,6 +39,11 @@ export default function Home() {
   const [showFav, setShowFav] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [archiveDate, setArchiveDate] = useState("");
+
+  // Pull to Refresh State
+  const [pullStartY, setPullStartY] = useState(0);
+  const [pullCurrentY, setPullCurrentY] = useState(0);
+  const PULL_THRESHOLD = 80;
 
   // --- Effects ---
   useEffect(() => {
@@ -50,18 +59,26 @@ export default function Home() {
     }
   }, []);
 
+  const fetchData = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
+    try {
+      const r = await fetch("/data.json?t=" + Date.now());
+      const data = await r.json();
+      if (data && data.news) {
+        setRawNewsData(data.news);
+        setLastUpdated(data.last_updated || "");
+      } else if (Array.isArray(data)) {
+        setRawNewsData(data);
+      }
+    } catch (e) {
+      console.error("Fetch error", e);
+    } finally {
+      if (showLoading) setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetch("/data.json?t=" + Date.now())
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && data.news) {
-          setRawNewsData(data.news);
-          setLastUpdated(data.last_updated || "");
-        } else if (Array.isArray(data)) {
-          setRawNewsData(data);
-        }
-      })
-      .catch((e) => console.error("Fetch error", e));
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -80,23 +97,8 @@ export default function Home() {
   }, [rawNewsData]);
 
   // --- Scroll Handler ---
-  const lastScrollTop = useRef(0);
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const scrollDelta = scrollTop - lastScrollTop.current;
-
-      // 防抖阈值 5px
-      if (Math.abs(scrollDelta) < 5) return;
-
-      if (scrollDelta > 0 && scrollTop > 60) {
-        setIsHeaderHidden(true);
-      } else if (scrollDelta < 0) {
-        setIsHeaderHidden(false);
-      }
-
-      lastScrollTop.current = scrollTop <= 0 ? 0 : scrollTop;
-
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
         setVisibleCount((prev) => (prev < 100 ? prev + 25 : prev));
       }
@@ -105,6 +107,39 @@ export default function Home() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // --- Pull to Refresh Logic ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      setPullStartY(e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (pullStartY > 0 && window.scrollY === 0) {
+      const currentY = e.touches[0].clientY;
+      if (currentY > pullStartY) {
+        setPullCurrentY(currentY - pullStartY);
+      }
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullCurrentY > PULL_THRESHOLD) {
+      setIsRefreshing(true);
+      await fetchData(false); // Refresh data without full screen loading
+      setIsRefreshing(false);
+    }
+    setPullStartY(0);
+    setPullCurrentY(0);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchData(false);
+    setIsRefreshing(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // --- Logic ---
   const filteredItems = useMemo(() => {
@@ -168,6 +203,7 @@ export default function Home() {
   const handleShowArchive = (dateStr: string) => {
     setArchiveDate(dateStr);
     setShowArchive(true);
+    setShowArchiveDrawer(false);
   };
 
   const handleFilterChange = (cat: string) => {
@@ -188,92 +224,87 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      {/* 
-          1. Header (Fixed, w-full, z-50)
-          隐藏时向上移动 100% (-60px)
-      */}
+    <div
+      className="min-h-screen bg-[var(--background)]"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to Refresh Indicator */}
       <div
-        className="fixed top-0 left-0 w-full z-50 transition-transform duration-300 ease-out"
-        style={{ transform: isHeaderHidden ? "translateY(-100%)" : "translateY(0)" }}
+        className="fixed top-0 left-0 w-full flex justify-center items-center pointer-events-none z-[60] transition-all duration-200"
+        style={{
+          height: pullCurrentY > 0 ? Math.min(pullCurrentY, 100) : 0,
+          opacity: pullCurrentY > 0 ? Math.min(pullCurrentY / PULL_THRESHOLD, 1) : 0
+        }}
       >
-        <Header
-          onOpenFav={() => setShowFav(true)}
-          onOpenAbout={() => setShowAbout(true)}
-          onOpenSettings={() => setShowSettings(true)}
-          favCount={favorites.length}
-        />
+        <div className="bg-white dark:bg-[#2c2c2c] rounded-full p-2 shadow-md mt-4">
+          <Loader2 className={`w-5 h-5 text-[var(--primary)] ${pullCurrentY > PULL_THRESHOLD || isRefreshing ? 'animate-spin' : ''}`} />
+        </div>
       </div>
 
       {/* 
-          2. CategoryNav (Fixed, w-full, z-40)
-          初始位置 top-[60px] (header下方)。
-          当 Header 隐藏时，Header 移走了，Nav 需要上移到 top-0。
-          移动距离 = -60px。
+          1. Header + Utility Bar (Static Flow)
+          Zone A + B
       */}
-      <div
-        className="fixed top-[60px] left-0 w-full z-40 transition-transform duration-300 ease-out"
-        style={{ transform: isHeaderHidden ? "translateY(-60px)" : "translateY(0)" }}
+      <Header
+        onOpenFav={() => setShowFav(true)}
+        onOpenAbout={() => setShowAbout(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        onRefresh={handleRefresh}
+        favCount={favorites.length}
       >
-        <CategoryNav currentFilter={currentFilter} onFilterChange={handleFilterChange} />
-      </div>
-
-      {/* 
-          3. Main Content
-          pt-[110px]: 预留头部空间 (60px Header + ~50px Nav)
-          max-w-[600px] mx-auto: 内容居中
-      */}
-      <main className="pt-[110px] pb-10 max-w-[600px] mx-auto relative">
-
-        {/* Control Bar (Search & Info) */}
-        <div className="px-4 pb-2 pt-1 flex justify-between items-end">
-          <div className="flex flex-col justify-end max-w-[70%] items-start">
-            <div
-              style={fontStyle}
-              className="inline-block bg-[#FFEBEE] dark:bg-[#3E2723] text-[var(--primary)] rounded-md px-2 py-1.5 shadow-sm"
-            >
-              <div className="text-[13px] font-bold mb-0.5 leading-[1.2]">
-                {searchQuery
-                  ? `"${searchQuery}"`
-                  : currentFilter !== "all"
-                    ? CATEGORY_MAP[currentFilter] || currentFilter
-                    : settings.lang === "sc"
-                      ? "100条日媒最新发布的中国新闻"
-                      : "100條日媒最新發布的中國新聞"}
-              </div>
-              <div className="text-[10px] font-normal opacity-90">
-                {(() => {
-                  if (!lastUpdated) return null;
-                  const match = lastUpdated.match(/(\d{4})年(\d{2})月(\d{2})日 (\d{2})时(\d{2})分/);
-                  if (match) {
-                    const [_, year, month, day, hour, minute] = match;
-                    const date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
-                    const diff = Date.now() - date.getTime();
-                    const minutes = Math.floor(diff / 60000);
-                    const timeStr = minutes >= 0 ? minutes : 0;
-                    return settings.lang === "sc"
-                      ? `数据更新于：${timeStr}分钟前`
-                      : `數據更新於：${timeStr}分鐘前`;
-                  }
-                  return (settings.lang === "sc" ? "数据更新于：" : "數據更新於：") + lastUpdated;
-                })()}
-              </div>
-            </div>
-          </div>
-          <div className="relative w-[110px] group">
+        {/* Utility Bar (Search & Archive) */}
+        <div className="flex justify-between items-center gap-3">
+          {/* Search Input - Left/Center */}
+          <div className="relative flex-1">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#999] pointer-events-none z-10" />
             <input
               type="text"
               placeholder={settings.lang === "sc" ? "搜索..." : "搜尋..."}
-              className="w-full py-1.5 pl-6 pr-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2c] text-[11px] outline-none text-[var(--text-main)] transition-all focus:w-[140px] focus:absolute focus:right-0 focus:shadow-md focus:border-[var(--primary)]"
+              className="w-full py-1.5 pl-6 pr-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-[#2c2c2c] text-[13px] outline-none text-[var(--text-main)] transition-all focus:bg-white focus:shadow-md focus:border-[var(--primary)]"
               onInput={(e) => handleSearch(e.currentTarget.value)}
             />
           </div>
-        </div>
 
-        {/* News List */}
+          {/* Archive Button - Right */}
+          <button
+            type="button"
+            onClick={() => setShowArchiveDrawer(!showArchiveDrawer)}
+            style={fontStyle}
+            className="py-1.5 px-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2c] text-[12px] text-[var(--text-main)] hover:border-[var(--primary)] hover:shadow-md transition-all whitespace-nowrap"
+          >
+            {settings.lang === "sc" ? "历史归档" : "歷史歸檔"}
+          </button>
+        </div>
+      </Header>
+
+      {/* Archive Drawer - Animated Wrapper */}
+      <div
+        className={`
+          overflow-hidden transition-all duration-300 ease-in-out bg-white dark:bg-[#121212] border-b border-gray-100 dark:border-gray-800
+          ${showArchiveDrawer ? "max-h-[200px] opacity-100 pb-2" : "max-h-0 opacity-0 border-none"}
+        `}
+      >
+        <ArchiveDrawer
+          archiveData={archiveData}
+          onSelectDate={handleShowArchive}
+        />
+      </div>
+
+      {/* 
+          2. Content Module (Zone C + D)
+          Contains CategoryNav (Sticky) and NewsList
+      */}
+      <main className="max-w-[600px] mx-auto pb-10">
+
+        {/* CategoryNav (Zone C) */}
+        <CategoryNav currentFilter={currentFilter} onFilterChange={handleFilterChange} />
+
+        {/* News List (Zone D) */}
         <NewsList
           news={displayItems}
+          isLoading={isLoading}
           onToggleFav={handleToggleFav}
           favorites={favorites}
           onShowArchive={handleShowArchive}
@@ -282,12 +313,15 @@ export default function Home() {
         />
 
         {/* Loading */}
-        {visibleCount < filteredItems.length && (
+        {!isLoading && visibleCount < filteredItems.length && (
           <div className="text-center py-8 text-[var(--text-sub)] text-sm">
             Loading...
           </div>
         )}
       </main>
+
+      {/* Back To Top Button */}
+      <BackToTop />
 
       {/* Modals */}
       <SettingsModal

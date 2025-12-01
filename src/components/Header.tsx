@@ -1,18 +1,25 @@
-import { Settings, Info, Star } from "lucide-react";
+"use client";
+
 import { useTheme } from "./ThemeContext";
+import { Settings, Info, Heart } from "lucide-react";
+import Image from "next/image";
 
 interface HeaderProps {
-  onOpenSettings: () => void;
-  onOpenAbout: () => void;
   onOpenFav: () => void;
+  onOpenAbout: () => void;
+  onOpenSettings: () => void;
+  onRefresh?: () => void;
   favCount: number;
+  children?: React.ReactNode;
 }
 
 export default function Header({
-  onOpenSettings,
-  onOpenAbout,
   onOpenFav,
+  onOpenAbout,
+  onOpenSettings,
+  onRefresh,
   favCount,
+  children
 }: HeaderProps) {
   const { settings } = useTheme();
 
@@ -23,57 +30,78 @@ export default function Header({
   };
 
   return (
-    // 外层：w-full 背景通栏，flex justify-center 负责让内部容器水平居中
-    <header className="w-full h-[60px] bg-white/95 dark:bg-[#121212]/95 backdrop-blur-sm border-b border-black/5 dark:border-white/5 flex justify-center z-50">
-      
-      {/* 内层：限制最大宽度 600px，确保与下方新闻卡片严格对齐 */}
-      <div className="w-full max-w-[600px] px-4 flex items-center justify-between h-full">
-        
-        <div className="flex flex-col">
-          <h1 
-            style={fontStyleObj}
-            className="text-2xl font-bold text-[var(--text-main)] tracking-tight leading-none drop-shadow-md"
-          >
-            {settings.lang === "sc" ? "从日本看中国" : "從日本看中國"}
-          </h1>
-          <span 
-            style={fontStyleObj}
-            className="text-[10px] text-[var(--text-sub)] tracking-wider uppercase mt-0.5 opacity-80 drop-shadow-sm"
-          >
-            China News From Japan
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
+    <header className="w-full bg-white dark:bg-[#121212] z-50">
+      <div className="max-w-[600px] mx-auto px-4 pt-3 pb-2">
+        {/* Top Row: Logo & Icons */}
+        <div className="flex items-center justify-between mb-3">
+          {/* Logo & Titles - Click to Refresh */}
           <button
-            onClick={onOpenFav}
-            className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors group"
-            aria-label="Favorites"
+            onClick={onRefresh}
+            className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+            title={settings.lang === "sc" ? "点击刷新" : "點擊刷新"}
           >
-            <Star className="w-[1.2rem] h-[1.2rem] text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors" />
-            {favCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex min-w-[14px] h-[14px] px-0.5 items-center justify-center rounded-full bg-[#ff3b30] text-[9px] font-bold text-white shadow-sm ring-1 ring-white dark:ring-[#121212] leading-none z-10">
-                {favCount > 99 ? "99+" : favCount}
+            <div className="relative w-8 h-8 rounded-lg overflow-hidden shadow-sm shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="flex flex-col justify-center">
+              <h1
+                style={fontStyleObj}
+                className="text-lg font-bold tracking-wide text-[var(--text-main)] leading-tight"
+              >
+                {settings.lang === "sc" ? "从日本看中国" : "從日本看中國"}
+              </h1>
+              <span className="text-[8px] text-gray-400 font-medium tracking-wider uppercase">
+                China News From Japan
               </span>
-            )}
+            </div>
           </button>
 
-          <button
-            onClick={onOpenAbout}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors group"
-            aria-label="About"
-          >
-            <Info className="w-[1.2rem] h-[1.2rem] text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors" />
-          </button>
+          {/* Right Icons */}
+          <div className="flex items-center gap-1">
+            {/* Favorites */}
+            <button
+              onClick={onOpenFav}
+              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors relative group"
+              title={settings.lang === "sc" ? "收藏" : "收藏"}
+            >
+              <Heart className="w-5 h-5 text-[var(--text-main)]" />
+              {favCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#121212]" />
+              )}
+            </button>
 
-          <button
-            onClick={onOpenSettings}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors group"
-            aria-label="Settings"
-          >
-            <Settings className="w-[1.2rem] h-[1.2rem] text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors" />
-          </button>
+            {/* About */}
+            <button
+              onClick={onOpenAbout}
+              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors relative"
+              title={settings.lang === "sc" ? "关于本站" : "關於本站"}
+            >
+              <Info className="w-5 h-5 text-[var(--text-main)]" />
+              {/* Exclamation badge for new users */}
+              <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500 text-[8px] text-white justify-center items-center font-bold">!</span>
+              </span>
+            </button>
+
+            {/* Settings */}
+            <button
+              onClick={onOpenSettings}
+              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              title={settings.lang === "sc" ? "设置" : "設置"}
+            >
+              <Settings className="w-5 h-5 text-[var(--text-main)]" />
+            </button>
+          </div>
         </div>
+
+        {/* Utility Bar (Search & Archive) - Passed as children */}
+        {children}
       </div>
     </header>
   );
