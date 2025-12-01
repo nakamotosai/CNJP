@@ -13,12 +13,6 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
   const { settings } = useTheme();
   const itemsRef = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  const fontStyleObj = {
-    fontFamily: settings.fontStyle === "serif"
-      ? "var(--font-noto-serif-tc), var(--font-noto-serif-sc), serif"
-      : "var(--font-noto-sans-tc), var(--font-noto-sans-sc), sans-serif",
-  };
-
   // Auto-scroll to active item
   useEffect(() => {
     const activeItem = itemsRef.current[currentFilter];
@@ -32,7 +26,7 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
   }, [currentFilter]);
 
   return (
-    <nav className="sticky top-0 w-full bg-[var(--background)] z-40 overflow-x-auto scrollbar-hide pt-2 pb-2">
+    <nav className="w-full z-40 overflow-x-auto scrollbar-hide py-1 bg-transparent transition-all duration-300">
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
@@ -43,8 +37,8 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
         }
       `}</style>
 
-      {/* Compact spacing: gap-2 instead of gap-4, h-[34px] instead of h-[40px] */}
-      <div className="px-3 flex items-center h-[34px] gap-2">
+      {/* Compact spacing: gap-2, reduced height to h-[26px] */}
+      <div className="px-3 flex items-center h-[26px] gap-2">
         {CATEGORIES.map((cat) => {
           const isActive = currentFilter === cat.key;
           const dotColor = CATEGORY_DOT_COLORS[cat.key] || "bg-gray-400";
@@ -56,7 +50,6 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
                 itemsRef.current[cat.key] = el;
               }}
               onClick={() => onFilterChange(cat.key)}
-              style={fontStyleObj}
               className={`
                 relative h-full flex items-center gap-1.5 text-[13px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 px-2.5 rounded-full
                 ${isActive

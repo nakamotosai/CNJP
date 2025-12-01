@@ -63,24 +63,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     root.classList.add(effectiveTheme);
 
-    // --- 处理字体 (关键修复：移动端回退支持) ---
-    let fontFamily = "";
-    if (settings.fontStyle === "serif") {
-      // 宋体模式：优先 Noto Serif，回退到系统衬线字体
-      if (settings.lang === "sc") {
-        fontFamily = "var(--font-noto-serif-sc), var(--font-noto-serif-tc), Georgia, 'Times New Roman', STSong, 'Songti SC', serif";
-      } else {
-        fontFamily = "var(--font-noto-serif-tc), var(--font-noto-serif-sc), Georgia, 'Times New Roman', STSong, 'Songti TC', serif";
-      }
-    } else {
-      // 黑体模式：优先 Noto Sans，回退到系统无衬线字体
-      if (settings.lang === "sc") {
-        fontFamily = "var(--font-noto-sans-sc), var(--font-noto-sans-tc), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Heiti SC', sans-serif";
-      } else {
-        fontFamily = "var(--font-noto-sans-tc), var(--font-noto-sans-sc), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang TC', 'Heiti TC', sans-serif";
-      }
-    }
-    body.style.fontFamily = fontFamily;
+    // --- 处理字体 (通过 CSS 属性控制) ---
+    body.setAttribute("data-font-style", settings.fontStyle);
+    body.setAttribute("data-lang", settings.lang);
 
     // --- 处理字号 (无极调节) ---
     root.style.fontSize = `${settings.fontSize}px`;

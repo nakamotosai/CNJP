@@ -40,12 +40,6 @@ export default function Header({
     onOpenAbout();
   };
 
-  const fontStyleObj = {
-    fontFamily: settings.fontStyle === "serif"
-      ? "var(--font-noto-serif-tc), var(--font-noto-serif-sc), serif"
-      : "var(--font-noto-sans-tc), var(--font-noto-sans-sc), sans-serif",
-  };
-
   // 立体文字阴影：一层深色投影 + 一层浅色环境光，营造厚度感
   const text3DStyle = {
     textShadow: "0 2px 1px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)"
@@ -60,11 +54,11 @@ export default function Header({
   const englishText = "CHINA NEWS FROM JAPAN";
 
   return (
-    <header className="w-full bg-white dark:bg-[#121212] z-50 shadow-sm transition-colors duration-300">
-      <div className="max-w-[600px] mx-auto px-4 pt-3 pb-2">
+    <header className="sticky top-0 w-full bg-white/80 dark:bg-[#202020]/80 backdrop-blur-md z-50 shadow-md transition-all duration-300 border-b border-gray-200/50 dark:border-white/5">
+      <div className="max-w-[600px] mx-auto px-4 pt-3 pb-0">
         {/* Top Row: Logo & Icons */}
         <div className="flex items-center justify-between mb-3">
-          
+
           {/* --- Logo Area --- */}
           <button
             onClick={onRefresh}
@@ -72,7 +66,7 @@ export default function Header({
             title={settings.lang === "sc" ? "点击刷新" : "點擊刷新"}
           >
             {/* Logo Image */}
-            <div 
+            <div
               className="relative w-10 h-10 rounded-lg overflow-hidden transition-all"
               style={icon3DStyle} // 应用立体阴影
             >
@@ -89,7 +83,6 @@ export default function Header({
               {/* Chinese Title */}
               <h1
                 style={{
-                  ...fontStyleObj,
                   ...text3DStyle // 应用文字立体阴影
                 }}
                 className="text-lg font-bold tracking-wide text-[var(--text-main)] leading-none whitespace-nowrap"
@@ -99,7 +92,7 @@ export default function Header({
 
               {/* English Subtitle - Flexbox Split Character Mode */}
               {/* 核心修改：使用 flex justify-between 让每一个字符（包括空格）均匀分布 */}
-              <div 
+              <div
                 className="w-full flex justify-between text-[0.42em] text-gray-400 font-sans mt-[3px] select-none font-medium"
                 style={{ textShadow: "0 1px 1px rgba(0,0,0,0.1)" }}
               >

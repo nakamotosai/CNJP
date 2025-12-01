@@ -26,12 +26,6 @@ export default function NewsList({
 }: NewsListProps) {
   const { settings } = useTheme();
 
-  const fontStyleObj = {
-    fontFamily: settings.fontStyle === "serif"
-      ? "var(--font-noto-serif-tc), var(--font-noto-serif-sc), serif"
-      : "var(--font-noto-sans-tc), var(--font-noto-sans-sc), sans-serif",
-  };
-
   // Loading state - Show skeleton screens
   if (isLoading) {
     return (
@@ -50,7 +44,6 @@ export default function NewsList({
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
           <p
-            style={fontStyleObj}
             className="text-base text-gray-500 dark:text-gray-400"
           >
             {settings.lang === "sc" ? "正在连接东京塔" : "正在連接東京塔"}

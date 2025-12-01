@@ -238,12 +238,6 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const fontStyle = {
-    fontFamily: settings.fontStyle === "serif"
-      ? "var(--font-noto-serif-tc), var(--font-noto-serif-sc), serif"
-      : "var(--font-noto-sans-tc), var(--font-noto-sans-sc), sans-serif",
-  };
-
   return (
     <div
       className="min-h-screen bg-[var(--background)]"
@@ -303,7 +297,6 @@ export default function Home() {
             type="button"
             onClick={() => setShowArchiveDrawer(!showArchiveDrawer)}
             style={{
-              ...fontStyle,
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}
             className="py-1.5 px-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2c] text-[12px] text-[var(--text-main)] hover:border-[var(--primary)] hover:shadow-md transition-all whitespace-nowrap"
@@ -311,6 +304,9 @@ export default function Home() {
             {settings.lang === "sc" ? "历史归档" : "歷史歸檔"}
           </button>
         </div>
+
+        {/* CategoryNav (Zone C) - Now inside Header for unified sticky behavior */}
+        <CategoryNav currentFilter={currentFilter} onFilterChange={handleFilterChange} />
       </Header>
 
       {/* Archive Drawer - Animated Wrapper */}
@@ -338,12 +334,9 @@ export default function Home() {
 
       {/* 
           2. Content Module (Zone C + D)
-          Contains CategoryNav (Sticky) and NewsList
+          Contains NewsList (CategoryNav moved to Header)
       */}
-      <main className="max-w-[600px] mx-auto pb-10 relative z-30">
-
-        {/* CategoryNav (Zone C) */}
-        <CategoryNav currentFilter={currentFilter} onFilterChange={handleFilterChange} />
+      <main className="max-w-[600px] mx-auto pb-10 relative z-30 mt-4">
 
         {/* News List (Zone D) */}
         <NewsList
@@ -360,7 +353,6 @@ export default function Home() {
         {!isLoading && searchQuery && filteredItems.length === 0 && (
           <div className="px-4 py-16 text-center">
             <p
-              style={fontStyle}
               className="text-base text-gray-500 dark:text-gray-400"
             >
               {settings.lang === "sc" ? "本次没搜到结果，换个关键词试试吧。" : "本次沒搜到結果，換個關鍵詞試試吧。"}

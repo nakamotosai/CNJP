@@ -42,12 +42,6 @@ export default function NewsCard({
   const { settings } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fontStyleObj = {
-    fontFamily: settings.fontStyle === "serif"
-      ? "var(--font-noto-serif-tc), var(--font-noto-serif-sc), serif"
-      : "var(--font-noto-sans-tc), var(--font-noto-sans-sc), sans-serif",
-  };
-
   let timeDisplay = item.time_str;
   if (item.timestamp && !timeDisplay) {
     try {
@@ -85,7 +79,7 @@ export default function NewsCard({
     <>
       <div
         onClick={() => setIsModalOpen(true)}
-        className="w-full bg-white dark:bg-[#1e1e1e] p-4 rounded-xl shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer border border-transparent group relative overflow-hidden"
+        className="w-full bg-white dark:bg-[#2c2c2c] p-4 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-transparent group relative overflow-hidden"
       >
         {/* Top Row: Category | Source • Time ... Fav */}
         <div className="flex items-center justify-between mb-2">
@@ -144,7 +138,6 @@ export default function NewsCard({
         {/* Title - with subtle text shadow */}
         <h3
           style={{
-            ...fontStyleObj,
             textShadow: '0 1px 2px rgba(0,0,0,0.08)'
           }}
           className="text-[16px] font-bold leading-[1.5] text-[var(--text-main)] line-clamp-2 group-hover:text-[var(--primary)] transition-colors"
@@ -161,7 +154,6 @@ export default function NewsCard({
         <div className="space-y-4">
           {/* 1. Chinese Title - Smaller (text-lg) */}
           <h2
-            style={fontStyleObj}
             className="text-lg font-bold leading-snug text-[var(--text-main)]"
           >
             {displayTitle}
@@ -187,8 +179,8 @@ export default function NewsCard({
             <button
               onClick={(e) => onToggleFav && onToggleFav(e, item)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${isFav
-                  ? "bg-red-50 dark:bg-red-900/20 text-red-500"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                ? "bg-red-50 dark:bg-red-900/20 text-red-500"
+                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }`}
             >
               <Heart className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
