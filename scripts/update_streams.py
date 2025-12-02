@@ -31,14 +31,15 @@ def get_live_stream_id(api_key, channel_id):
     try:
         youtube = build("youtube", "v3", developerKey=api_key)
 
-        # 1. 获取该频道下所有的直播（提高到 10 个结果，确保不遗漏）
+        # 1. 获取该频道下所有的直播（YouTube API 最大值是 50）
+        # ANN 新闻台有 20+ 个直播源同时在线，必须搜索足够多
         print(f"🔍 Searching for live streams on channel: {channel_id}...")
         request = youtube.search().list(
             part="id,snippet",
             channelId=channel_id,
             eventType="live",
             type="video",
-            maxResults=10  # 提高到 10 个
+            maxResults=50  # YouTube API 允许的最大值
         )
         response = request.execute()
         items = response.get("items", [])
