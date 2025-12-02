@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "./ThemeContext";
+import Link from "next/link";
 import { Settings, Info, Heart } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -101,6 +102,18 @@ export default function Header({
                     {char === ' ' ? '\u00A0' : char}
                   </span>
                 ))}
+
+              </div>
+
+              {/* Navigation Links */}
+              <div className="flex gap-3 mt-2 text-xs font-bold text-gray-500">
+                <Link href="/" className="hover:text-[var(--text-main)] transition-colors">
+                  {settings.lang === "sc" ? "中国新闻" : "中國新聞"}
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/live" className="hover:text-[var(--text-main)] transition-colors">
+                  {settings.lang === "sc" ? "实时直播（测试中）" : "實時直播（測試中）"}
+                </Link>
               </div>
             </div>
           </button>
