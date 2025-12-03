@@ -31,6 +31,10 @@ export default function Home() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'news' | 'live' | 'coming'>('news');
 
+  // Live View Persistence State
+  const [isLiveMounted, setIsLiveMounted] = useState(false);
+  const liveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // UI State
   const [currentFilter, setCurrentFilter] = useState("all");
   const [searchInput, setSearchInput] = useState("");
@@ -230,6 +234,29 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Live View Keep Alive Logic
+  useEffect(() => {
+    if (activeTab === 'live') {
+      setIsLiveMounted(true);
+      if (liveTimeoutRef.current) {
+        clearTimeout(liveTimeoutRef.current);
+        liveTimeoutRef.current = null;
+      }
+    } else {
+      // If switching away from live, set a timeout to unmount it
+      if (isLiveMounted && !liveTimeoutRef.current) {
+        liveTimeoutRef.current = setTimeout(() => {
+          setIsLiveMounted(false);
+          liveTimeoutRef.current = null;
+        }, 5 * 60 * 1000); // 5 minutes
+      }
+    }
+    return () => {
+      // Cleanup on unmount (though this component likely won't unmount)
+    };
+  }, [activeTab, isLiveMounted]);
+
+
   const handleTouchStart = (e: React.TouchEvent) => {
     setPullStartX(e.touches[0].clientX);
     if (window.scrollY === 0) {
@@ -420,7 +447,7 @@ export default function Home() {
               <CategoryNav currentFilter={currentFilter} onFilterChange={handleFilterChange} />
 
               {/* Search & Archive Bar - 固定高度和间距 */}
-              <div className="px-4 pb-3 relative z-30">
+              <div className="px-4 pb-3 relative z-45">
                 <div className="flex justify-between items-center gap-3 h-12">
                   <div
                     ref={searchContainerRef}
@@ -569,19 +596,20 @@ export default function Home() {
               )}
             </motion.div>
           )}
+        </AnimatePresence>
 
-          {activeTab === 'live' && (
+        {/* Live View - Keep Alive Logic */}
+        <div style={{ display: activeTab === 'live' ? 'block' : 'none' }}>
+          {isLiveMounted && (
             <motion.div
-              key="live"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
             >
               <LiveView />
             </motion.div>
           )}
-        </AnimatePresence>
+        </div>
       </main>
 
       <BackToTop />

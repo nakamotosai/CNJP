@@ -79,7 +79,7 @@ export default function Header({
           <div className="relative max-w-[600px] mx-auto px-4 py-1.5 flex items-center justify-center gap-2">
             请收藏本站全新域名
             <span className="font-bold mx-1">cn.saaaai.com</span>
-            
+
             <button
               onClick={closeBanner}
               className="absolute right-4 p-1 rounded-full hover:bg-white/20 active:scale-90 transition-all"
@@ -153,8 +153,8 @@ export default function Header({
                 <Info className="w-5 h-5 text-[var(--text-main)]" />
                 {showBadge && (
                   <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 pointer-events-none">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500 text-[8px] text-white justify-center items-center font-bold">!</span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 text-[8px] text-white justify-center items-center font-bold">!</span>
                   </span>
                 )}
               </button>
