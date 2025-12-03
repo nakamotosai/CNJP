@@ -313,6 +313,24 @@ def update_news():
             
         print(f"[{date_key}] 存档更新: 总{len(final_list)}条")
 
+    # === 生成 archive/index.json ===
+    print("正在生成归档索引...")
+    archive_index = {}
+    all_files = os.listdir(archive_dir)
+    for filename in all_files:
+        if filename.endswith(".json") and filename != "index.json":
+            date_str = filename.replace(".json", "")
+            try:
+                with open(os.path.join(archive_dir, filename), 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    archive_index[date_str] = len(data)
+            except Exception as e:
+                print(f"读取 {filename} 失败: {e}")
+    
+    with open(os.path.join(archive_dir, 'index.json'), 'w', encoding='utf-8') as f:
+        json.dump(archive_index, f, ensure_ascii=False, indent=2)
+    print("归档索引生成完毕。")
+
     # data.json 更新
     homepage_news = []
     seen_titles = set()

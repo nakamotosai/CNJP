@@ -3,7 +3,7 @@
   "streams": [
     {
       "id": "shibuya",
-      "displayName": "涩谷街头直播",
+      "displayName": "涩谷交叉點24小時直播",
       "channelName": "ANN News",
       "isLive": true,
       "videoId": "tujkoXI8rWM",
@@ -12,7 +12,7 @@
     },
     {
       "id": "tokyo_bay",
-      "displayName": "东京湾24小时直播",
+      "displayName": "東京灣24小時直播",
       "channelName": "東京風景",
       "isLive": true,
       "videoId": "_k-5U7IeK8g",
@@ -21,7 +21,7 @@
     },
     {
       "id": "asakusa",
-      "displayName": "浅草寺24小时直播",
+      "displayName": "浅草寺24小時直播",
       "channelName": "浅草中屋チャンネル",
       "isLive": true,
       "videoId": "LHPKP8PP6QY",
@@ -30,7 +30,7 @@
     },
     {
       "id": "shinjuku",
-      "displayName": "新宿歌舞伎町24小时直播",
+      "displayName": "新宿歌舞伎町24小時直播",
       "channelName": "テイケイ公式チャンネル",
       "isLive": true,
       "videoId": "ErHJBXTmm2Q",
@@ -39,7 +39,7 @@
     },
     {
       "id": "fujisan",
-      "displayName": "富士山忍野八海24小时直播",
+      "displayName": "富士山忍野八海24小時直播",
       "channelName": "FujiyamaTV - FujigokoTV",
       "isLive": true,
       "videoId": "sm3xXTfDtGE",

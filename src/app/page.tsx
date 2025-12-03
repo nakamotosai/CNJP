@@ -11,9 +11,11 @@ import FavModal from "@/components/modals/FavModal";
 import ArchiveModal from "@/components/modals/ArchiveModal";
 import ArchiveDrawer from "@/components/ArchiveDrawer";
 import BackToTop from "@/components/BackToTop";
+import LiveView from "@/components/LiveView";
 import { Search, Loader2, X, Flame } from "lucide-react";
 import { useTheme } from "@/components/ThemeContext";
 import { CATEGORY_MAP, CATEGORIES } from "@/lib/constants";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const { settings } = useTheme();
@@ -24,8 +26,10 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState("");
   const [favorites, setFavorites] = useState<NewsItem[]>([]);
   const [archiveData, setArchiveData] = useState<Record<string, NewsItem[]>>({});
+  const [archiveIndex, setArchiveIndex] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'news' | 'live' | 'coming'>('news');
 
   // UI State
   const [currentFilter, setCurrentFilter] = useState("all");
@@ -63,31 +67,31 @@ export default function Home() {
 
     const wordCounts: Record<string, number> = {};
     const hasSegmenter = typeof Intl !== 'undefined' && (Intl as any).Segmenter;
-    
+
     if (hasSegmenter) {
-        const segmenter = new (Intl as any).Segmenter('zh-CN', { granularity: 'word' });
-        rawNewsData.forEach(item => {
-          if (!item.title) return;
-          const cleanTitle = item.title.trim();
-          const segments = segmenter.segment(cleanTitle);
-          for (const { segment, isWordLike } of segments) {
-            if (!isWordLike) continue;
-            const word = segment.trim();
-            if (
-              word.length < 2 ||
-              STOP_WORDS.has(word) ||
-              SOURCE_BLACKLIST.has(word) ||
-              /^\d+$/.test(word) ||
-              /^\d+月$/.test(word) ||
-              /^\d{4}$/.test(word) ||
-              /^[a-zA-Z]+$/.test(word)
-            ) {
-              continue;
-            }
-            const weight = word.length >= 3 ? 1.5 : 1;
-            wordCounts[word] = (wordCounts[word] || 0) + weight;
+      const segmenter = new (Intl as any).Segmenter('zh-CN', { granularity: 'word' });
+      rawNewsData.forEach(item => {
+        if (!item.title) return;
+        const cleanTitle = item.title.trim();
+        const segments = segmenter.segment(cleanTitle);
+        for (const { segment, isWordLike } of segments) {
+          if (!isWordLike) continue;
+          const word = segment.trim();
+          if (
+            word.length < 2 ||
+            STOP_WORDS.has(word) ||
+            SOURCE_BLACKLIST.has(word) ||
+            /^\d+$/.test(word) ||
+            /^\d+月$/.test(word) ||
+            /^\d{4}$/.test(word) ||
+            /^[a-zA-Z]+$/.test(word)
+          ) {
+            continue;
           }
-        });
+          const weight = word.length >= 3 ? 1.5 : 1;
+          wordCounts[word] = (wordCounts[word] || 0) + weight;
+        }
+      });
     }
 
     return Object.entries(wordCounts)
@@ -146,8 +150,10 @@ export default function Home() {
   const [archiveDate, setArchiveDate] = useState("");
 
   const [pullStartY, setPullStartY] = useState(0);
+  const [pullStartX, setPullStartX] = useState(0);
   const [pullCurrentY, setPullCurrentY] = useState(0);
   const PULL_THRESHOLD = 80;
+  const SWIPE_THRESHOLD = 50;
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -167,6 +173,7 @@ export default function Home() {
   const fetchData = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
     try {
+      // Fetch latest news
       const r = await fetch("/data.json?t=" + Date.now());
       const data = await r.json();
       if (data && data.news) {
@@ -175,6 +182,18 @@ export default function Home() {
       } else if (Array.isArray(data)) {
         setRawNewsData(data);
       }
+
+      // Fetch archive index
+      try {
+        const rIndex = await fetch("/archive/index.json?t=" + Date.now());
+        if (rIndex.ok) {
+          const indexData = await rIndex.json();
+          setArchiveIndex(indexData);
+        }
+      } catch (e) {
+        console.error("Failed to fetch archive index", e);
+      }
+
     } catch (e) {
       console.error("Fetch error", e);
     } finally {
@@ -212,12 +231,14 @@ export default function Home() {
   }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    setPullStartX(e.touches[0].clientX);
     if (window.scrollY === 0) {
       setPullStartY(e.touches[0].clientY);
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    // Pull to refresh logic
     if (pullStartY > 0 && window.scrollY === 0) {
       const currentY = e.touches[0].clientY;
       if (currentY > pullStartY) {
@@ -226,13 +247,31 @@ export default function Home() {
     }
   };
 
-  const handleTouchEnd = async () => {
+  const handleTouchEnd = async (e: React.TouchEvent) => {
+    const endX = e.changedTouches[0].clientX;
+    const diffX = endX - pullStartX;
+
+    // Horizontal Swipe Logic
+    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(pullCurrentY) < 30) {
+      if (diffX > 0) {
+        // Swipe Right
+        if (activeTab === 'live') setActiveTab('news');
+        else if (activeTab === 'news') setActiveTab('live');
+      } else {
+        // Swipe Left
+        if (activeTab === 'news') setActiveTab('live');
+        else if (activeTab === 'live') setActiveTab('news');
+      }
+    }
+
+    // Pull to Refresh Logic
     if (pullCurrentY > PULL_THRESHOLD) {
       setIsRefreshing(true);
       await fetchData(false);
       setIsRefreshing(false);
     }
     setPullStartY(0);
+    setPullStartX(0);
     setPullCurrentY(0);
   };
 
@@ -283,14 +322,8 @@ export default function Home() {
   const displayItems = filteredItems.slice(0, visibleCount);
 
   const filteredArchiveItems = useMemo(() => {
-    const items = archiveData[archiveDate] || [];
-    if (currentFilter === "all") return items;
-    return items.filter((item) => {
-      const itemCategory = item.category || "其他";
-      const itemCategoryKey = CATEGORY_MAP[itemCategory] || "other";
-      return itemCategoryKey === currentFilter;
-    });
-  }, [archiveData, archiveDate, currentFilter]);
+    return archiveData[archiveDate] || [];
+  }, [archiveData, archiveDate]);
 
   const handleToggleFav = (e: React.MouseEvent, item: NewsItem) => {
     e.stopPropagation();
@@ -318,10 +351,25 @@ export default function Home() {
     }
   };
 
-  const handleShowArchive = (dateStr: string) => {
+  const handleShowArchive = async (dateStr: string) => {
     setArchiveDate(dateStr);
     setShowArchive(true);
     setShowArchiveDrawer(false);
+
+    if (!archiveData[dateStr]) {
+      try {
+        const r = await fetch(`/archive/${dateStr}.json`);
+        if (r.ok) {
+          const items = await r.json();
+          setArchiveData(prev => ({
+            ...prev,
+            [dateStr]: items
+          }));
+        }
+      } catch (e) {
+        console.error(`Failed to load archive for ${dateStr}`, e);
+      }
+    }
   };
 
   const handleFilterChange = (cat: string) => {
@@ -356,202 +404,198 @@ export default function Home() {
         onOpenSettings={() => setShowSettings(true)}
         onRefresh={handleRefresh}
         favCount={favorites.length}
-      >
-        <div className="flex justify-between items-center gap-3 relative z-50">
-          <div
-            ref={searchContainerRef}
-            className="flex-1 relative"
-          >
-            <div className="flex items-center gap-2 border-b border-gray-300 dark:border-gray-700 focus-within:border-gray-800 dark:focus-within:border-gray-200 transition-colors duration-300 pb-1">
-              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                value={searchInput}
-                placeholder={settings.lang === "sc" ? "搜索..." : "搜尋..."}
-                className="flex-1 bg-transparent border-none focus:ring-0 placeholder-gray-400 text-gray-700 dark:text-gray-200 text-sm p-0 outline-none"
-                onChange={(e) => handleSearchInput(e.target.value)}
-                onFocus={() => setShowSuggestions(true)}
-              />
-              {searchInput && (
-                <button
-                  onClick={handleClearSearch}
-                  title="Clear search"
-                  className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 hover:scale-110 active:scale-95 transition-all flex-shrink-0"
-                >
-                  <X className="w-3 h-3 text-gray-500 dark:text-gray-300" strokeWidth={3} />
-                </button>
-              )}
-            </div>
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
-            {showSuggestions && (trendingNow.length > 0 || hotKeywords.length > 0 || hotSources.length > 0) && !searchInput && (
-              <div className="absolute top-full left-0 w-full mt-2 bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 dark:border-white/5 p-3 animate-in slide-in-from-top-2 fade-in duration-200 z-50 max-w-xl">
-                {trendingNow.length > 0 && (
-                  <div className="mb-2.5">
-                    <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 flex items-center gap-1">
-                      {settings.lang === "sc" ? "当下最热" : "當下最熱"}
-                      <Flame className="w-3 h-3 text-red-500 fill-red-500" />
-                    </div>
-                    <div className="leading-relaxed text-sm">
-                      {trendingNow.map((keyword, index) => (
-                        <span key={keyword}>
-                          <button
-                            onClick={() => handleSuggestionClick(keyword)}
-                            className="text-gray-800 dark:text-gray-200 text-[13px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors font-medium"
-                          >
-                            {settings.lang === "sc" ? keyword : (TC_MAP[keyword] || keyword)}
-                          </button>
-                          {index < trendingNow.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-2">·</span>}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {trendingNow.length > 0 && hotKeywords.length > 0 && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 my-2.5"></div>
-                )}
-
-                {hotKeywords.length > 0 && (
-                  <div className="mb-2.5">
-                    <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">
-                      {settings.lang === "sc" ? "热门话题" : "熱門話題"}
-                    </div>
-                    <div className="leading-relaxed">
-                      {hotKeywords.map((keyword, index) => (
-                        <span key={keyword}>
-                          <button
-                            onClick={() => handleSuggestionClick(keyword)}
-                            className="text-gray-700 dark:text-gray-300 text-[12px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors"
-                          >
-                            {keyword}
-                          </button>
-                          {index < hotKeywords.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {hotKeywords.length > 0 && hotSources.length > 0 && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 my-2.5"></div>
-                )}
-
-                {hotSources.length > 0 && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">
-                      {settings.lang === "sc" ? "热门来源" : "熱門來源"}
-                    </div>
-                    <div className="leading-relaxed">
-                      {hotSources.map((source, index) => (
-                        <span key={source}>
-                          <button
-                            onClick={() => handleSuggestionClick(source)}
-                            className="text-gray-600 dark:text-gray-400 text-[11px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors"
-                          >
-                            {source}
-                          </button>
-                          {index < hotSources.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowArchiveDrawer(!showArchiveDrawer)}
-            style={{
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-            }}
-            className="py-1.5 px-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2c] text-[12px] text-[var(--text-main)] hover:border-[var(--primary)] hover:shadow-md transition-all whitespace-nowrap"
-          >
-            {settings.lang === "sc" ? "历史归档" : "歷史歸檔"}
-          </button>
-        </div>
-
-        <CategoryNav currentFilter={currentFilter} onFilterChange={handleFilterChange} />
-      </Header>
-
-      {/* --- Archive Drawer (Fixed, Centered, Rounded) --- */}
-      {/* 
-          1. left-1/2 -translate-x-1/2: 强制居中
-          2. w-full max-w-[600px]: 限制最大宽度与新闻卡片一致
-          3. rounded-b-2xl: 底部大圆角
-          4. shadow-xl: 增加悬浮感
-          5. border-x: 增加两侧边框，让它看起来像独立的面板
-      */}
-      <div
-        className={`
-          fixed left-1/2 -translate-x-1/2 w-full max-w-[600px] z-40 
-          bg-white dark:bg-[#121212] 
-          border-b border-x border-gray-100 dark:border-gray-800 
-          shadow-2xl rounded-b-2xl
-          transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
-          ${showArchiveDrawer 
-            ? "opacity-100 translate-y-0 visible pointer-events-auto" 
-            : "opacity-0 -translate-y-2 invisible pointer-events-none"
-          }
-        `}
-        style={{ top: '112px' }}
-      >
-        {/* 内部容器保持不动，只做内容展示 */}
-        <div className="py-2"> 
-            <ArchiveDrawer
-              archiveData={archiveData}
-              onSelectDate={handleShowArchive}
-              isOpen={showArchiveDrawer}
-            />
-        </div>
-      </div>
-
-      {/* --- Backdrop (Fixed Full Screen) --- */}
-      {/* 
-          1. fixed inset-0: 覆盖全屏
-          2. backdrop-blur-sm: 确保虚化效果
-          3. bg-black/20: 稍微加深背景色，突出抽屉
-          4. z-30: 在 Drawer (z-40) 之下，在 Header (z-50) 之下? 不，Header 是 z-50，Drawer是 z-40，Backdrop 是 z-30。
-             注意：如果 Header 是透明的，Backdrop 会遮住 Header。
-             为了不遮住 Header，我们要设置 top: 112px
-      */}
+      {/* --- Backdrop --- */}
       <div
         className={`
           fixed inset-0 z-30 bg-black/20 backdrop-blur-[2px] transition-all duration-500
-          ${showArchiveDrawer 
-            ? "opacity-100 visible pointer-events-auto" 
+          ${showArchiveDrawer
+            ? "opacity-100 visible pointer-events-auto"
             : "opacity-0 invisible pointer-events-none"
           }
         `}
-        style={{ top: '112px' }}
         onClick={() => setShowArchiveDrawer(false)}
       />
 
-      <main className="max-w-[600px] mx-auto pb-10 relative z-20 mt-4">
-        <NewsList
-          news={displayItems}
-          isLoading={isLoading}
-          onToggleFav={handleToggleFav}
-          favorites={favorites}
-          onShowArchive={handleShowArchive}
-          onFilterCategory={handleFilterChange}
-          archiveData={archiveData}
-        />
+      <main className="max-w-[600px] mx-auto pb-10 relative">
+        <AnimatePresence mode="wait">
+          {activeTab === 'news' && (
+            <motion.div
+              key="news"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* CategoryNav - 吸顶 */}
+              <CategoryNav currentFilter={currentFilter} onFilterChange={handleFilterChange} />
 
-        {!isLoading && searchQuery && filteredItems.length === 0 && (
-          <div className="px-4 py-16 text-center">
-            <p className="text-base text-gray-500 dark:text-gray-400">
-              {settings.lang === "sc" ? "本次没搜到结果，换个关键词试试吧。" : "本次沒搜到結果，換個關鍵詞試試吧。"}
-            </p>
-          </div>
-        )}
+              {/* Search & Archive Bar - 固定高度和间距 */}
+              <div className="px-4 pb-3 relative z-30">
+                <div className="flex justify-between items-center gap-3 h-12">
+                  <div
+                    ref={searchContainerRef}
+                    className="flex-1 relative h-full"
+                  >
+                    <div className="flex items-center gap-2 h-full bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-full px-4 shadow-md dark:shadow-none transition-all focus-within:ring-2 focus-within:ring-[var(--primary)] focus-within:border-transparent">
+                      <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <input
+                        type="text"
+                        value={searchInput}
+                        placeholder={settings.lang === "sc" ? "搜索..." : "搜尋..."}
+                        className="flex-1 bg-transparent border-none focus:ring-0 placeholder-gray-400 text-gray-700 dark:text-gray-200 text-sm p-0 outline-none"
+                        onChange={(e) => handleSearchInput(e.target.value)}
+                        onFocus={() => setShowSuggestions(true)}
+                      />
+                      {searchInput && (
+                        <button
+                          onClick={handleClearSearch}
+                          title="Clear search"
+                          className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 hover:scale-110 active:scale-95 transition-all flex-shrink-0"
+                        >
+                          <X className="w-3 h-3 text-gray-500 dark:text-gray-300" strokeWidth={3} />
+                        </button>
+                      )}
+                    </div>
 
-        {!isLoading && visibleCount < filteredItems.length && (
-          <div className="text-center py-8 text-[var(--text-sub)] text-sm">
-            Loading...
-          </div>
-        )}
+                    {showSuggestions && (trendingNow.length > 0 || hotKeywords.length > 0 || hotSources.length > 0) && !searchInput && (
+                      <div className="absolute top-full left-0 w-full mt-2 bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 dark:border-white/5 p-3 animate-in slide-in-from-top-2 fade-in duration-200 z-50 max-w-xl">
+                        {trendingNow.length > 0 && (
+                          <div className="mb-2.5">
+                            <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 flex items-center gap-1">
+                              {settings.lang === "sc" ? "当下最热" : "當下最熱"}
+                              <Flame className="w-3 h-3 text-red-500 fill-red-500" />
+                            </div>
+                            <div className="leading-relaxed text-sm">
+                              {trendingNow.map((keyword, index) => (
+                                <span key={keyword}>
+                                  <button
+                                    onClick={() => handleSuggestionClick(keyword)}
+                                    className="text-gray-800 dark:text-gray-200 text-[13px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors font-medium"
+                                  >
+                                    {settings.lang === "sc" ? keyword : (TC_MAP[keyword] || keyword)}
+                                  </button>
+                                  {index < trendingNow.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-2">·</span>}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {trendingNow.length > 0 && hotKeywords.length > 0 && (
+                          <div className="mb-2.5">
+                            <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">
+                              {settings.lang === "sc" ? "热门话题" : "熱門話題"}
+                            </div>
+                            <div className="leading-relaxed">
+                              {hotKeywords.map((keyword, index) => (
+                                <span key={keyword}>
+                                  <button
+                                    onClick={() => handleSuggestionClick(keyword)}
+                                    className="text-gray-700 dark:text-gray-300 text-[12px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors"
+                                  >
+                                    {keyword}
+                                  </button>
+                                  {index < hotKeywords.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {hotKeywords.length > 0 && hotSources.length > 0 && (
+                          <div className="border-t border-gray-200 dark:border-gray-700 my-2.5"></div>
+                        )}
+
+                        {hotSources.length > 0 && (
+                          <div>
+                            <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">
+                              {settings.lang === "sc" ? "热门来源" : "熱門來源"}
+                            </div>
+                            <div className="leading-relaxed">
+                              {hotSources.map((source, index) => (
+                                <span key={source}>
+                                  <button
+                                    onClick={() => handleSuggestionClick(source)}
+                                    className="text-gray-600 dark:text-gray-400 text-[11px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors"
+                                  >
+                                    {source}
+                                  </button>
+                                  {index < hotSources.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowArchiveDrawer(!showArchiveDrawer)}
+                    className="h-full px-5 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] text-sm font-medium text-[var(--text-main)] hover:border-[var(--primary)] hover:text-[var(--primary)] shadow-md dark:shadow-none transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    {settings.lang === "sc" ? "历史归档" : "歷史歸檔"}
+                  </button>
+                </div>
+
+                {/* Archive Drawer Overlay */}
+                <AnimatePresence>
+                  {showArchiveDrawer && (
+                    <div className="absolute top-full left-0 w-full z-50 px-4 mt-2">
+                      <ArchiveDrawer
+                        archiveData={archiveData}
+                        archiveIndex={archiveIndex}
+                        onSelectDate={handleShowArchive}
+                        isOpen={showArchiveDrawer}
+                      />
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <NewsList
+                news={displayItems}
+                isLoading={isLoading}
+                onToggleFav={handleToggleFav}
+                favorites={favorites}
+                onShowArchive={handleShowArchive}
+                onFilterCategory={handleFilterChange}
+                archiveData={archiveData}
+              />
+
+              {!isLoading && searchQuery && filteredItems.length === 0 && (
+                <div className="px-4 py-16 text-center">
+                  <p className="text-base text-gray-500 dark:text-gray-400">
+                    {settings.lang === "sc" ? "本次没搜到结果，换个关键词试试吧。" : "本次沒搜到結果，換個關鍵詞試試吧。"}
+                  </p>
+                </div>
+              )}
+
+              {!isLoading && visibleCount < filteredItems.length && (
+                <div className="text-center py-8 text-[var(--text-sub)] text-sm">
+                  Loading...
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'live' && (
+            <motion.div
+              key="live"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LiveView />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       <BackToTop />
@@ -579,9 +623,10 @@ export default function Home() {
         currentFilter={currentFilter}
       />
 
+      {/* 隐形遮罩层:用于点击空白处关闭弹窗 */}
       {showSuggestions && (trendingNow.length > 0 || hotKeywords.length > 0 || hotSources.length > 0) && !searchInput && (
         <div
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-40 bg-transparent"
           onClick={() => setShowSuggestions(false)}
         />
       )}

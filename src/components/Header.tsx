@@ -1,10 +1,10 @@
 "use client";
 
 import { useTheme } from "./ThemeContext";
-import Link from "next/link";
-import { Settings, Info, Heart } from "lucide-react";
+import { Settings, Info, Heart, Tv, Sparkles, Newspaper } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 interface HeaderProps {
   onOpenFav: () => void;
@@ -12,7 +12,8 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onRefresh?: () => void;
   favCount: number;
-  children?: React.ReactNode;
+  activeTab: 'news' | 'live' | 'coming';
+  onTabChange: (tab: 'news' | 'live' | 'coming') => void;
 }
 
 export default function Header({
@@ -21,7 +22,8 @@ export default function Header({
   onOpenSettings,
   onRefresh,
   favCount,
-  children
+  activeTab,
+  onTabChange
 }: HeaderProps) {
   const { settings } = useTheme();
   const [showBadge, setShowBadge] = useState(false);
@@ -41,24 +43,22 @@ export default function Header({
     onOpenAbout();
   };
 
-  // 立体文字阴影：一层深色投影 + 一层浅色环境光，营造厚度感
   const text3DStyle = {
     textShadow: "0 2px 1px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)"
   };
 
-  // 立体图标阴影：更深的投影
   const icon3DStyle = {
     filter: "drop-shadow(0 4px 3px rgba(0,0,0,0.15)) drop-shadow(0 2px 1px rgba(0,0,0,0.1))"
   };
 
-  // 英文副标题拆分逻辑
   const englishText = "CHINA NEWS FROM JAPAN";
 
   return (
-    <header className="sticky top-0 w-full bg-white/80 dark:bg-[#121212]/80 backdrop-blur-md z-50 shadow-md dark:shadow-none transition-all duration-300 border-b border-gray-200/50 dark:border-white/5">
-      <div className="max-w-[600px] mx-auto px-4 pt-3 pb-0">
+    <header className="sticky top-0 w-full bg-white/95 dark:bg-[#121212]/95 backdrop-blur-md z-50 shadow-sm dark:shadow-none transition-all duration-300 border-b border-gray-200/50 dark:border-white/5">
+      <div className="relative max-w-[600px] mx-auto px-4 pt-3 pb-3">
+
         {/* Top Row: Logo & Icons */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-4">
 
           {/* --- Logo Area --- */}
           <button
@@ -66,10 +66,9 @@ export default function Header({
             className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity active:scale-95 duration-200 group"
             title={settings.lang === "sc" ? "点击刷新" : "點擊刷新"}
           >
-            {/* Logo Image */}
             <div
               className="relative w-8 h-8 rounded-lg overflow-hidden transition-all"
-              style={icon3DStyle} // 应用立体阴影
+              style={icon3DStyle}
             >
               <Image
                 src="/logo.png"
@@ -79,20 +78,14 @@ export default function Header({
               />
             </div>
 
-            {/* Title Text Container */}
             <div className="flex flex-col justify-center w-fit">
-              {/* Chinese Title */}
               <h1
-                style={{
-                  ...text3DStyle // 应用文字立体阴影
-                }}
+                style={{ ...text3DStyle }}
                 className="text-lg font-bold tracking-wide text-[var(--text-main)] leading-none whitespace-nowrap"
               >
                 {settings.lang === "sc" ? "从日本看中国" : "從日本看中國"}
               </h1>
 
-              {/* English Subtitle - Flexbox Split Character Mode */}
-              {/* 核心修改：使用 flex justify-between 让每一个字符（包括空格）均匀分布 */}
               <div
                 className="w-full flex justify-between text-[0.42em] text-gray-400 font-sans mt-[3px] select-none font-medium"
                 style={{ textShadow: "0 1px 1px rgba(0,0,0,0.1)" }}
@@ -102,30 +95,16 @@ export default function Header({
                     {char === ' ' ? '\u00A0' : char}
                   </span>
                 ))}
-
-              </div>
-
-              {/* Navigation Links */}
-              <div className="flex gap-3 mt-2 text-xs font-bold text-gray-500">
-                <Link href="/" className="hover:text-[var(--text-main)] transition-colors">
-                  {settings.lang === "sc" ? "中国新闻" : "中國新聞"}
-                </Link>
-                <span className="text-gray-300">|</span>
-                <Link href="/live" className="hover:text-[var(--text-main)] transition-colors">
-                  {settings.lang === "sc" ? "实时直播（测试中）" : "實時直播（測試中）"}
-                </Link>
               </div>
             </div>
           </button>
 
           {/* --- Right Icons Area --- */}
           <div className="flex items-center gap-1">
-            {/* Favorites Button */}
             <button
               onClick={onOpenFav}
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative group dark:text-gray-200"
-              title={settings.lang === "sc" ? "收藏" : "收藏"}
-              style={icon3DStyle} // 应用立体阴影
+              style={icon3DStyle}
             >
               <Heart className="w-5 h-5 text-[var(--text-main)]" />
               {favCount > 0 && (
@@ -133,12 +112,10 @@ export default function Header({
               )}
             </button>
 
-            {/* About Button */}
             <button
               onClick={handleAboutClick}
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative dark:text-gray-200"
-              title={settings.lang === "sc" ? "关于本站" : "關於本站"}
-              style={icon3DStyle} // 应用立体阴影
+              style={icon3DStyle}
             >
               <Info className="w-5 h-5 text-[var(--text-main)]" />
               {showBadge && (
@@ -149,20 +126,70 @@ export default function Header({
               )}
             </button>
 
-            {/* Settings Button */}
             <button
               onClick={onOpenSettings}
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 dark:text-gray-200"
-              title={settings.lang === "sc" ? "设置" : "設置"}
-              style={icon3DStyle} // 应用立体阴影
+              style={icon3DStyle}
             >
               <Settings className="w-5 h-5 text-[var(--text-main)]" />
             </button>
           </div>
         </div>
 
-        {/* Utility Bar (Search & Archive) */}
-        {children}
+        {/* Tab Bar - iOS Segmented Control Style */}
+        <div className="relative flex items-center p-1 bg-gray-100 dark:bg-white/10 rounded-xl">
+
+          {/* News Tab */}
+          <button
+            onClick={() => onTabChange('news')}
+            className="relative flex-1 flex items-center justify-center py-2 text-sm font-medium transition-colors duration-200 z-10"
+          >
+            {activeTab === 'news' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-white dark:bg-[#121212] rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className={`relative z-10 flex items-center gap-2 ${activeTab === 'news' ? 'text-[var(--text-main)] font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+              <Newspaper className={`w-4 h-4 ${activeTab === 'news' ? 'text-[var(--primary)]' : 'text-gray-400'}`} />
+              {settings.lang === "sc" ? "日媒中国报道" : "日媒中國報道"}
+            </span>
+          </button>
+
+          {/* Live Tab */}
+          <button
+            onClick={() => onTabChange('live')}
+            className="relative flex-1 flex items-center justify-center py-2 text-sm font-medium transition-colors duration-200 z-10"
+          >
+            {activeTab === 'live' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-white dark:bg-[#121212] rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className={`relative z-10 flex items-center gap-2 ${activeTab === 'live' ? 'text-[var(--text-main)] font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+              <Tv className={`w-4 h-4 ${activeTab === 'live' ? 'text-red-500' : 'text-gray-400'}`} />
+              {settings.lang === "sc" ? "日本实时监控" : "日本實時監控"}
+            </span>
+          </button>
+
+          {/* Coming Soon Tab */}
+        {/* 暂时隐藏敬请期待功能，后面需要再打开 */}
+{/*
+<button
+  disabled
+  className="relative flex-1 flex items-center justify-center py-2 text-sm font-medium text-gray-400 cursor-not-allowed opacity-60 z-10"
+>
+  <span className="flex items-center gap-2">
+    <Sparkles className="w-4 h-4" />
+    {settings.lang === "sc" ? "敬请期待" : "敬請期待"}
+  </span>
+</button>
+*/}
+
+        </div>
       </div>
     </header>
   );
