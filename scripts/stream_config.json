@@ -1,64 +1,64 @@
 {
-    "streams": [
-        {
-            "id": "shibuya",
-            "displayName": "涩谷街头直播",
-            "channelId": "UCGCZAYq5Xxojl_tSXcVJhiQ",
-            "channelName": "ANN News",
-            "keywords": [
-                "渋谷",
-                "Shibuya",
-                "Scramble",
-                "スクランブル"
-            ]
-        },
-        {
-            "id": "tokyo_bay",
-            "displayName": "东京湾24小时直播",
-            "channelId": "UCaaSp7JYkACHR-Sr-p3OHeQ",
-            "channelName": "東京風景",
-            "keywords": [
-                "live",
-                "tokyo",
-                "24/7",
-                "city views"
-            ]
-        },
-        {
-            "id": "asakusa",
-            "displayName": "浅草寺24小时直播",
-            "channelId": "UCh1UcGFBIuFo5I-I1WMyclA",
-            "channelName": "浅草中屋チャンネル",
-            "keywords": [
-                "浅草",
-                "宝蔵門",
-                "屋上より",
-                "浅草中屋",
-                "浅草寺"
-            ]
-        },
-        {
-            "id": "shinjuku",
-            "displayName": "新宿歌舞伎町24小时直播",
-            "channelId": "UCuv7xqb-jo3HEFMIVLTY_CA",
-            "channelName": "テイケイ公式チャンネル",
-            "keywords": [
-                "新宿",
-                "歌舞伎町",
-                "交差点",
-                "屋上カメラ",
-                "ライブカメラ"
-            ]
-        },
-        {
-            "id": "fujisan",
-            "displayName": "富士山忍野八海24小时直播",
-            "channelId": "UCcuadYD11H2Eti8AEOP7Buw",
-            "channelName": "FujiyamaTV - FujigokoTV",
-            "keywords": [
-                "富士山",
-                "忍野八海"
-            ]
-        }
-    ]
+  "streams": [
+    {
+      "id": "shibuya",
+      "displayName": "涩谷交差点24小时直播",
+      "channelId": "UCGCZAYq5Xxojl_tSXcVJhiQ",
+      "channelName": "ANN News",
+      "keywords": [
+        "渋谷",
+        "Shibuya",
+        "Scramble",
+        "スクランブル"
+      ]
+    },
+    {
+      "id": "asakusa",
+      "displayName": "浅草寺24小时直播",
+      "channelId": "UCh1UcGFBIuFo5I-I1WMyclA",
+      "channelName": "浅草中屋チャンネル",
+      "keywords": [
+        "浅草",
+        "宝蔵門",
+        "屋上より",
+        "浅草中屋",
+        "浅草寺"
+      ]
+    },
+    {
+      "id": "shinjuku",
+      "displayName": "新宿歌舞伎町24小时直播",
+      "channelId": "UCuv7xqb-jo3HEFMIVLTY_CA",
+      "channelName": "テイケイ公式チャンネル",
+      "keywords": [
+        "新宿",
+        "歌舞伎町",
+        "交差点",
+        "屋上カメラ",
+        "ライブカメラ"
+      ]
+    },
+    {
+      "id": "fujisan",
+      "displayName": "富士山忍野八海24小时直播",
+      "channelId": "UCcuadYD11H2Eti8AEOP7Buw",
+      "channelName": "FujiyamaTV - FujigokoTV",
+      "keywords": [
+        "富士山",
+        "忍野八海"
+      ]
+    },
+    {
+      "id": "osaka_night",
+      "displayName": "大阪全景24小时直播",
+      "channelId": "UC7lHIZbQzHILorlX4R0izsw",
+      "channelName": "starstyle",
+      "keywords": [
+        "ライブ",
+        "大阪",
+        "Osaka",
+        "夜景"
+      ]
+    }
+  ]
 }
