@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-12-04T11:36:46.531341",
+  "lastUpdated": "2025-12-04T12:49:34.557888",
   "streams": [
     {
       "id": "shibuya",
@@ -14,10 +14,10 @@
       "id": "asakusa",
       "displayName": "浅草寺24小时直播",
       "channelName": "浅草中屋チャンネル",
-      "isLive": true,
-      "videoId": "LHPKP8PP6QY",
-      "title": "【LIVE CAMERA】浅草ライブカメラ「浅草寺 宝蔵門」（浅草中屋  屋上より）",
-      "matchScore": 5
+      "isLive": false,
+      "videoId": null,
+      "title": null,
+      "matchScore": 0
     },
     {
       "id": "shinjuku",
@@ -51,9 +51,9 @@
       "displayName": "东京湾24小时直播",
       "channelName": "東京風景",
       "isLive": true,
-      "videoId": "zPfCPHQZvpw",
-      "title": "Tokyo Bay Live 24/7 | Christmas Edition 🎄 Relaxing Lofi &amp; City Lights",
-      "matchScore": 3
+      "videoId": "_k-5U7IeK8g",
+      "title": "LIVE from Tokyo — 24/7 City Views | Chat, Relax, and Win a Postcard from Japan 🇯🇵 (w 🎄Winter Music)",
+      "matchScore": 4
     }
   ]
 }
