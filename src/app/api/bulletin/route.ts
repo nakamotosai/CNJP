@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 
 import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
@@ -40,11 +41,6 @@ export async function GET() {
         }
     } catch (error) {
         console.error("Failed to fetch bulletins from R2:", error);
-        // Return system bulletins as fallback or empty array
-        // Since frontend will merge with system bulletins if empty, we can just return empty here
-        // or return the structure. Let's return empty array and let frontend handle logic
-        // or maybe return something to indicate error?
-        // User asked: "如果文件不存在（NoSuchKey），返回空数组或系统默认消息，不要报错崩溃。"
         return NextResponse.json([]);
     }
 }
@@ -74,7 +70,6 @@ export async function POST(request: Request) {
             if (e.name !== "NoSuchKey") {
                 console.error("Error fetching existing bulletins:", e);
             }
-            // If NoSuchKey, proceed with empty array
         }
 
         // 2. Prepend new message

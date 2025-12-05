@@ -1,9 +1,10 @@
+export const runtime = 'edge';
 
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
 import { r2Client, R2_BUCKET_NAME } from "@/lib/r2";
 
-const FILE_KEY = "barrage.json"; // Changed from bulletins.json
+const FILE_KEY = "barrage.json";
 
 export async function GET() {
     try {
