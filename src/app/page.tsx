@@ -26,6 +26,7 @@ export default function Home() {
 
   // --- State ---
   const [rawNewsData, setRawNewsData] = useState<NewsItem[]>([]);
+  const [allNewsData, setAllNewsData] = useState<NewsItem[]>([]); // 所有归档新闻
   const [lastUpdated, setLastUpdated] = useState("");
   const [favorites, setFavorites] = useState<NewsItem[]>([]);
   const [archiveData, setArchiveData] = useState<Record<string, NewsItem[]>>({});
@@ -33,6 +34,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'news' | 'live' | 'coming'>('news');
+  const [isSearchingAll, setIsSearchingAll] = useState(false); // 正在加载全部数据
 
   // Live View Persistence State
   const [isLiveMounted, setIsLiveMounted] = useState(false);
@@ -61,11 +63,13 @@ export default function Home() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // SECTION 1: Manual Trending Keywords
-  const trendingNow = ["高市", "滨崎步", "台湾"];
+  const trendingNow = ["高市", "滨崎步", "台湾", "逮捕", "香港"];
   const TC_MAP: Record<string, string> = {
     "高市": "高市",
     "滨崎步": "濱崎步",
-    "台湾": "台灣"
+    "台湾": "台灣",
+    "逮捕": "逮捕",
+    "香港": "香港"
   };
 
   // SECTION 2: Hot Keywords (Auto-extracted)
@@ -228,6 +232,56 @@ export default function Home() {
     }
   };
 
+  // 加载所有归档数据用于全局搜索
+  const loadAllArchiveData = async () => {
+    if (allNewsData.length > 0 || isSearchingAll) return; // 已加载或正在加载
+
+    setIsSearchingAll(true);
+    try {
+      const allDates = Object.keys(archiveIndex).sort().reverse();
+      const allItems: NewsItem[] = [];
+      const seenLinks = new Set<string>();
+
+      // 并行加载所有归档文件
+      const promises = allDates.map(async (dateStr) => {
+        try {
+          const archiveUrl = R2_PUBLIC_URL
+            ? `${R2_PUBLIC_URL}/archive/${dateStr}.json`
+            : `/archive/${dateStr}.json`;
+          const r = await fetch(archiveUrl);
+          if (r.ok) {
+            return await r.json();
+          }
+        } catch (e) {
+          console.error(`Failed to load archive ${dateStr}`, e);
+        }
+        return [];
+      });
+
+      const results = await Promise.all(promises);
+
+      // 合并并去重
+      results.forEach((items: NewsItem[]) => {
+        items.forEach(item => {
+          if (!seenLinks.has(item.link)) {
+            seenLinks.add(item.link);
+            allItems.push(item);
+          }
+        });
+      });
+
+      // 按时间排序
+      allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      setAllNewsData(allItems);
+      console.log(`📚 已加载全部 ${allItems.length} 条新闻用于搜索`);
+    } catch (e) {
+      console.error("Failed to load all archive data", e);
+    } finally {
+      setIsSearchingAll(false);
+    }
+  };
+
   // 后台轮询检查新内容
   const checkForNewContent = useCallback(async () => {
     try {
@@ -287,6 +341,13 @@ export default function Home() {
     };
   }, [checkForNewContent]);
 
+  // 当有搜索词且有归档索引时，加载全部数据
+  useEffect(() => {
+    if (searchQuery && Object.keys(archiveIndex).length > 0 && allNewsData.length === 0) {
+      loadAllArchiveData();
+    }
+  }, [searchQuery, archiveIndex, allNewsData.length]);
+
   // 加载新内容
   const loadNewContent = () => {
     if (pendingNewsData) {
@@ -317,7 +378,7 @@ export default function Home() {
   useEffect(() => {
     const handleScroll = () => {
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
-        setVisibleCount((prev) => (prev < 100 ? prev + 25 : prev));
+        setVisibleCount((prev) => (prev < 200 ? prev + 25 : prev));
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -415,9 +476,17 @@ export default function Home() {
     }, 2500);
   };
 
+  // 选择数据源：搜索时用全部数据，否则用今天/昨天数据
+  const dataSource = useMemo(() => {
+    if (searchQuery && allNewsData.length > 0) {
+      return allNewsData;
+    }
+    return rawNewsData;
+  }, [searchQuery, allNewsData, rawNewsData]);
+
   // 排序后的新闻数据
   const sortedNewsData = useMemo(() => {
-    const sorted = [...rawNewsData].sort((a, b) => {
+    const sorted = [...dataSource].sort((a, b) => {
       if (sortMode === 'fetch') {
         // 按抓取时间排序（新抓取的在前）
         const fetchA = (a as any).fetched_at || a.timestamp || 0;
@@ -429,7 +498,7 @@ export default function Home() {
       }
     });
     return sorted;
-  }, [rawNewsData, sortMode]);
+  }, [dataSource, sortMode]);
 
   const filteredItems = useMemo(() => {
     let filtered = sortedNewsData;
@@ -444,8 +513,10 @@ export default function Home() {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((item) => {
         const title = (item.title || "").toLowerCase();
+        const titleTc = (item.title_tc || "").toLowerCase();
+        const titleJa = (item.title_ja || "").toLowerCase();
         const origin = (item.origin || "").toLowerCase();
-        return title.includes(q) || origin.includes(q);
+        return title.includes(q) || titleTc.includes(q) || titleJa.includes(q) || origin.includes(q);
       });
     }
 
@@ -619,11 +690,14 @@ export default function Home() {
                       <input
                         type="text"
                         value={searchInput}
-                        placeholder={settings.lang === "sc" ? "搜索..." : "搜尋..."}
+                        placeholder={settings.lang === "sc" ? "搜索全部新闻..." : "搜尋全部新聞..."}
                         className="flex-1 bg-transparent border-none focus:ring-0 placeholder-gray-400 text-gray-700 dark:text-gray-200 text-sm p-0 outline-none min-w-0"
                         onChange={(e) => handleSearchInput(e.target.value)}
                         onFocus={() => setShowSuggestions(true)}
                       />
+                      {isSearchingAll && (
+                        <Loader2 className="w-4 h-4 text-gray-400 animate-spin flex-shrink-0" />
+                      )}
                       {searchInput && (
                         <button
                           onClick={handleClearSearch}
@@ -723,14 +797,32 @@ export default function Home() {
                     type="button"
                     onClick={toggleSortMode}
                     className={`h-full px-4 rounded-xl border text-sm font-medium shadow-md dark:shadow-none transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 ${sortMode === 'fetch'
-                        ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]'
-                        : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] text-[var(--text-main)] hover:border-[var(--primary)] hover:text-[var(--primary)]'
+                      ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]'
+                      : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] text-[var(--text-main)] hover:border-[var(--primary)] hover:text-[var(--primary)]'
                       }`}
                   >
                     <ArrowUpDown className="w-4 h-4" />
                     {settings.lang === "sc" ? "排序" : "排序"}
                   </button>
                 </div>
+
+                {/* 搜索结果提示 */}
+                {searchQuery && (
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    {isSearchingAll ? (
+                      <span className="flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {settings.lang === "sc" ? "正在搜索全部新闻..." : "正在搜尋全部新聞..."}
+                      </span>
+                    ) : (
+                      <span>
+                        {settings.lang === "sc"
+                          ? `在 ${allNewsData.length || rawNewsData.length} 条新闻中找到 ${filteredItems.length} 条结果`
+                          : `在 ${allNewsData.length || rawNewsData.length} 條新聞中找到 ${filteredItems.length} 條結果`}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Archive Drawer Overlay */}
                 <AnimatePresence>
@@ -749,7 +841,7 @@ export default function Home() {
 
               {/* 新闻列表 - 带动画 */}
               <motion.div
-                key={sortMode}
+                key={`${sortMode}-${searchQuery}`}
                 initial={{ opacity: 0.8, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
@@ -765,7 +857,7 @@ export default function Home() {
                 />
               </motion.div>
 
-              {!isLoading && searchQuery && filteredItems.length === 0 && (
+              {!isLoading && searchQuery && filteredItems.length === 0 && !isSearchingAll && (
                 <div className="px-4 py-16 text-center">
                   <p className="text-base text-gray-500 dark:text-gray-400">
                     {settings.lang === "sc" ? "本次没搜到结果，换个关键词试试吧。" : "本次沒搜到結果，換個關鍵詞試試吧。"}
