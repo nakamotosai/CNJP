@@ -12,7 +12,7 @@ import ArchiveModal from "@/components/modals/ArchiveModal";
 import ArchiveDrawer from "@/components/ArchiveDrawer";
 import BackToTop from "@/components/BackToTop";
 import LiveView from "@/components/LiveView";
-import { Search, Loader2, X, Flame, ArrowUpDown, Clock, Calendar } from "lucide-react";
+import { Search, Loader2, X, Flame, ArrowUpDown, Calendar } from "lucide-react";
 import { useTheme } from "@/components/ThemeContext";
 import { CATEGORY_MAP, CATEGORIES } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,6 +47,8 @@ export default function Home() {
 
   // Sort State: 'publish' (按发布时间) or 'fetch' (按抓取时间)
   const [sortMode, setSortMode] = useState<'publish' | 'fetch'>('publish');
+  const [showSortToast, setShowSortToast] = useState(false);
+  const sortToastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // New Content Notification State
   const [newContentCount, setNewContentCount] = useState(0);
@@ -398,13 +400,39 @@ export default function Home() {
     setVisibleCount(25);
   };
 
-  // 切换排序模式
+  // 切换排序模式并显示提示
   const toggleSortMode = () => {
-    setSortMode(prev => prev === 'publish' ? 'fetch' : 'publish');
+    const newMode = sortMode === 'publish' ? 'fetch' : 'publish';
+    setSortMode(newMode);
+
+    // 显示切换提示
+    setShowSortToast(true);
+    if (sortToastTimeoutRef.current) {
+      clearTimeout(sortToastTimeoutRef.current);
+    }
+    sortToastTimeoutRef.current = setTimeout(() => {
+      setShowSortToast(false);
+    }, 2500);
   };
 
+  // 排序后的新闻数据
+  const sortedNewsData = useMemo(() => {
+    const sorted = [...rawNewsData].sort((a, b) => {
+      if (sortMode === 'fetch') {
+        // 按抓取时间排序（新抓取的在前）
+        const fetchA = (a as any).fetched_at || a.timestamp || 0;
+        const fetchB = (b as any).fetched_at || b.timestamp || 0;
+        return fetchB - fetchA;
+      } else {
+        // 按发布时间排序（默认）
+        return (b.timestamp || 0) - (a.timestamp || 0);
+      }
+    });
+    return sorted;
+  }, [rawNewsData, sortMode]);
+
   const filteredItems = useMemo(() => {
-    let filtered = rawNewsData;
+    let filtered = sortedNewsData;
     if (currentFilter !== "all") {
       filtered = filtered.filter((item) => {
         const itemCategory = item.category || "其他";
@@ -421,21 +449,8 @@ export default function Home() {
       });
     }
 
-    // 根据排序模式排序
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortMode === 'fetch') {
-        // 按抓取时间排序（新抓取的在前）
-        const fetchA = (a as any).fetched_at || a.timestamp || 0;
-        const fetchB = (b as any).fetched_at || b.timestamp || 0;
-        return fetchB - fetchA;
-      } else {
-        // 按发布时间排序（默认）
-        return (b.timestamp || 0) - (a.timestamp || 0);
-      }
-    });
-
-    return sorted;
-  }, [rawNewsData, currentFilter, searchQuery, sortMode]);
+    return filtered;
+  }, [sortedNewsData, currentFilter, searchQuery]);
 
   const displayItems = filteredItems.slice(0, visibleCount);
 
@@ -520,6 +535,24 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 排序切换提示 Toast */}
+      <AnimatePresence>
+        {showSortToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 text-sm font-medium rounded-xl shadow-lg backdrop-blur-sm"
+          >
+            {sortMode === 'publish'
+              ? (settings.lang === "sc" ? "当前排序规则为新闻实际时间顺序" : "當前排序規則為新聞實際時間順序")
+              : (settings.lang === "sc" ? "当前排序规则为后台抓取时间顺序" : "當前排序規則為後台抓取時間順序")
+            }
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Header
         onOpenFav={() => setShowFav(true)}
         onOpenAbout={() => setShowAbout(true)}
@@ -557,7 +590,7 @@ export default function Home() {
 
               {/* Search & Archive Bar - 固定高度和间距 */}
               <div className="px-4 pb-3 relative z-45">
-                {/* 新内容提醒 */}
+                {/* 新内容提醒 - 红色 */}
                 <AnimatePresence>
                   {newContentCount > 0 && (
                     <motion.button
@@ -565,7 +598,7 @@ export default function Home() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       onClick={loadNewContent}
-                      className="w-full mb-3 py-2.5 px-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                      className="w-full mb-3 py-2.5 px-4 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white text-sm font-medium rounded-xl shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                     >
                       <ArrowUpDown className="w-4 h-4" />
                       {settings.lang === "sc"
@@ -685,7 +718,7 @@ export default function Home() {
                     {settings.lang === "sc" ? "存档" : "存檔"}
                   </button>
 
-                  {/* 排序按钮 */}
+                  {/* 排序按钮 - 经典排序图标 */}
                   <button
                     type="button"
                     onClick={toggleSortMode}
@@ -693,16 +726,9 @@ export default function Home() {
                         ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]'
                         : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] text-[var(--text-main)] hover:border-[var(--primary)] hover:text-[var(--primary)]'
                       }`}
-                    title={sortMode === 'publish'
-                      ? (settings.lang === "sc" ? "当前按发布时间排序，点击切换" : "當前按發布時間排序，點擊切換")
-                      : (settings.lang === "sc" ? "当前按抓取时间排序，点击切换" : "當前按抓取時間排序，點擊切換")
-                    }
                   >
-                    <Clock className="w-4 h-4" />
-                    {sortMode === 'publish'
-                      ? (settings.lang === "sc" ? "发布" : "發布")
-                      : (settings.lang === "sc" ? "抓取" : "抓取")
-                    }
+                    <ArrowUpDown className="w-4 h-4" />
+                    {settings.lang === "sc" ? "排序" : "排序"}
                   </button>
                 </div>
 
@@ -721,15 +747,23 @@ export default function Home() {
                 </AnimatePresence>
               </div>
 
-              <NewsList
-                news={displayItems}
-                isLoading={isLoading}
-                onToggleFav={handleToggleFav}
-                favorites={favorites}
-                onShowArchive={handleShowArchive}
-                onFilterCategory={handleFilterChange}
-                archiveData={archiveData}
-              />
+              {/* 新闻列表 - 带动画 */}
+              <motion.div
+                key={sortMode}
+                initial={{ opacity: 0.8, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <NewsList
+                  news={displayItems}
+                  isLoading={isLoading}
+                  onToggleFav={handleToggleFav}
+                  favorites={favorites}
+                  onShowArchive={handleShowArchive}
+                  onFilterCategory={handleFilterChange}
+                  archiveData={archiveData}
+                />
+              </motion.div>
 
               {!isLoading && searchQuery && filteredItems.length === 0 && (
                 <div className="px-4 py-16 text-center">
