@@ -14,7 +14,7 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
   const { settings } = useTheme();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [isStopped, setIsStopped] = useState(true);
+  const [isStopped, setIsStopped] = useState(false); // 默认开启滚动
   const animationRef = useRef<number | null>(null);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -33,12 +33,11 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
   // 测量内容宽度
   useEffect(() => {
     if (contentRef.current) {
-      // 内容是三倍的，所以除以3得到单组宽度
       setContentWidth(contentRef.current.scrollWidth / 3);
     }
   }, []);
 
-  // CSS Transform 动画 - 使用 GPU 加速
+  // CSS Transform 动画
   useEffect(() => {
     if (contentWidth === 0 || isStopped) return;
 
@@ -52,7 +51,6 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
       if (!isPaused && !isStopped) {
         setOffset(prev => {
           const newOffset = prev + (scrollSpeed * deltaTime) / 1000;
-          // 无缝循环：当滚动超过一组内容宽度时重置
           if (newOffset >= contentWidth) {
             return newOffset - contentWidth;
           }
@@ -69,19 +67,23 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
     };
   }, [isPaused, isStopped, contentWidth]);
 
-  // 鼠标事件 - PC端悬停暂停
+  // 鼠标事件 - PC端悬停暂停1秒后恢复
   const handleMouseEnter = useCallback(() => {
     if (isStopped) return;
     setIsPaused(true);
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+    // 1秒后自动恢复
+    pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
   }, [isStopped]);
 
   const handleMouseLeave = useCallback(() => {
     if (isStopped) return;
-    pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
+    // 离开时也确保1秒后恢复
+    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+    pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
   }, [isStopped]);
 
-  // 触摸事件 - 只在水平滑动组件时暂停
+  // 触摸事件 - 只在水平滑动组件时暂停，1秒后恢复
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (isStopped) return;
     const touch = e.touches[0];
@@ -95,7 +97,6 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
     const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
     const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
 
-    // 只有水平滑动距离大于垂直滑动时才认为是在操作组件
     if (deltaX > deltaY && deltaX > 10) {
       isDraggingRef.current = true;
       setIsPaused(true);
@@ -105,23 +106,27 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
 
   const handleTouchEnd = useCallback(() => {
     if (isStopped) return;
-    if (isDraggingRef.current) {
-      pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
-    }
+    // 拖动后1秒恢复滚动
+    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+    pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
     touchStartRef.current = null;
     isDraggingRef.current = false;
   }, [isStopped]);
 
   const handleToggleStop = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+
     if (isStopped) {
+      // 立即恢复滚动，不等待
       setIsStopped(false);
       setIsPaused(false);
-      lastTimeRef.current = 0; // Reset animation timing
+      lastTimeRef.current = 0;
     } else {
+      // 暂停并重置位置
       setIsStopped(true);
       setIsPaused(true);
-      setOffset(0); // Reset position
+      setOffset(0);
     }
   };
 
@@ -130,7 +135,7 @@ export default function CategoryNav({ currentFilter, onFilterChange }: CategoryN
     if (!isStopped) {
       setIsPaused(true);
       if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-      pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
+      pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
     }
   };
 

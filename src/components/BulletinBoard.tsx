@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { X, Send } from "lucide-react";
+import { X, Send, BarChart3 } from "lucide-react";
 import { SYSTEM_BULLETINS, CATEGORY_DOT_COLORS, BULLETIN_PRESETS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeContext";
@@ -39,6 +39,7 @@ export default function BulletinBoard() {
     const [bulletins, setBulletins] = useState<Bulletin[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showStatsModal, setShowStatsModal] = useState(false);
     const [sending, setSending] = useState(false);
     const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
@@ -53,7 +54,6 @@ export default function BulletinBoard() {
 
     // 触摸事件相关
     const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
-    const isDraggingRef = useRef(false);
 
     useEffect(() => {
         fetchBulletins();
@@ -77,12 +77,11 @@ export default function BulletinBoard() {
     // 测量内容宽度
     useEffect(() => {
         if (contentRef.current) {
-            // 内容是双倍的，所以除以2得到单组宽度
             setContentWidth(contentRef.current.scrollWidth / 2);
         }
     }, [bulletins]);
 
-    // CSS Transform 动画 - 使用 GPU 加速
+    // CSS Transform 动画 - 持续滚动
     useEffect(() => {
         if (contentWidth === 0) return;
 
@@ -96,7 +95,6 @@ export default function BulletinBoard() {
             if (!isPaused) {
                 setOffset(prev => {
                     const newOffset = prev + (scrollSpeed * deltaTime) / 1000;
-                    // 无缝循环：当滚动超过一组内容宽度时重置
                     if (newOffset >= contentWidth) {
                         return newOffset - contentWidth;
                     }
@@ -112,44 +110,41 @@ export default function BulletinBoard() {
         };
     }, [isPaused, contentWidth]);
 
-    // 鼠标事件 - PC端悬停暂停
-    const handleMouseEnter = useCallback(() => {
+    // 暂停并1秒后强制恢复
+    const pauseAndResume = useCallback(() => {
         setIsPaused(true);
         if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-    }, []);
-
-    const handleMouseLeave = useCallback(() => {
         pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
     }, []);
 
-    // 触摸事件 - 只在水平滑动组件时暂停
+    // 鼠标事件 - PC端悬停暂停1秒后恢复
+    const handleMouseEnter = useCallback(() => {
+        pauseAndResume();
+    }, [pauseAndResume]);
+
+    const handleMouseLeave = useCallback(() => {
+        // 确保1秒后恢复
+        if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
+    }, []);
+
+    // 触摸事件 - 触摸暂停，1秒后强制恢复
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         const touch = e.touches[0];
         touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
-        isDraggingRef.current = false;
-    }, []);
-
-    const handleTouchMove = useCallback((e: React.TouchEvent) => {
-        if (!touchStartRef.current) return;
-        const touch = e.touches[0];
-        const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
-        const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
-
-        // 只有水平滑动距离大于垂直滑动时才认为是在操作组件
-        if (deltaX > deltaY && deltaX > 10) {
-            isDraggingRef.current = true;
-            setIsPaused(true);
-            if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-        }
-    }, []);
+        pauseAndResume();
+    }, [pauseAndResume]);
 
     const handleTouchEnd = useCallback(() => {
-        if (isDraggingRef.current) {
-            // 只有真正拖动过才延迟恢复
-            pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
-        }
+        // 触摸结束后1秒恢复
+        if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
         touchStartRef.current = null;
-        isDraggingRef.current = false;
+    }, []);
+
+    // 点击弹幕区域显示统计
+    const handleMarqueeClick = useCallback(() => {
+        setShowStatsModal(true);
     }, []);
 
     const fetchBulletins = async () => {
@@ -258,14 +253,14 @@ export default function BulletinBoard() {
                     </span>
                 </div>
 
-                {/* Scrollable Marquee Area - CSS Transform */}
+                {/* Scrollable Marquee Area - 可点击 */}
                 <div
-                    className="flex-1 overflow-hidden relative h-full flex items-center"
+                    className="flex-1 overflow-hidden relative h-full flex items-center cursor-pointer"
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                     onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
+                    onClick={handleMarqueeClick}
                 >
                     <div
                         ref={contentRef}
@@ -315,7 +310,66 @@ export default function BulletinBoard() {
                 </button>
             </div>
 
-            {/* Modal */}
+            {/* 统计对话框 */}
+            {showStatsModal && typeof document !== 'undefined' && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+                    <div
+                        className="bg-white dark:bg-[#202020] w-full max-w-sm rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700 max-h-[70vh] flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                            <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                                <BarChart3 className="w-4 h-4 text-[var(--primary)]" />
+                                {settings.lang === 'tc' ? '熱議統計' : '热议统计'}
+                            </h3>
+                            <button
+                                onClick={() => setShowStatsModal(false)}
+                                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            >
+                                <X size={18} className="text-gray-400" />
+                            </button>
+                        </div>
+
+                        <div className="overflow-y-auto p-4 custom-scrollbar">
+                            <div className="space-y-2">
+                                {aggregatedList.map((item, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-black/20"
+                                    >
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <span className={`w-2 h-2 rounded-full ${item.color} shrink-0`} />
+                                            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                                                {item.content}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                                x{item.count}
+                                            </span>
+                                            <span className="text-xs text-gray-400 w-10 text-right">
+                                                {item.percent}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-center">
+                                <span className="text-xs text-gray-400">
+                                    {settings.lang === 'tc'
+                                        ? `共 ${bulletins.length} 條發言`
+                                        : `共 ${bulletins.length} 条发言`}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="absolute inset-0 -z-10" onClick={() => setShowStatsModal(false)} />
+                </div>,
+                document.body
+            )}
+
+            {/* 发送对话框 */}
             {showModal && typeof document !== 'undefined' && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
                     <div

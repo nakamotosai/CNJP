@@ -713,7 +713,7 @@ export default function Home() {
                       </button>
                       <AnimatePresence>
                         {showArchiveDrawer && (
-                          <div className="absolute top-full right-1/2 translate-x-1/2 mt-2 w-72 z-50">
+                          <div className="absolute top-full right-0 mt-2 w-72 z-50">
                             <ArchiveDrawer
                               archiveData={archiveData}
                               archiveIndex={archiveIndex}
@@ -735,9 +735,9 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Smart Suggestions Dropdown - Moved Outside for Overflow Visibility */}
+                {/* Smart Suggestions Dropdown - Smaller Width */}
                 {showSuggestions && (trendingNow.length > 0 || hotKeywords.length > 0 || hotSources.length > 0) && !searchInput && (
-                  <div className="absolute top-[65px] left-4 right-4 w-auto bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 dark:border-white/5 p-3 animate-in slide-in-from-top-2 fade-in duration-200 z-50">
+                  <div className="absolute top-[65px] left-1/2 -translate-x-1/2 w-[280px] bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 dark:border-white/5 p-3 animate-in slide-in-from-top-2 fade-in duration-200 z-50">
                     {/* 关闭按钮 */}
                     <button
                       onClick={() => setShowSuggestions(false)}
