@@ -74,6 +74,31 @@ export default function Header({
 
   const englishText = "https://cn.saaaai.com";
 
+  // --- Tab Data Configuration ---
+  const tabs = [
+    {
+      id: 'news' as const,
+      icon: Newspaper,
+      labelFull: settings.lang === "sc" ? "日媒中国报道" : "日媒中國報道",
+      labelShort: settings.lang === "sc" ? "新闻" : "新聞",
+      activeColor: "text-[var(--primary)]"
+    },
+    {
+      id: 'live' as const,
+      icon: Tv,
+      labelFull: settings.lang === "sc" ? "日本实时监控" : "日本實時監控",
+      labelShort: settings.lang === "sc" ? "直播" : "直播",
+      activeColor: "text-red-500"
+    },
+    {
+      id: 'disaster' as const,
+      icon: CloudRain,
+      labelFull: settings.lang === "sc" ? "日本天气灾害" : "日本天氣災害",
+      labelShort: settings.lang === "sc" ? "灾害" : "災害",
+      activeColor: "text-blue-500"
+    }
+  ];
+
   return (
     <>
       {/* 域名公告横幅：每天第一次访问显示 */}
@@ -106,7 +131,6 @@ export default function Header({
               className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity active:scale-95 duration-200 group"
               title={settings.lang === "sc" ? "点击刷新" : "點擊刷新"}
             >
-
               {/* logo暂时隐藏，以后可恢复 */}
               {/*
               <div className="relative w-8 h-8 rounded-lg overflow-hidden transition-all" style={icon3DStyle}>
@@ -177,47 +201,42 @@ export default function Header({
           {/* Tab Bar - Master Standard Container */}
           <div className="w-full max-w-[600px] h-[52px] mx-auto bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center gap-2 px-1.5 mt-3 overflow-hidden">
 
-            <button
-              onClick={() => onTabChange('news')}
-              className={`relative h-[42px] flex items-center justify-center text-sm font-medium transition-all duration-300 ease-in-out rounded-xl backdrop-blur-sm overflow-hidden
-                ${activeTab === 'news'
-                  ? 'flex-[1.4] bg-white/90 dark:bg-white/20 shadow-md border border-gray-200 dark:border-white/10'
-                  : 'flex-1 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
-                }`}
-            >
-              <span className={`flex items-center gap-2 whitespace-nowrap ${activeTab === 'news' ? 'text-[var(--text-main)] font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
-                <Newspaper className={`w-4 h-4 ${activeTab === 'news' ? 'text-[var(--primary)]' : 'text-gray-400'}`} />
-                {settings.lang === "sc" ? "日媒中国报道" : "日媒中國報道"}
-              </span>
-            </button>
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
 
-            <button
-              onClick={() => onTabChange('live')}
-              className={`relative h-[42px] flex items-center justify-center text-sm font-medium transition-all duration-300 ease-in-out rounded-xl backdrop-blur-sm overflow-hidden
-                ${activeTab === 'live'
-                  ? 'flex-[1.4] bg-white/90 dark:bg-white/20 shadow-md border border-gray-200 dark:border-white/10'
-                  : 'flex-1 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
-                }`}
-            >
-              <span className={`flex items-center gap-2 whitespace-nowrap ${activeTab === 'live' ? 'text-[var(--text-main)] font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
-                <Tv className={`w-4 h-4 ${activeTab === 'live' ? 'text-red-500' : 'text-gray-400'}`} />
-                {settings.lang === "sc" ? "日本实时监控" : "日本實時監控"}
-              </span>
-            </button>
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className={`relative h-[42px] flex items-center justify-center text-sm font-medium transition-all duration-300 ease-in-out rounded-xl backdrop-blur-sm overflow-hidden
+                            ${isActive
+                      ? 'flex-[2] bg-white/90 dark:bg-white/20 shadow-md border border-gray-200 dark:border-white/10'
+                      : 'flex-1 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
+                    }
+                        `}
+                >
+                  <span className={`flex items-center gap-2 whitespace-nowrap`}>
+                    {/* Icon: Highlighted when active, gray when inactive */}
+                    <tab.icon
+                      className={`w-4 h-4 transition-colors duration-300 ${isActive ? tab.activeColor : 'text-gray-400'}`}
+                    />
 
-            <button
-              onClick={() => onTabChange('disaster')}
-              className={`relative h-[42px] flex items-center justify-center text-sm font-medium transition-all duration-300 ease-in-out rounded-xl backdrop-blur-sm overflow-hidden
-                ${activeTab === 'disaster'
-                  ? 'flex-[1.4] bg-white/90 dark:bg-white/20 shadow-md border border-gray-200 dark:border-white/10'
-                  : 'flex-1 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 border border-gray-100 dark:border-white/5'
-                }`}
-            >
-              <span className={`flex items-center gap-2 whitespace-nowrap ${activeTab === 'disaster' ? 'text-[var(--text-main)] font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
-                <CloudRain className={`w-4 h-4 ${activeTab === 'disaster' ? 'text-blue-500' : 'text-gray-400'}`} />
-                {settings.lang === "sc" ? "日本天气灾害" : "日本天氣災害"}
-              </span>
-            </button>
+                    {/* Text: Logic for Mobile/Desktop visibility */}
+                    <span className={`${isActive ? 'text-[var(--text-main)] font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {/* Short Label: Visible ONLY on Mobile AND Inactive */}
+                      <span className={isActive ? "hidden" : "block md:hidden"}>
+                        {tab.labelShort}
+                      </span>
+
+                      {/* Full Label: Visible on Mobile Active OR Desktop Always */}
+                      <span className={isActive ? "block" : "hidden md:block"}>
+                        {tab.labelFull}
+                      </span>
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
 
           </div>
         </div>
