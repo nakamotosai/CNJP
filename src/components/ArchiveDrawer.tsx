@@ -102,14 +102,14 @@ export default function ArchiveDrawer({ archiveData, archiveIndex, onSelectDate,
                                     key={dateStr}
                                     onClick={() => onSelectDate(dateStr)}
                                     style={fontStyleObj}
-                                    className="w-full h-[52px] flex items-center justify-between px-5 hover:bg-gray-100/80 dark:hover:bg-white/10 transition-all border-b border-gray-100/80 dark:border-white/5 last:border-b-0 group"
+                                    className="w-full h-[40px] flex items-center justify-between px-3 hover:bg-gray-100/80 dark:hover:bg-white/10 transition-all border-b border-gray-100/80 dark:border-white/5 last:border-b-0 group"
                                 >
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
                                         {isToday && (
                                             <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
                                         )}
                                         <div className="flex items-baseline gap-2">
-                                            <span className={`text-[15px] ${isToday ? 'font-bold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'}`}>
+                                            <span className={`text-sm ${isToday ? 'font-bold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'}`}>
                                                 {monthDay}
                                             </span>
                                             <span className="text-xs text-gray-400 group-hover:text-gray-500">

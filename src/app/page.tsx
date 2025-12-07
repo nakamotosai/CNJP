@@ -13,9 +13,9 @@ import ArchiveDrawer from "@/components/ArchiveDrawer";
 import BackToTop from "@/components/BackToTop";
 import LiveView from "@/components/LiveView";
 import DisasterSection from "@/components/disaster/DisasterSection";
-import { Search, Loader2, X, Flame, ArrowUpDown, Calendar } from "lucide-react";
+import { Search, Loader2, X, Flame, Calendar, ArrowUpDown } from "lucide-react";
 import { useTheme } from "@/components/ThemeContext";
-import { CATEGORY_MAP, CATEGORIES } from "@/lib/constants";
+import { CATEGORY_MAP } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
 
 // R2 公开访问 URL
@@ -23,21 +23,26 @@ const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_URL || "";
 
 export default function Home() {
   const { settings } = useTheme();
-  const [mounted, setMounted] = useState(false);
+
 
   // --- State ---
   const [rawNewsData, setRawNewsData] = useState<NewsItem[]>([]);
-  const [allNewsData, setAllNewsData] = useState<NewsItem[]>([]); // 所有归档新闻
+  const [allNewsData, setAllNewsData] = useState<NewsItem[]>([]); // 所有历史数据（合并去重后）
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false); // 是否已加载完全部历史
   const [lastUpdated, setLastUpdated] = useState("");
   const [favorites, setFavorites] = useState<NewsItem[]>([]);
+
+  // 归档相关
   const [archiveData, setArchiveData] = useState<Record<string, NewsItem[]>>({});
   const [archiveIndex, setArchiveIndex] = useState<Record<string, number>>({});
+
+  // UI 状态
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'news' | 'live' | 'disaster'>('news');
-  const [isSearchingAll, setIsSearchingAll] = useState(false); // 正在加载全部数据
+  const [isSearchingAll, setIsSearchingAll] = useState(false); // 正在后台加载历史数据
 
-  // Load default tab preference on mount
+  // Tab 偏好
   useEffect(() => {
     const defaultTab = localStorage.getItem("default_tab") as 'news' | 'live' | 'disaster' | null;
     if (defaultTab && ['news', 'live', 'disaster'].includes(defaultTab)) {
@@ -45,34 +50,51 @@ export default function Home() {
     }
   }, []);
 
-  // Live View Persistence State
+  // Live View Persistence
   const [isLiveMounted, setIsLiveMounted] = useState(false);
   const liveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // UI State
+  // Filter & Search
   const [currentFilter, setCurrentFilter] = useState("all");
   const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // 实际用于搜索
   const [visibleCount, setVisibleCount] = useState(25);
   const [showArchiveDrawer, setShowArchiveDrawer] = useState(false);
 
-  // Sort State: 'publish' (按发布时间) or 'fetch' (按抓取时间)
+  // Sort State
   const [sortMode, setSortMode] = useState<'publish' | 'fetch'>('publish');
   const [showSortToast, setShowSortToast] = useState(false);
   const sortToastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // New Content Notification State
+  // New Content Logic
   const [newContentCount, setNewContentCount] = useState(0);
   const [pendingNewsData, setPendingNewsData] = useState<NewsItem[] | null>(null);
   const [pendingLastUpdated, setPendingLastUpdated] = useState("");
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- Smart Search Suggestions Logic ---
+  // Smart Search Suggestions
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 滚动到搜索栏位置
+  // Modals
+  const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showFav, setShowFav] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
+  const [archiveDate, setArchiveDate] = useState("");
+
+  // Pull to refresh
+  const [pullStartY, setPullStartY] = useState(0);
+
+  const [pullCurrentY, setPullCurrentY] = useState(0);
+  const PULL_THRESHOLD = 80;
+
+  // Category Toast
+  const [categoryToast, setCategoryToast] = useState<string | null>(null);
+  const categoryToastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const scrollToSearchBar = () => {
     if (searchBarRef.current) {
       const rect = searchBarRef.current.getBoundingClientRect();
@@ -80,10 +102,6 @@ export default function Home() {
       window.scrollTo({ top: scrollTop, behavior: "smooth" });
     }
   };
-
-  // Category Toast State
-  const [categoryToast, setCategoryToast] = useState<string | null>(null);
-  const categoryToastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleShowCategoryToast = useCallback((message: string) => {
     setCategoryToast(message);
@@ -94,14 +112,6 @@ export default function Home() {
       setCategoryToast(null);
     }, 1500);
   }, []);
-
-  const getCategoryCount = useCallback((category: string) => {
-    return rawNewsData.filter(item => {
-      const cat = item.category ? (CATEGORY_MAP[item.category] || item.category) : '';
-      return cat === category;
-    }).length;
-  }, [rawNewsData]);
-
   // SECTION 1: Manual Trending Keywords
   const trendingNow = ["高市", "滨崎步", "台湾", "逮捕", "香港"];
   const TC_MAP: Record<string, string> = {
@@ -112,9 +122,255 @@ export default function Home() {
     "香港": "香港"
   };
 
-  // SECTION 2: Hot Keywords (Auto-extracted)
+  // --- Initial Mount ---
+  useEffect(() => {
+
+    try {
+      const savedFav = localStorage.getItem("favorites");
+      if (savedFav) setFavorites(JSON.parse(savedFav));
+    } catch (e) {
+      console.error("Failed to load favorites", e);
+    }
+  }, []);
+
+  // --- Core Data Loading Logic ---
+
+  // 加载所有归档数据 (Eager Load)并与 rawData 合并
+  // 只有当获取到 archiveIndex 后才调用
+  const loadAllArchiveData = async (indexData: Record<string, number>, currentRawData: NewsItem[]) => {
+    if (Object.keys(indexData).length === 0 || isHistoryLoaded) return;
+
+    setIsSearchingAll(true);
+    try {
+      const allDates = Object.keys(indexData).sort().reverse();
+      const allItems: NewsItem[] = [];
+      const seenLinks = new Set<string>();
+
+      // 1. 先加入当前的 rawNewsData
+      currentRawData.forEach(item => {
+        seenLinks.add(item.link);
+        allItems.push(item);
+      });
+
+      // 2. 并行加载所有归档
+      const promises = allDates.map(async (dateStr) => {
+        try {
+          const archiveUrl = R2_PUBLIC_URL
+            ? `${R2_PUBLIC_URL}/archive/${dateStr}.json`
+            : `/archive/${dateStr}.json`;
+          const r = await fetch(archiveUrl);
+          if (r.ok) {
+            return await r.json();
+          }
+        } catch (e) {
+          console.error(`Failed to load archive ${dateStr}`, e);
+        }
+        return [];
+      });
+
+      const results = await Promise.all(promises);
+
+      // 3. 合并归档数据
+      results.forEach((items: NewsItem[]) => {
+        items.forEach(item => {
+          if (!seenLinks.has(item.link)) {
+            seenLinks.add(item.link);
+            allItems.push(item);
+          }
+        });
+      });
+
+      // 4. 按时间排序
+      allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      setAllNewsData(allItems);
+      setIsHistoryLoaded(true);
+      console.log(`📚 已加载全部 ${allItems.length} 条新闻 (历史+最新)`);
+    } catch (e) {
+      console.error("Failed to load full history", e);
+    } finally {
+      setIsSearchingAll(false);
+    }
+  };
+
+  const fetchData = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
+    let capturedRawData: NewsItem[] = [];
+
+    try {
+      // 1. 获取最新 data.json
+      const dataUrl = R2_PUBLIC_URL
+        ? `${R2_PUBLIC_URL}/data.json?t=${Date.now()}`
+        : `/data.json?t=${Date.now()}`;
+      const r = await fetch(dataUrl);
+      const data = await r.json();
+
+      if (data && data.news) {
+        setRawNewsData(data.news);
+        capturedRawData = data.news;
+        setLastUpdated(data.last_updated || "");
+        setNewContentCount(0);
+        setPendingNewsData(null);
+        setPendingLastUpdated("");
+      } else if (Array.isArray(data)) {
+        setRawNewsData(data);
+        capturedRawData = data;
+      }
+
+      // 2. 获取归档索引
+      try {
+        const indexUrl = R2_PUBLIC_URL
+          ? `${R2_PUBLIC_URL}/archive/index.json?t=${Date.now()}`
+          : `/archive/index.json?t=${Date.now()}`;
+        const rIndex = await fetch(indexUrl);
+        if (rIndex.ok) {
+          const indexData = await rIndex.json();
+          setArchiveIndex(indexData);
+
+          // 3. 立即触发加载所有历史数据
+          // 传递 indexData 和 capturedRawData 避免闭包 stale 问题
+          loadAllArchiveData(indexData, capturedRawData);
+        }
+      } catch (e) {
+        console.error("Failed to fetch archive index", e);
+      }
+
+    } catch (e) {
+      console.error("Fetch error", e);
+    } finally {
+      if (showLoading) setIsLoading(false);
+    }
+  };
+
+  // 轮询检查新内容
+  const checkForNewContent = useCallback(async () => {
+    try {
+      const dataUrl = R2_PUBLIC_URL
+        ? `${R2_PUBLIC_URL}/data.json?t=${Date.now()}`
+        : `/data.json?t=${Date.now()}`;
+      const r = await fetch(dataUrl);
+      const data = await r.json();
+
+      if (data && data.news && data.last_updated !== lastUpdated) {
+        const currentLinks = new Set(rawNewsData.map(item => item.link));
+        const newItems = data.news.filter((item: NewsItem) => !currentLinks.has(item.link));
+
+        if (newItems.length > 0) {
+          setNewContentCount(newItems.length);
+          setPendingNewsData(data.news);
+          setPendingLastUpdated(data.last_updated || "");
+        }
+      }
+    } catch (e) {
+      console.error("Check for new content failed", e);
+    }
+  }, [lastUpdated, rawNewsData]);
+
+  useEffect(() => {
+    fetchData();
+    pollingIntervalRef.current = setInterval(() => {
+      checkForNewContent();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    };
+  }, []);
+
+  // 更新轮询依赖
+  useEffect(() => {
+    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    pollingIntervalRef.current = setInterval(() => {
+      checkForNewContent();
+    }, 5 * 60 * 1000);
+    return () => {
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    };
+  }, [checkForNewContent]);
+
+  const loadNewContent = () => {
+    if (pendingNewsData) {
+      setRawNewsData(pendingNewsData);
+      setLastUpdated(pendingLastUpdated);
+      setNewContentCount(0);
+      setPendingNewsData(null);
+      setPendingLastUpdated("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // 更新最新数据后，如果历史已加载，也应该尝试合并更新 allNewsData
+      // 简单起见，这里可以让 loadAllArchiveData 重新判断或不做处理，
+      // 因为新内容通常很少，暂时仅更新 rawNewsData。
+      // 若要严谨，可将 pendingNewsData merge 到 allNewsData:
+      if (isHistoryLoaded) {
+        setAllNewsData(prev => {
+          const next = [...prev];
+          const seen = new Set(next.map(n => n.link));
+          pendingNewsData.forEach(item => {
+            if (!seen.has(item.link)) next.unshift(item);
+          });
+          return next.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        });
+      }
+    }
+  };
+
+  // 归档侧边栏数据源准备
+  useEffect(() => {
+    const newData: Record<string, NewsItem[]> = {};
+    rawNewsData.forEach((item) => {
+      if (item.timestamp) {
+        const d = new Date(item.timestamp * 1000);
+        if (!isNaN(d.getTime())) {
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          if (!newData[dateStr]) newData[dateStr] = [];
+          newData[dateStr].push(item);
+        }
+      }
+    });
+    setArchiveData(newData);
+  }, [rawNewsData]);
+
+  // 无限滚动主要逻辑（仅增加 visibleCount）
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+        setVisibleCount((prev) => prev + 25);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Live View Keep Alive
+  useEffect(() => {
+    if (activeTab === 'live') {
+      setIsLiveMounted(true);
+      if (liveTimeoutRef.current) {
+        clearTimeout(liveTimeoutRef.current);
+        liveTimeoutRef.current = null;
+      }
+    } else {
+      if (isLiveMounted && !liveTimeoutRef.current) {
+        liveTimeoutRef.current = setTimeout(() => {
+          setIsLiveMounted(false);
+          liveTimeoutRef.current = null;
+        }, 5 * 60 * 1000);
+      }
+    }
+  }, [activeTab, isLiveMounted]);
+
+  // Data Source Decision: Full History vs Raw
+  const dataSource = useMemo(() => {
+    if (isHistoryLoaded && allNewsData.length > 0) {
+      return allNewsData;
+    }
+    return rawNewsData;
+  }, [isHistoryLoaded, allNewsData, rawNewsData]);
+
+  // Section: Hot Keywords (Full Scope Support)
   const hotKeywords = useMemo(() => {
-    if (!rawNewsData || rawNewsData.length === 0) return [];
+    const source = dataSource;
+    if (!source || source.length === 0) return [];
 
     const STOP_WORDS = new Set([
       "的", "了", "是", "在", "和", "有", "我", "这", "就", "不", "人", "都", "一", "一个", "上", "也", "很", "到", "说", "要", "去", "你", "会", "着", "没有", "看", "怎么", "还是", "或者", "因为", "所以", "如果", "那个", "这个",
@@ -130,9 +386,12 @@ export default function Home() {
     const wordCounts: Record<string, number> = {};
     const hasSegmenter = typeof Intl !== 'undefined' && (Intl as any).Segmenter;
 
+    // 只分析最新的 200 条，避免全量分析太卡
+    const analysisTarget = source.slice(0, 200);
+
     if (hasSegmenter) {
       const segmenter = new (Intl as any).Segmenter('zh-CN', { granularity: 'word' });
-      rawNewsData.forEach(item => {
+      analysisTarget.forEach(item => {
         if (!item.title) return;
         const cleanTitle = item.title.trim();
         const segments = segmenter.segment(cleanTitle);
@@ -163,18 +422,21 @@ export default function Home() {
       })
       .slice(0, 15)
       .map(([word]) => word);
-  }, [rawNewsData]);
+  }, [dataSource]);
 
-  // SECTION 3: Hot Sources
+  // Section: Hot Sources
   const hotSources = useMemo(() => {
-    if (!rawNewsData || rawNewsData.length === 0) return [];
+    const source = dataSource;
+    if (!source || source.length === 0) return [];
+
     const SOURCE_NAMES = new Set([
       "雅虎新闻", "雅虎", "共同社", "路透社", "路透", "产经新闻", "日本经济新闻", "日经新闻", "朝日新闻", "每日新闻",
       "读卖新闻", "时事通信", "时事通讯社", "日刊体育", "东洋经济", "钻石在线", "中央日报", "朝日电视台",
       "NHK", "TBS", "东京新闻", "富士电视台", "产经体育", "体育日报"
     ]);
     const sourceCounts: Record<string, number> = {};
-    rawNewsData.forEach(item => {
+    // 分析最新的 300 条
+    source.slice(0, 300).forEach(item => {
       if (!item.title) return;
       const cleanTitle = item.title.trim();
       SOURCE_NAMES.forEach(sourceName => {
@@ -187,353 +449,16 @@ export default function Home() {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
       .map(([source]) => source);
-  }, [rawNewsData]);
+  }, [dataSource]);
 
-  const handleSuggestionClick = (keyword: string) => {
-    handleSearchInput(keyword);
-    setShowSuggestions(false);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const [showSettings, setShowSettings] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-  const [showFav, setShowFav] = useState(false);
-  const [showArchive, setShowArchive] = useState(false);
-  const [archiveDate, setArchiveDate] = useState("");
-
-  const [pullStartY, setPullStartY] = useState(0);
-  const [pullStartX, setPullStartX] = useState(0);
-  const [pullCurrentY, setPullCurrentY] = useState(0);
-  const PULL_THRESHOLD = 80;
-
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    try {
-      const savedFav = localStorage.getItem("favorites");
-      if (savedFav) setFavorites(JSON.parse(savedFav));
-    } catch (e) {
-      console.error("Failed to load favorites", e);
-    }
-  }, []);
-
-  const fetchData = async (showLoading = true) => {
-    if (showLoading) setIsLoading(true);
-    try {
-      // 从 R2 获取最新新闻数据
-      const dataUrl = R2_PUBLIC_URL
-        ? `${R2_PUBLIC_URL}/data.json?t=${Date.now()}`
-        : `/data.json?t=${Date.now()}`;
-      const r = await fetch(dataUrl);
-      const data = await r.json();
-      if (data && data.news) {
-        setRawNewsData(data.news);
-        setLastUpdated(data.last_updated || "");
-        // 清除新内容提醒
-        setNewContentCount(0);
-        setPendingNewsData(null);
-        setPendingLastUpdated("");
-      } else if (Array.isArray(data)) {
-        setRawNewsData(data);
-      }
-
-      // 从 R2 获取归档索引
-      try {
-        const indexUrl = R2_PUBLIC_URL
-          ? `${R2_PUBLIC_URL}/archive/index.json?t=${Date.now()}`
-          : `/archive/index.json?t=${Date.now()}`;
-        const rIndex = await fetch(indexUrl);
-        if (rIndex.ok) {
-          const indexData = await rIndex.json();
-          setArchiveIndex(indexData);
-        }
-      } catch (e) {
-        console.error("Failed to fetch archive index", e);
-      }
-
-    } catch (e) {
-      console.error("Fetch error", e);
-    } finally {
-      if (showLoading) setIsLoading(false);
-    }
-  };
-
-  // 加载所有归档数据用于全局搜索
-  const loadAllArchiveData = async () => {
-    if (allNewsData.length > 0 || isSearchingAll) return; // 已加载或正在加载
-
-    setIsSearchingAll(true);
-    try {
-      const allDates = Object.keys(archiveIndex).sort().reverse();
-      const allItems: NewsItem[] = [];
-      const seenLinks = new Set<string>();
-
-      // 并行加载所有归档文件
-      const promises = allDates.map(async (dateStr) => {
-        try {
-          const archiveUrl = R2_PUBLIC_URL
-            ? `${R2_PUBLIC_URL}/archive/${dateStr}.json`
-            : `/archive/${dateStr}.json`;
-          const r = await fetch(archiveUrl);
-          if (r.ok) {
-            return await r.json();
-          }
-        } catch (e) {
-          console.error(`Failed to load archive ${dateStr}`, e);
-        }
-        return [];
-      });
-
-      const results = await Promise.all(promises);
-
-      // 合并并去重
-      results.forEach((items: NewsItem[]) => {
-        items.forEach(item => {
-          if (!seenLinks.has(item.link)) {
-            seenLinks.add(item.link);
-            allItems.push(item);
-          }
-        });
-      });
-
-      // 按时间排序
-      allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-      setAllNewsData(allItems);
-      console.log(`📚 已加载全部 ${allItems.length} 条新闻用于搜索`);
-    } catch (e) {
-      console.error("Failed to load all archive data", e);
-    } finally {
-      setIsSearchingAll(false);
-    }
-  };
-
-  // 后台轮询检查新内容
-  const checkForNewContent = useCallback(async () => {
-    try {
-      const dataUrl = R2_PUBLIC_URL
-        ? `${R2_PUBLIC_URL}/data.json?t=${Date.now()}`
-        : `/data.json?t=${Date.now()}`;
-      const r = await fetch(dataUrl);
-      const data = await r.json();
-
-      if (data && data.news && data.last_updated !== lastUpdated) {
-        // 有新内容
-        const currentLinks = new Set(rawNewsData.map(item => item.link));
-        const newItems = data.news.filter((item: NewsItem) => !currentLinks.has(item.link));
-
-        if (newItems.length > 0) {
-          setNewContentCount(newItems.length);
-          setPendingNewsData(data.news);
-          setPendingLastUpdated(data.last_updated || "");
-        }
-      }
-    } catch (e) {
-      console.error("Check for new content failed", e);
-    }
-  }, [lastUpdated, rawNewsData]);
-
-  // 设置轮询
-  useEffect(() => {
-    fetchData();
-
-    // 每5分钟检查一次新内容
-    pollingIntervalRef.current = setInterval(() => {
-      checkForNewContent();
-    }, 5 * 60 * 1000);
-
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
-
-  // 当 lastUpdated 或 rawNewsData 变化时更新 checkForNewContent 的依赖
-  useEffect(() => {
-    // 清除旧的轮询
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-    // 设置新的轮询
-    pollingIntervalRef.current = setInterval(() => {
-      checkForNewContent();
-    }, 5 * 60 * 1000);
-
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [checkForNewContent]);
-
-  // 当有搜索词且有归档索引时，加载全部数据
-  useEffect(() => {
-    if (searchQuery && Object.keys(archiveIndex).length > 0 && allNewsData.length === 0) {
-      loadAllArchiveData();
-    }
-  }, [searchQuery, archiveIndex, allNewsData.length]);
-
-  // 加载新内容
-  const loadNewContent = () => {
-    if (pendingNewsData) {
-      setRawNewsData(pendingNewsData);
-      setLastUpdated(pendingLastUpdated);
-      setNewContentCount(0);
-      setPendingNewsData(null);
-      setPendingLastUpdated("");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  useEffect(() => {
-    const newData: Record<string, NewsItem[]> = {};
-    rawNewsData.forEach((item) => {
-      if (item.timestamp) {
-        const d = new Date(item.timestamp * 1000);
-        if (!isNaN(d.getTime())) {
-          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-          if (!newData[dateStr]) newData[dateStr] = [];
-          newData[dateStr].push(item);
-        }
-      }
-    });
-    setArchiveData(newData);
-  }, [rawNewsData]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
-        setVisibleCount((prev) => (prev < 200 ? prev + 25 : prev));
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Live View Keep Alive Logic
-  useEffect(() => {
-    if (activeTab === 'live') {
-      setIsLiveMounted(true);
-      if (liveTimeoutRef.current) {
-        clearTimeout(liveTimeoutRef.current);
-        liveTimeoutRef.current = null;
-      }
-    } else {
-      // If switching away from live, set a timeout to unmount it
-      if (isLiveMounted && !liveTimeoutRef.current) {
-        liveTimeoutRef.current = setTimeout(() => {
-          setIsLiveMounted(false);
-          liveTimeoutRef.current = null;
-        }, 5 * 60 * 1000); // 5 minutes
-      }
-    }
-    return () => {
-      // Cleanup on unmount (though this component likely won't unmount)
-    };
-  }, [activeTab, isLiveMounted]);
-
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setPullStartX(e.touches[0].clientX);
-    if (window.scrollY === 0) {
-      setPullStartY(e.touches[0].clientY);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    // Pull to refresh logic
-    if (pullStartY > 0 && window.scrollY === 0) {
-      const currentY = e.touches[0].clientY;
-      if (currentY > pullStartY) {
-        setPullCurrentY(currentY - pullStartY);
-      }
-    }
-  };
-
-  const handleTouchEnd = async (e: React.TouchEvent) => {
-    // Pull to Refresh Logic
-    if (pullCurrentY > PULL_THRESHOLD) {
-      setIsRefreshing(true);
-      await fetchData(false);
-      setIsRefreshing(false);
-    }
-    setPullStartY(0);
-    setPullStartX(0);
-    setPullCurrentY(0);
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchData(false);
-    setIsRefreshing(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleSearchInput = useCallback((val: string) => {
-    setSearchInput(val);
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    searchTimeoutRef.current = setTimeout(() => {
-      setSearchQuery(val.trim());
-      setVisibleCount(25);
-    }, 500);
-  }, []);
-
-  const handleClearSearch = () => {
-    setSearchInput("");
-    setSearchQuery("");
-    setVisibleCount(25);
-  };
-
-  // 切换排序模式并显示提示
-  const toggleSortMode = () => {
-    const newMode = sortMode === 'publish' ? 'fetch' : 'publish';
-    setSortMode(newMode);
-
-    // 显示切换提示
-    setShowSortToast(true);
-    if (sortToastTimeoutRef.current) {
-      clearTimeout(sortToastTimeoutRef.current);
-    }
-    sortToastTimeoutRef.current = setTimeout(() => {
-      setShowSortToast(false);
-    }, 2500);
-  };
-
-  // 选择数据源：搜索时用全部数据，否则用今天/昨天数据
-  const dataSource = useMemo(() => {
-    if (searchQuery && allNewsData.length > 0) {
-      return allNewsData;
-    }
-    return rawNewsData;
-  }, [searchQuery, allNewsData, rawNewsData]);
-
-  // 排序后的新闻数据
+  // Filtering & Sorting
   const sortedNewsData = useMemo(() => {
     const sorted = [...dataSource].sort((a, b) => {
       if (sortMode === 'fetch') {
-        // 按抓取时间排序（新抓取的在前）
         const fetchA = (a as any).fetched_at || a.timestamp || 0;
         const fetchB = (b as any).fetched_at || b.timestamp || 0;
         return fetchB - fetchA;
       } else {
-        // 按发布时间排序（默认）
         return (b.timestamp || 0) - (a.timestamp || 0);
       }
     });
@@ -542,6 +467,8 @@ export default function Home() {
 
   const filteredItems = useMemo(() => {
     let filtered = sortedNewsData;
+
+    // Category Filter
     if (currentFilter !== "all") {
       filtered = filtered.filter((item) => {
         const itemCategory = item.category || "其他";
@@ -549,6 +476,8 @@ export default function Home() {
         return itemCategoryKey === currentFilter;
       });
     }
+
+    // Search Filter
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((item) => {
@@ -564,30 +493,79 @@ export default function Home() {
   }, [sortedNewsData, currentFilter, searchQuery]);
 
   const displayItems = filteredItems.slice(0, visibleCount);
+  const filteredArchiveItems = useMemo(() => archiveData[archiveDate] || [], [archiveData, archiveDate]);
 
-  const filteredArchiveItems = useMemo(() => {
-    return archiveData[archiveDate] || [];
-  }, [archiveData, archiveDate]);
+  // Touch Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
 
+    if (window.scrollY === 0) setPullStartY(e.touches[0].clientY);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (pullStartY > 0 && window.scrollY === 0) {
+      const currentY = e.touches[0].clientY;
+      if (currentY > pullStartY) setPullCurrentY(currentY - pullStartY);
+    }
+  };
+  const handleTouchEnd = async () => {
+    if (pullCurrentY > PULL_THRESHOLD) {
+      setIsRefreshing(true);
+      await fetchData(false);
+      setIsRefreshing(false);
+    }
+    setPullStartY(0);
+
+    setPullCurrentY(0);
+  };
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchData(false);
+    setIsRefreshing(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Search Helpers
+  const handleSearchInput = useCallback((val: string) => {
+    setSearchInput(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchQuery(val.trim());
+      setVisibleCount(25);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 500);
+  }, []);
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setVisibleCount(25);
+  };
+  const handleSuggestionClick = (keyword: string) => {
+    handleSearchInput(keyword);
+    setShowSuggestions(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const toggleSortMode = () => {
+    const newMode = sortMode === 'publish' ? 'fetch' : 'publish';
+    setSortMode(newMode);
+    setShowSortToast(true);
+    if (sortToastTimeoutRef.current) clearTimeout(sortToastTimeoutRef.current);
+    sortToastTimeoutRef.current = setTimeout(() => setShowSortToast(false), 2500);
+  };
+
+  // Fav Logic
   const handleToggleFav = (e: React.MouseEvent, item: NewsItem) => {
     e.stopPropagation();
     const exists = favorites.some((f) => f.link === item.link);
     let newFavs;
-    if (exists) {
-      newFavs = favorites.filter((f) => f.link !== item.link);
-    } else {
-      newFavs = [item, ...favorites];
-    }
+    if (exists) newFavs = favorites.filter((f) => f.link !== item.link);
+    else newFavs = [item, ...favorites];
     setFavorites(newFavs);
     localStorage.setItem("favorites", JSON.stringify(newFavs));
   };
-
   const handleRemoveFav = (item: NewsItem) => {
     const newFavs = favorites.filter((f) => f.link !== item.link);
     setFavorites(newFavs);
     localStorage.setItem("favorites", JSON.stringify(newFavs));
   };
-
   const handleClearFav = () => {
     if (confirm("确定要清空所有收藏吗？")) {
       setFavorites([]);
@@ -595,35 +573,41 @@ export default function Home() {
     }
   };
 
-  const handleShowArchive = async (dateStr: string) => {
+  // Count logic for CategoryNav
+  const getCategoryCount = useCallback((category: string) => {
+    // Determine which dataset to use for counting
+    // Always use dataSource (which could be full history or raw)
+    const source = dataSource;
+    return source.filter(item => {
+      const cat = item.category ? (CATEGORY_MAP[item.category] || item.category) : '';
+      return cat === category;
+    }).length;
+  }, [dataSource]);
+
+  const handleFilterChange = (cat: string) => {
+    setCurrentFilter(cat);
+    setVisibleCount(25);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const handleSelectArchiveDate = async (dateStr: string) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setArchiveDate(dateStr);
     setShowArchive(true);
     setShowArchiveDrawer(false);
-
     if (!archiveData[dateStr]) {
       try {
-        // 从 R2 获取归档数据
         const archiveUrl = R2_PUBLIC_URL
           ? `${R2_PUBLIC_URL}/archive/${dateStr}.json`
           : `/archive/${dateStr}.json`;
         const r = await fetch(archiveUrl);
         if (r.ok) {
           const items = await r.json();
-          setArchiveData(prev => ({
-            ...prev,
-            [dateStr]: items
-          }));
+          setArchiveData(prev => ({ ...prev, [dateStr]: items }));
         }
       } catch (e) {
         console.error(`Failed to load archive for ${dateStr}`, e);
       }
     }
-  };
-
-  const handleFilterChange = (cat: string) => {
-    setCurrentFilter(cat);
-    setVisibleCount(25);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -707,7 +691,7 @@ export default function Home() {
                 onFilterChange={handleFilterChange}
                 disableSticky={showSuggestions || showArchiveDrawer}
                 onShowToast={handleShowCategoryToast}
-                totalCount={rawNewsData.length}
+                totalCount={dataSource.length} // 使用全部数据总数
                 getCategoryCount={getCategoryCount}
               />
 
@@ -728,8 +712,8 @@ export default function Home() {
                 )}
               </AnimatePresence>
 
-              <div ref={searchBarRef} className={`relative max-w-[600px] mx-auto px-4 ${(showSuggestions || showArchiveDrawer) ? "z-[200]" : "z-30"}`}>
-                {/* Search & Tool Bar - Master Standard Container */}
+              <div ref={searchBarRef} className={`relative max-w-[600px] mx-auto px-4 mb-6 ${(showSuggestions || showArchiveDrawer) ? "z-[200]" : "z-30"}`}>
+                {/* Search & Tool Bar */}
                 <div className="w-full max-w-[600px] h-[52px] mx-auto bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center px-1 mt-2">
 
                   {/* Left: Search Input */}
@@ -763,210 +747,194 @@ export default function Home() {
                         <X className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
                       </button>
                     )}
-
                   </div>
 
-                  {/* Divider */}
                   <div className="w-[1px] h-6 bg-gray-200 dark:bg-white/10 shrink-0" />
 
                   {/* Right: Tools (Archive & Sort) */}
                   <div className="flex items-center gap-1 pl-1 pr-1 shrink-0">
+                    <button
+                      onClick={toggleSortMode}
+                      className="flex items-center justify-center w-10 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 transition-colors"
+                    >
+                      <ArrowUpDown className="w-4 h-4" />
+                    </button>
                     <div className="relative">
                       <button
                         onClick={() => {
                           const newState = !showArchiveDrawer;
                           setShowArchiveDrawer(newState);
                           setShowSuggestions(false);
-                          if (newState) {
-                            setTimeout(scrollToSearchBar, 50);
-                          }
+                          if (newState) setTimeout(scrollToSearchBar, 50);
                         }}
                         className="flex items-center justify-center gap-1.5 px-3 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 transition-colors"
                       >
                         <Calendar className="w-4 h-4" />
                         <span className="text-[13px] font-medium">{settings.lang === "sc" ? "存档" : "存檔"}</span>
                       </button>
-                      <AnimatePresence>
-                        {showArchiveDrawer && (
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] z-[200]">
-                            <ArchiveDrawer
-                              archiveData={archiveData}
-                              archiveIndex={archiveIndex}
-                              onSelectDate={handleShowArchive}
-                              isOpen={showArchiveDrawer}
-                            />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Archive Drawer (Moved here for correct positioning) */}
+                <AnimatePresence>
+                  {showArchiveDrawer && (
+                    <div className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] z-[200]">
+                      <ArchiveDrawer
+                        archiveData={archiveData}
+                        archiveIndex={archiveIndex}
+                        onSelectDate={handleSelectArchiveDate}
+                        isOpen={showArchiveDrawer}
+                      />
+                    </div>
+                  )}
+                </AnimatePresence>
+
+                {/* Search Suggestions Dropdown */}
+                <AnimatePresence>
+                  {showSuggestions && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 overflow-hidden z-[200]"
+                    >
+                      <div className="p-3">
+                        <div className="mb-3">
+                          <div className="text-[10px] text-gray-400 mb-2 px-1">{settings.lang === "sc" ? "热门搜索" : "熱門搜索"}</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {trendingNow.map(k => (
+                              <button
+                                key={k}
+                                onClick={() => handleSuggestionClick(k)}
+                                className="px-2.5 py-1 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs rounded-lg hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-colors"
+                              >
+                                {settings.lang === "sc" ? k : TC_MAP[k] || k}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {hotKeywords.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-[10px] text-gray-400 mb-2 px-1">{settings.lang === "sc" ? "上升热词" : "上升熱詞"}</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hotKeywords.map(k => (
+                                <button
+                                  key={k}
+                                  onClick={() => handleSuggestionClick(k)}
+                                  className="px-2.5 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 text-xs rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                                >
+                                  {k}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
-                      </AnimatePresence>
-                    </div>
 
-                    <button
-                      onClick={toggleSortMode}
-                      className={`flex items-center justify-center gap-1.5 px-3 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${sortMode === 'fetch' ? 'text-[var(--primary)] font-bold' : 'text-gray-600 dark:text-gray-400'}`}
-                    >
-                      <ArrowUpDown className={`w-4 h-4 ${sortMode === 'fetch' ? 'text-[var(--primary)]' : ''}`} />
-                      <span className="text-[13px] font-medium">{settings.lang === "sc" ? "排序" : "排序"}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Smart Suggestions Dropdown - Relative to Search Bar */}
-                {showSuggestions && (trendingNow.length > 0 || hotKeywords.length > 0 || hotSources.length > 0) && !searchInput && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 dark:border-white/5 p-3 animate-in slide-in-from-top-2 fade-in duration-200 z-[200]">
-                    {/* 关闭按钮 */}
-                    <button
-                      onClick={() => {
-                        setShowSuggestions(false);
-                      }}
-                      className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                    </button>
-                    {trendingNow.length > 0 && (
-                      <div className="mb-2.5">
-                        <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 flex items-center gap-1">
-                          {settings.lang === "sc" ? "当下最热" : "當下最熱"}
-                          <Flame className="w-3 h-3 text-red-500 fill-red-500" />
-                        </div>
-                        <div className="leading-relaxed text-sm">
-                          {trendingNow.map((keyword, index) => (
-                            <span key={keyword}>
-                              <button
-                                onClick={() => handleSuggestionClick(keyword)}
-                                className="text-gray-800 dark:text-gray-200 text-[13px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors font-medium"
-                              >
-                                {settings.lang === "sc" ? keyword : (TC_MAP[keyword] || keyword)}
-                              </button>
-                              {index < trendingNow.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-2">·</span>}
-                            </span>
-                          ))}
-                        </div>
+                        {hotSources.length > 0 && (
+                          <div>
+                            <div className="text-[10px] text-gray-400 mb-2 px-1">{settings.lang === "sc" ? "热门媒体" : "熱門媒體"}</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hotSources.map(s => (
+                                <button
+                                  key={s}
+                                  onClick={() => handleSuggestionClick(s)}
+                                  className="px-2.5 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-
-                    {trendingNow.length > 0 && hotKeywords.length > 0 && (
-                      <div className="mb-2.5">
-                        <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">
-                          {settings.lang === "sc" ? "热门话题" : "熱門話題"}
-                        </div>
-                        <div className="leading-relaxed">
-                          {hotKeywords.map((keyword, index) => (
-                            <span key={keyword}>
-                              <button
-                                onClick={() => handleSuggestionClick(keyword)}
-                                className="text-gray-700 dark:text-gray-300 text-[12px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors"
-                              >
-                                {keyword}
-                              </button>
-                              {index < hotKeywords.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {hotKeywords.length > 0 && hotSources.length > 0 && (
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-2.5"></div>
-                    )}
-
-                    {hotSources.length > 0 && (
-                      <div>
-                        <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">
-                          {settings.lang === "sc" ? "热门来源" : "熱門來源"}
-                        </div>
-                        <div className="leading-relaxed">
-                          {hotSources.map((source, index) => (
-                            <span key={source}>
-                              <button
-                                onClick={() => handleSuggestionClick(source)}
-                                className="text-gray-600 dark:text-gray-400 text-[11px] underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:text-red-500 hover:decoration-red-500 dark:hover:text-red-400 dark:hover:decoration-red-400 transition-colors"
-                              >
-                                {source}
-                              </button>
-                              {index < hotSources.length - 1 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              {/* 搜索结果提示 */}
-              {searchQuery && (
-                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
-                  {isSearchingAll ? (
-                    <span className="flex items-center justify-center gap-1">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      {settings.lang === "sc" ? "正在搜索全部新闻..." : "正在搜尋全部新聞..."}
-                    </span>
-                  ) : (
-                    <span>
-                      {settings.lang === "sc"
-                        ? `在 ${allNewsData.length || rawNewsData.length} 条新闻中找到 ${filteredItems.length} 条结果`
-                        : `在 ${allNewsData.length || rawNewsData.length} 條新聞中找到 ${filteredItems.length} 條結果`}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* New Content Notification - Red */}
+              {/* New Content Notification */}
               <AnimatePresence>
                 {newContentCount > 0 && (
-                  <motion.button
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    onClick={loadNewContent}
-                    className="w-full mt-3 mb-1 py-2.5 px-4 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white text-sm font-medium rounded-xl shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  <motion.div
+                    initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                    className="flex justify-center mt-4 mb-2 relative z-30"
                   >
-                    <ArrowUpDown className="w-4 h-4" />
-                    {settings.lang === "sc"
-                      ? `有 ${newContentCount} 条新内容`
-                      : `有 ${newContentCount} 條新內容`}
-                  </motion.button>
+                    <button
+                      onClick={loadNewContent}
+                      className="group flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg shadow-blue-500/30 transition-all active:scale-95"
+                    >
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-200 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+                      </span>
+                      <span className="text-[13px] font-medium tracking-wide">
+                        {settings.lang === "sc" ? `发现 ${newContentCount} 条新内容` : `發現 ${newContentCount} 條新內容`}
+                      </span>
+                    </button>
+                  </motion.div>
                 )}
               </AnimatePresence>
 
-
-
               {/* News List */}
-              <motion.div
-                key={`${sortMode}-${searchQuery}`}
-                initial={{ opacity: 0.8, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="mt-3"
-              >
-                <NewsList
-                  news={displayItems}
-                  isLoading={isLoading}
-                  onToggleFav={handleToggleFav}
-                  favorites={favorites}
-                  onShowArchive={handleShowArchive}
-                  onFilterCategory={handleFilterChange}
-                  archiveData={archiveData}
-                />
-              </motion.div>
+              <NewsList
+                news={displayItems}
+                isLoading={isLoading}
+                onToggleFav={handleToggleFav}
+                favorites={favorites}
+                onShowArchive={handleSelectArchiveDate}
+                onFilterCategory={handleFilterChange}
+                archiveData={archiveData}
+              />
 
-              {/* Empty State */}
-              {!isLoading && searchQuery && filteredItems.length === 0 && !isSearchingAll && (
-                <div className="px-4 py-16 text-center">
-                  <p className="text-base text-gray-500 dark:text-gray-400">
-                    {settings.lang === "sc" ? "本次没搜到结果，换个关键词试试吧。" : "本次沒搜到結果，換個關鍵詞試試吧。"}
-                  </p>
-                </div>
-              )}
-
-              {/* Loading State */}
-              {!isLoading && visibleCount < filteredItems.length && (
-                <div className="text-center py-8 text-[var(--text-sub)] text-sm">
-                  Loading...
-                </div>
-              )}
+              {/* Footer / Status */}
+              <div className="py-8 text-center">
+                {isLoading ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-5 h-5 text-gray-300 animate-spin" />
+                    <p className="text-xs text-gray-400">
+                      {settings.lang === "sc" ? "正在加载内容..." : "正在加載內容..."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-300 dark:text-white/20">
+                      {filteredItems.length === 0
+                        ? (settings.lang === "sc" ? "没有找到相关内容" : "沒有找到相關內容")
+                        : (
+                          <>
+                            {settings.lang === "sc" ? "已加载" : "已加載"} {filteredItems.length} {settings.lang === "sc" ? "条内容" : "條內容"}
+                            {isSearchingAll && (
+                              <span className="ml-2 inline-flex items-center gap-1 text-orange-400">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                {settings.lang === "sc" ? "仍在加载更多历史..." : "仍在加載更多歷史..."}
+                              </span>
+                            )}
+                          </>
+                        )
+                      }
+                    </p>
+                    <BackToTop />
+                  </div>
+                )}
+              </div>
             </motion.div>
+          )}
 
+          {activeTab === 'live' && (
+            <motion.div
+              key="live"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LiveView />
+            </motion.div>
           )}
 
           {activeTab === 'disaster' && (
@@ -981,29 +949,22 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
+      </main>
 
-        {/* Live View - Keep Alive Logic */}
-        <div style={{ display: activeTab === 'live' ? 'block' : 'none' }}>
-          {isLiveMounted && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <LiveView />
-            </motion.div>
-          )}
-        </div>
-      </main >
-
-      <BackToTop />
-
+      {/* Settings Modal */}
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         onClearFavorites={handleClearFav}
       />
-      <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
+
+      {/* About Modal */}
+      <AboutModal
+        isOpen={showAbout}
+        onClose={() => setShowAbout(false)}
+      />
+
+      {/* Favorites Modal */}
       <FavModal
         isOpen={showFav}
         onClose={() => setShowFav(false)}
@@ -1011,29 +972,17 @@ export default function Home() {
         onRemoveFav={handleRemoveFav}
         onClearFavorites={handleClearFav}
       />
+
+      {/* Archive Detail Modal */}
       <ArchiveModal
         isOpen={showArchive}
         onClose={() => setShowArchive(false)}
         dateStr={archiveDate}
         items={filteredArchiveItems}
-        favorites={favorites}
         onToggleFav={handleToggleFav}
+        favorites={favorites}
         currentFilter={currentFilter}
       />
-
-
-
-      {/* 滚动锁定：当搜索或存档抽屉打开时 */}
-      {
-        (showSuggestions || showArchiveDrawer) && (
-          <style jsx global>{`
-          body {
-            overflow: hidden !important;
-            touch-action: none !important;
-          }
-        `}</style>
-        )
-      }
-    </div >
+    </div>
   );
 }
