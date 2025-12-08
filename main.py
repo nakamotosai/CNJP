@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 
 # 日本时间 (UTC+9)
 JST = datetime.timezone(datetime.timedelta(hours=9))
@@ -50,6 +51,26 @@ def upload_to_r2(client, local_path, r2_key):
         return True
     except Exception as e:
         print(f"❌ R2 upload failed for {r2_key}: {e}")
+        return False
+
+def download_file_from_r2(client, r2_key, local_path):
+    """从 R2 下载文件到本地"""
+    if client is None:
+        return False
+    try:
+        # 确保目录存在
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        client.download_file(R2_BUCKET_NAME, r2_key, local_path)
+        print(f"✅ Downloaded from R2: {r2_key}")
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            print(f"ℹ️ File not found in R2: {r2_key} (will create new)")
+        else:
+            print(f"❌ R2 download failed for {r2_key}: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ R2 download failed for {r2_key}: {e}")
         return False
 
 # === 媒体映射表 ===
@@ -318,12 +339,31 @@ def update_news():
     archive_dir = "public/archive"
     os.makedirs(archive_dir, exist_ok=True)
     
+    # 获取 R2 客户端
+    r2_client = get_r2_client()
+
+    # === 关键修复：先从 R2 下载历史数据 ===
+    # 1. 确定需要同步的日期集合
+    #    包括：本次 RSS 抓到的日期 + 今天 + 昨天
+    today = get_current_jst_time()
+    yesterday = today - datetime.timedelta(days=1)
+    
+    dates_to_sync = set(news_by_date.keys())
+    dates_to_sync.add(today.strftime("%Y-%m-%d"))
+    dates_to_sync.add(yesterday.strftime("%Y-%m-%d"))
+    
+    print(f"需同步日期: {dates_to_sync}")
+
+    # 2. 从 R2 下载这些日期的存档 (如果存在)
+    if r2_client:
+        for date_str in dates_to_sync:
+            download_file_from_r2(r2_client, f"archive/{date_str}.json", os.path.join(archive_dir, f"{date_str}.json"))
+    # ====================================
+    
     total_updated = 0
     total_added = 0
     total_ignored = 0
 
-    # 获取 R2 客户端
-    r2_client = get_r2_client()
     uploaded_archives = []
 
     for date_key, items in news_by_date.items():
@@ -371,23 +411,39 @@ def update_news():
         print(f"[{date_key}] 存档更新: 总{len(final_list)}条")
 
     # === 生成 archive/index.json ===
-    print("正在生成归档索引...")
+    print("正在更新归档索引...")
+    
+    # 1. 先下载现有的 index.json
+    index_path = os.path.join(archive_dir, 'index.json')
+    if r2_client:
+        download_file_from_r2(r2_client, "archive/index.json", index_path)
+
+    # 2. 读取现有索引
     archive_index = {}
-    all_files = os.listdir(archive_dir)
-    for filename in all_files:
-        if filename.endswith(".json") and filename != "index.json":
-            date_str = filename.replace(".json", "")
+    if os.path.exists(index_path):
+        try:
+            with open(index_path, 'r', encoding='utf-8') as f:
+                archive_index = json.load(f)
+        except Exception as e:
+            print(f"读取现有 index.json 失败: {e}, 将重建索引")
+
+    # 3. 更新本次修改过的日期的计数
+    #    只需要更新 dates_to_sync 中确实存在的文件的计数
+    #    (因为我们只修改了这些文件，其他日期的计数应该保持不变)
+    for date_str in dates_to_sync:
+        file_path = os.path.join(archive_dir, f"{date_str}.json")
+        if os.path.exists(file_path):
             try:
-                with open(os.path.join(archive_dir, filename), 'r', encoding='utf-8') as f:
+                with open(file_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     archive_index[date_str] = len(data)
             except Exception as e:
-                print(f"读取 {filename} 失败: {e}")
-    
-    index_path = os.path.join(archive_dir, 'index.json')
+                print(f"读取 {file_path} 计算索引失败: {e}")
+
+    # 4. 保存并上传
     with open(index_path, 'w', encoding='utf-8') as f:
         json.dump(archive_index, f, ensure_ascii=False, indent=2)
-    print("归档索引生成完毕。")
+    print("归档索引更新完毕。")
     
     # 上传 index.json 到 R2
     upload_to_r2(r2_client, index_path, "archive/index.json")
@@ -395,7 +451,7 @@ def update_news():
     # data.json 更新
     homepage_news = []
     seen_titles = set()
-    today = get_current_jst_time()
+    # today 和 yesterday 已经在上面定义过了
     target_dates = [
         today.strftime("%Y-%m-%d"),
         (today - datetime.timedelta(days=1)).strftime("%Y-%m-%d")

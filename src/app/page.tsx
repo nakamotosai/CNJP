@@ -51,8 +51,26 @@ export default function Home() {
   }, []);
 
   // Live View Persistence
-  const [isLiveMounted, setIsLiveMounted] = useState(false);
+  // Live View Persistence
+  const [isLiveActive, setIsLiveActive] = useState(false);
   const liveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle Live View Persistence and Timeout
+  useEffect(() => {
+    if (activeTab === 'live') {
+      setIsLiveActive(true);
+      if (liveTimeoutRef.current) {
+        clearTimeout(liveTimeoutRef.current);
+        liveTimeoutRef.current = null;
+      }
+    } else {
+      if (isLiveActive && !liveTimeoutRef.current) {
+        liveTimeoutRef.current = setTimeout(() => {
+          setIsLiveActive(false);
+        }, 10 * 60 * 1000); // 10 minutes
+      }
+    }
+  }, [activeTab, isLiveActive]);
 
   // Filter & Search
   const [currentFilter, setCurrentFilter] = useState("all");
@@ -123,8 +141,8 @@ export default function Home() {
   };
 
   // --- Initial Mount ---
+  // --- Initial Mount ---
   useEffect(() => {
-
     try {
       const savedFav = localStorage.getItem("favorites");
       if (savedFav) setFavorites(JSON.parse(savedFav));
@@ -132,8 +150,6 @@ export default function Home() {
       console.error("Failed to load favorites", e);
     }
   }, []);
-
-  // --- Core Data Loading Logic ---
 
   // 加载所有归档数据 (Eager Load)并与 rawData 合并
   // 只有当获取到 archiveIndex 后才调用
@@ -202,8 +218,18 @@ export default function Home() {
       const dataUrl = R2_PUBLIC_URL
         ? `${R2_PUBLIC_URL}/data.json?t=${Date.now()}`
         : `/data.json?t=${Date.now()}`;
-      const r = await fetch(dataUrl);
-      const data = await r.json();
+
+      let data;
+      try {
+        const r = await fetch(dataUrl);
+        if (!r.ok) throw new Error("Network response was not ok");
+        data = await r.json();
+      } catch (e) {
+        console.warn("Primary data fetch failed, trying local fallback...", e);
+        // Fallback to local
+        const rFallback = await fetch(`/data.json?t=${Date.now()}`);
+        data = await rFallback.json();
+      }
 
       if (data && data.news) {
         setRawNewsData(data.news);
@@ -222,11 +248,22 @@ export default function Home() {
         const indexUrl = R2_PUBLIC_URL
           ? `${R2_PUBLIC_URL}/archive/index.json?t=${Date.now()}`
           : `/archive/index.json?t=${Date.now()}`;
-        const rIndex = await fetch(indexUrl);
-        if (rIndex.ok) {
-          const indexData = await rIndex.json();
-          setArchiveIndex(indexData);
 
+        let indexData;
+        try {
+          const rIndex = await fetch(indexUrl);
+          if (!rIndex.ok) throw new Error("Network response was not ok");
+          indexData = await rIndex.json();
+        } catch (e) {
+          console.warn("Primary index fetch failed, trying local fallback...", e);
+          const rIndexFallback = await fetch(`/archive/index.json?t=${Date.now()}`);
+          if (rIndexFallback.ok) {
+            indexData = await rIndexFallback.json();
+          }
+        }
+
+        if (indexData) {
+          setArchiveIndex(indexData);
           // 3. 立即触发加载所有历史数据
           // 传递 indexData 和 capturedRawData 避免闭包 stale 问题
           loadAllArchiveData(indexData, capturedRawData);
@@ -341,23 +378,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Live View Keep Alive
-  useEffect(() => {
-    if (activeTab === 'live') {
-      setIsLiveMounted(true);
-      if (liveTimeoutRef.current) {
-        clearTimeout(liveTimeoutRef.current);
-        liveTimeoutRef.current = null;
-      }
-    } else {
-      if (isLiveMounted && !liveTimeoutRef.current) {
-        liveTimeoutRef.current = setTimeout(() => {
-          setIsLiveMounted(false);
-          liveTimeoutRef.current = null;
-        }, 5 * 60 * 1000);
-      }
-    }
-  }, [activeTab, isLiveMounted]);
+
 
   // Data Source Decision: Full History vs Raw
   const dataSource = useMemo(() => {
@@ -925,17 +946,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {activeTab === 'live' && (
-            <motion.div
-              key="live"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <LiveView />
-            </motion.div>
-          )}
+
 
           {activeTab === 'disaster' && (
             <motion.div
@@ -949,6 +960,19 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Persistent Live View (Hidden when inactive, Unmounted after timeout) */}
+        <div className={activeTab === 'live' ? "block" : "hidden"}>
+          {isLiveActive && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LiveView />
+            </motion.div>
+          )}
+        </div>
       </main>
 
       {/* Settings Modal */}

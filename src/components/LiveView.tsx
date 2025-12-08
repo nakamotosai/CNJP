@@ -42,8 +42,21 @@ export default function LiveView() {
             ? `${R2_PUBLIC_URL}/live_data.json?t=${Date.now()}`
             : `/live_data.json?t=${Date.now()}`;
 
-        fetch(liveDataUrl)
-            .then((res) => res.json())
+        const fetchLive = async () => {
+            try {
+                const res = await fetch(liveDataUrl);
+                if (!res.ok) throw new Error("Network response was not ok");
+                const data: LiveData = await res.json();
+                return data;
+            } catch (e) {
+                console.warn("Primary live data fetch failed, trying local fallback...", e);
+                const res = await fetch(`/live_data.json?t=${Date.now()}`);
+                const data: LiveData = await res.json();
+                return data;
+            }
+        };
+
+        fetchLive()
             .then((data: LiveData) => {
                 setData(data);
                 const firstLive = data.streams.find(s => s.isLive);
