@@ -733,7 +733,7 @@ export default function Home() {
                 )}
               </AnimatePresence>
 
-              <div ref={searchBarRef} className={`relative max-w-[600px] mx-auto px-4 mb-6 ${(showSuggestions || showArchiveDrawer) ? "z-[200]" : "z-30"}`}>
+              <div ref={searchBarRef} className={`relative max-w-[600px] mx-auto px-4 mb-3.5 ${(showSuggestions || showArchiveDrawer) ? "z-[200]" : "z-30"}`}>
                 {/* Search & Tool Bar */}
                 <div className="w-full max-w-[600px] h-[52px] mx-auto bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center px-1 mt-2">
 
