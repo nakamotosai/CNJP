@@ -12,7 +12,7 @@ type Settings = {
 
 // 默认兜底设置 (万一探测失败用这个)
 const defaultSettings: Settings = {
-  theme: "light",
+  theme: "dark",
   lang: "sc",
   fontStyle: "serif",
   fontSize: 16,
@@ -61,7 +61,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // --- 3. 应用探测结果 ---
       setSettings({
         ...defaultSettings,
-        theme: "light", // 默认使用浅色模式
+        theme: "dark", // 默认使用深色模式
         lang: detectedLang,
         fontSize: detectedFontSize,
         fontStyle: "serif", // 默认保持宋体

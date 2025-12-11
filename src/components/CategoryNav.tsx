@@ -5,6 +5,18 @@ import { CATEGORIES, CATEGORY_DOT_COLORS } from "@/lib/constants";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Pause, Play } from "lucide-react";
 
+// Map category keys to tag color classes for dark mode
+const TAG_COLOR_CLASSES: Record<string, string> = {
+  all: "",
+  politics: "tag-purple",
+  military: "tag-pink",
+  economy: "tag-yellow",
+  society: "tag-blue",
+  entertainment: "tag-pink",
+  sports: "tag-green",
+  other: "",
+};
+
 interface CategoryNavProps {
   currentFilter: string;
   onFilterChange: (category: string) => void;
@@ -146,7 +158,6 @@ export default function CategoryNav({
   const handleCategoryClick = (key: string, label: string) => {
     onFilterChange(key);
 
-    // 显示 Toast
     if (onShowToast && getCategoryCount) {
       const categoryLabel = getCategoryLabel(key, label);
       if (key === 'all') {
@@ -179,13 +190,11 @@ export default function CategoryNav({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <nav
-        className="w-full max-w-[600px] h-[52px] mx-auto bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center px-1 mt-3 overflow-hidden"
-      >
+      <nav className="category-nav-container w-full max-w-[600px] h-[52px] dark:h-auto mx-auto flex items-center px-1 dark:px-0 mt-3 overflow-hidden dark:py-1">
         <div className="relative flex-1 overflow-hidden">
           <div
             ref={contentRef}
-            className="flex items-center h-full gap-2.5 w-max px-2 py-2 will-change-transform"
+            className="flex items-center h-full gap-2.5 dark:gap-2 w-max px-2 dark:px-1 py-2 dark:py-1.5 will-change-transform"
             style={{
               transform: isStopped ? 'translate3d(0, 0, 0)' : `translate3d(-${offset}px, 0, 0)`,
             }}
@@ -195,6 +204,7 @@ export default function CategoryNav({
               const isActive = currentFilter === cat.key;
               const isAllButton = cat.key === 'all';
               const dotColor = CATEGORY_DOT_COLORS[cat.key] || "bg-gray-400";
+              const tagColorClass = TAG_COLOR_CLASSES[cat.key] || "";
 
               return (
                 <button
@@ -202,10 +212,10 @@ export default function CategoryNav({
                   onClick={() => handleCategoryClick(cat.key, cat.label)}
                   className={`
                     relative flex items-center gap-1.5 text-[13px] transition-all duration-200 
-                    whitespace-nowrap flex-shrink-0 px-3.5 py-1.5 rounded-xl backdrop-blur-sm
+                    whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 py-1.5 dark:py-2 backdrop-blur-sm
                     ${isActive
-                      ? "bg-white/90 dark:bg-white/20 text-gray-900 dark:text-white shadow-md border border-gray-200 dark:border-white/10 font-bold"
-                      : "bg-white/60 dark:bg-transparent text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-white/15 border border-gray-100 dark:border-transparent dark:hover:border-white/5 font-medium"
+                      ? `category-tag-active text-gray-900 dark:text-white font-bold`
+                      : `category-tag-inactive ${tagColorClass} text-gray-700 dark:text-gray-300 font-medium`
                     }
                   `}
                 >

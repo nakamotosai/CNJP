@@ -21,15 +21,12 @@
 
 .dark {
   /* Classic Dark Mode - Refined */
-  --background: #121212;
+  --background: #0b0d12;
   --card: #1e1e1e;
   --text-main: #e4e4e7;
-  /* Gray-200 */
   --text-sub: #9ca3af;
-  /* Gray-400 */
   --text-aux: #71717a;
   --border: rgba(255, 255, 255, 0.05);
-  /* white/5 */
 }
 
 .shadow-card {
@@ -41,22 +38,18 @@
 }
 
 /* Font Definitions based on ThemeContext attributes */
-/* Serif - Simplified Chinese */
 body[data-font-style="serif"][data-lang="sc"] {
   font-family: 'Noto Serif SC', 'Noto Serif TC', Georgia, 'Times New Roman', STSong, 'Songti SC', serif;
 }
 
-/* Serif - Traditional Chinese */
 body[data-font-style="serif"][data-lang="tc"] {
   font-family: 'Noto Serif TC', 'Noto Serif SC', Georgia, 'Times New Roman', STSong, 'Songti TC', serif;
 }
 
-/* Sans - Simplified Chinese */
 body[data-font-style="sans"][data-lang="sc"] {
   font-family: 'Noto Sans SC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Heiti SC', sans-serif;
 }
 
-/* Sans - Traditional Chinese */
 body[data-font-style="sans"][data-lang="tc"] {
   font-family: 'Noto Sans TC', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang TC', 'Heiti TC', sans-serif;
 }
@@ -110,4 +103,196 @@ body[data-font-style="sans"][data-lang="tc"] {
   background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #5f27cd);
   background-size: 300% 300%;
   animation: rainbow-shift 3s ease infinite;
+}
+
+/* ============================================= */
+/* Dark Mode Gradient Background                 */
+/* ============================================= */
+.dark body,
+.dark .min-h-screen {
+  background: radial-gradient(circle at top, #1e2538, #0b0d12) !important;
+  background-attachment: fixed;
+}
+
+/* ============================================= */
+/* Gradient Border Utilities (Dark Mode Only)   */
+/* Applied unconditionally but only styled in .dark */
+/* ============================================= */
+
+/* Search Bar Gradient Border - Light mode: white bg, Dark mode: gradient border */
+.search-bar-container {
+  /* Light mode default */
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+}
+
+.dark .search-bar-container {
+  background:
+    linear-gradient(#0b0d12, #0b0d12) padding-box,
+    linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899) border-box !important;
+  border: 1px solid transparent !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+}
+
+/* Tab Container - Light mode: white card, Dark mode: transparent */
+.tab-container {
+  /* Light mode default */
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dark .tab-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Active Tab - Light mode: white card, Dark mode: gradient border */
+.tab-active {
+  /* Light mode default */
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dark .tab-active {
+  background:
+    linear-gradient(rgba(30, 41, 59, 0.7), rgba(30, 41, 59, 0.7)) padding-box,
+    linear-gradient(to right, #3b82f6, #8b5cf6) border-box !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Inactive Tab - Light mode: light bg, Dark mode: transparent */
+.tab-inactive {
+  /* Light mode default */
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid #f3f4f6;
+}
+
+.dark .tab-inactive {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid transparent !important;
+}
+
+.dark .tab-inactive:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Category Nav Container */
+.category-nav-container {
+  /* Light mode default */
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dark .category-nav-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Category Tag Active - Light mode: white, Dark mode: gradient */
+.category-tag-active {
+  /* Light mode default */
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+}
+
+.dark .category-tag-active {
+  background:
+    linear-gradient(rgba(30, 41, 59, 0.7), rgba(30, 41, 59, 0.7)) padding-box,
+    linear-gradient(to right, #3b82f6, #8b5cf6) border-box !important;
+  border: 1px solid transparent !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Category Tag Inactive - Colored Borders (Dark Mode Only) */
+.category-tag-inactive {
+  /* Light mode default */
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid #f3f4f6;
+  border-radius: 0.75rem;
+}
+
+.dark .category-tag-inactive {
+  background: rgba(156, 163, 175, 0.05) !important;
+  border: 1px solid rgba(156, 163, 175, 0.3) !important;
+  border-radius: 9999px !important;
+}
+
+.dark .category-tag-inactive:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Specific tag colors for dark mode */
+.dark .category-tag-inactive.tag-blue {
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.dark .category-tag-inactive.tag-purple {
+  border-color: rgba(139, 92, 246, 0.5) !important;
+  background: rgba(139, 92, 246, 0.1) !important;
+}
+
+.dark .category-tag-inactive.tag-pink {
+  border-color: rgba(236, 72, 153, 0.5) !important;
+  background: rgba(236, 72, 153, 0.1) !important;
+}
+
+.dark .category-tag-inactive.tag-yellow {
+  border-color: rgba(234, 179, 8, 0.5) !important;
+  background: rgba(234, 179, 8, 0.1) !important;
+}
+
+.dark .category-tag-inactive.tag-green {
+  border-color: rgba(34, 197, 94, 0.5) !important;
+  background: rgba(34, 197, 94, 0.1) !important;
+}
+
+/* Bulletin Board Container */
+.bulletin-container {
+  /* Light mode default */
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dark .bulletin-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Speak Button - Light mode: red, Dark mode: gradient with glow */
+.speak-button {
+  /* Light mode default */
+  background: #dc2626;
+}
+
+.dark .speak-button {
+  background: linear-gradient(135deg, #7f1d1d, #450a0a) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 0 10px rgba(220, 38, 38, 0.3) !important;
+}
+
+.speak-button-disabled {
+  /* Light mode */
+  background: #f3f4f6;
+}
+
+.dark .speak-button-disabled {
+  background: rgba(75, 85, 99, 0.5) !important;
+  border: 1px solid rgba(75, 85, 99, 0.3) !important;
 }

@@ -43,7 +43,6 @@ export default function BulletinBoard() {
     const [sending, setSending] = useState(false);
     const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
-    // CSS Transform 动画状态
     const [offset, setOffset] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
     const [contentWidth, setContentWidth] = useState(0);
@@ -52,7 +51,6 @@ export default function BulletinBoard() {
     const lastTimeRef = useRef<number>(0);
     const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // 触摸事件相关
     const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
     useEffect(() => {
@@ -74,18 +72,16 @@ export default function BulletinBoard() {
         return () => clearInterval(timer);
     }, [cooldownRemaining]);
 
-    // 测量内容宽度
     useEffect(() => {
         if (contentRef.current) {
             setContentWidth(contentRef.current.scrollWidth / 2);
         }
     }, [bulletins]);
 
-    // CSS Transform 动画 - 持续滚动
     useEffect(() => {
         if (contentWidth === 0) return;
 
-        const scrollSpeed = 30; // pixels per second
+        const scrollSpeed = 30;
 
         const animate = (timestamp: number) => {
             if (!lastTimeRef.current) lastTimeRef.current = timestamp;
@@ -110,25 +106,21 @@ export default function BulletinBoard() {
         };
     }, [isPaused, contentWidth]);
 
-    // 暂停并1秒后强制恢复
     const pauseAndResume = useCallback(() => {
         setIsPaused(true);
         if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
         pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
     }, []);
 
-    // 鼠标事件 - PC端悬停暂停1秒后恢复
     const handleMouseEnter = useCallback(() => {
         pauseAndResume();
     }, [pauseAndResume]);
 
     const handleMouseLeave = useCallback(() => {
-        // 确保1秒后恢复
         if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
         pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
     }, []);
 
-    // 触摸事件 - 触摸暂停，1秒后强制恢复
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         const touch = e.touches[0];
         touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
@@ -136,13 +128,11 @@ export default function BulletinBoard() {
     }, [pauseAndResume]);
 
     const handleTouchEnd = useCallback(() => {
-        // 触摸结束后1秒恢复
         if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
         pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
         touchStartRef.current = null;
     }, []);
 
-    // 点击弹幕区域显示统计
     const handleMarqueeClick = useCallback(() => {
         setShowStatsModal(true);
     }, []);
@@ -234,7 +224,6 @@ export default function BulletinBoard() {
         return result.sort((a, b) => b.count - a.count);
     }, [bulletins]);
 
-    // 双倍内容实现无缝循环
     const displayList = [...aggregatedList, ...aggregatedList];
 
     const getPresetContent = (item: { sc: string, tc: string }) => {
@@ -243,17 +232,17 @@ export default function BulletinBoard() {
 
     return (
         <div className="w-full mb-3">
-            <div className="w-full max-w-[600px] h-[52px] mx-auto bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center px-1 mt-3 overflow-hidden">
+            <div className="bulletin-container w-full max-w-[600px] h-[52px] mx-auto flex items-center px-1 dark:px-0 mt-3 overflow-hidden">
 
                 {/* Left Label */}
-                <div className="flex items-center gap-1.5 pl-1 pr-3 border-r border-gray-100 dark:border-white/5 shrink-0 h-4">
+                <div className="flex items-center gap-1.5 pl-1 pr-3 border-r border-gray-100 dark:border-white/10 shrink-0 h-4">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-[13px] font-medium text-gray-600 dark:text-gray-300 leading-none">
+                    <span className="text-[13px] font-medium text-gray-600 dark:text-gray-400 leading-none">
                         {settings.lang === 'tc' ? '熱議' : '热议'}
                     </span>
                 </div>
 
-                {/* Scrollable Marquee Area - 可点击 */}
+                {/* Scrollable Marquee Area */}
                 <div
                     className="flex-1 overflow-hidden relative h-full flex items-center cursor-pointer"
                     onMouseEnter={handleMouseEnter}
@@ -299,32 +288,32 @@ export default function BulletinBoard() {
                     }}
                     disabled={cooldownRemaining > 0}
                     className={cn(
-                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 py-1.5 rounded-xl shadow-md font-bold ml-2",
+                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 py-1.5 rounded-xl font-bold ml-2 text-white",
                         cooldownRemaining > 0
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-red-600 hover:bg-red-700 text-white active:scale-95"
+                            ? "speak-button-disabled text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                            : "speak-button hover:brightness-110 active:scale-95"
                     )}
                 >
-                    <Send size={13} className={cooldownRemaining > 0 ? "" : "text-white"} />
+                    <Send size={13} />
                     <span className="pt-[1px]">{cooldownRemaining > 0 ? `${cooldownRemaining}s` : (settings.lang === 'tc' ? '發聲' : '发声')}</span>
                 </button>
             </div>
 
-            {/* 统计对话框 */}
+            {/* Stats Modal */}
             {showStatsModal && typeof document !== 'undefined' && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 dark:bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-200">
                     <div
-                        className="bg-white dark:bg-[#202020] w-full max-w-sm rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700 max-h-[70vh] flex flex-col"
+                        className="bg-white dark:bg-[#1a1a2e] w-full max-w-sm rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-white/10 max-h-[70vh] flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/10 shrink-0">
                             <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                                <BarChart3 className="w-4 h-4 text-[var(--primary)]" />
+                                <BarChart3 className="w-4 h-4 text-[var(--primary)] dark:text-blue-400" />
                                 {settings.lang === 'tc' ? '熱議統計' : '热议统计'}
                             </h3>
                             <button
                                 onClick={() => setShowStatsModal(false)}
-                                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                             >
                                 <X size={18} className="text-gray-400" />
                             </button>
@@ -335,7 +324,7 @@ export default function BulletinBoard() {
                                 {aggregatedList.map((item, i) => (
                                     <div
                                         key={i}
-                                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-black/20"
+                                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-white/5"
                                     >
                                         <div className="flex items-center gap-2 flex-1 min-w-0">
                                             <span className={`w-2 h-2 rounded-full ${item.color} shrink-0`} />
@@ -355,7 +344,7 @@ export default function BulletinBoard() {
                                 ))}
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-center">
+                            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/10 text-center">
                                 <span className="text-xs text-gray-400">
                                     {settings.lang === 'tc'
                                         ? `共 ${bulletins.length} 條發言`
@@ -369,21 +358,21 @@ export default function BulletinBoard() {
                 document.body
             )}
 
-            {/* 发送对话框 */}
+            {/* Send Modal */}
             {showModal && typeof document !== 'undefined' && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 dark:bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-200">
                     <div
-                        className="bg-white dark:bg-[#202020] w-full max-w-sm rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700 max-h-[80vh] flex flex-col"
+                        className="bg-white dark:bg-[#1a1a2e] w-full max-w-sm rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-white/10 max-h-[80vh] flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/10 shrink-0">
                             <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
                                 {settings.lang === 'tc' ? '選擇你的態度' : '选择你的态度'}
                             </h3>
                             <button
                                 onClick={() => setShowModal(false)}
-                                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                             >
                                 <X size={18} className="text-gray-400" />
                             </button>
@@ -397,7 +386,7 @@ export default function BulletinBoard() {
                                         <button
                                             key={i}
                                             onClick={() => handleSend(text)}
-                                            className="text-center px-2 py-3 text-xs sm:text-sm rounded-xl bg-gray-50 dark:bg-black/20 hover:bg-[var(--primary)] hover:text-white dark:hover:bg-[var(--primary)] dark:text-gray-300 transition-all border border-transparent hover:border-[var(--primary)] active:scale-95 break-words leading-snug flex items-center justify-center gap-2 group"
+                                            className="text-center px-2 py-3 text-xs sm:text-sm rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-[var(--primary)] dark:hover:bg-blue-500/30 hover:text-white dark:text-gray-300 transition-all border border-transparent hover:border-[var(--primary)] dark:hover:border-blue-500/50 active:scale-95 break-words leading-snug flex items-center justify-center gap-2 group"
                                         >
                                             <span>{text}</span>
                                         </button>
@@ -405,7 +394,7 @@ export default function BulletinBoard() {
                                 })}
                             </div>
 
-                            <div className="mt-4 text-[10px] text-center text-gray-400">
+                            <div className="mt-4 text-[10px] text-center text-gray-400 dark:text-gray-500">
                                 每分钟仅能发表1次
                             </div>
                         </div>

@@ -735,7 +735,7 @@ export default function Home() {
 
               <div ref={searchBarRef} className={`relative max-w-[600px] mx-auto px-4 mb-3.5 ${(showSuggestions || showArchiveDrawer) ? "z-[200]" : "z-30"}`}>
                 {/* Search & Tool Bar */}
-                <div className="w-full max-w-[600px] h-[52px] mx-auto bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center px-1 mt-2">
+                <div className="search-bar-container w-full max-w-[600px] h-[52px] mx-auto flex items-center px-1 dark:px-2 mt-2 backdrop-blur-md">
 
                   {/* Left: Search Input */}
                   <div className="flex-1 flex items-center h-full px-3 gap-2">
@@ -758,7 +758,7 @@ export default function Home() {
                         setTimeout(scrollToSearchBar, 50);
                       }}
                       placeholder={settings.lang === "sc" ? "大家都在搜…" : "大家都在搜…"}
-                      className="w-full h-full bg-transparent border-none outline-none text-[15px] placeholder:text-gray-400 text-gray-700 dark:text-gray-200"
+                      className="w-full h-full bg-transparent border-none outline-none text-[15px] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
                     />
                     {isSearchingAll && (
                       <Loader2 className="w-4 h-4 text-gray-400 animate-spin shrink-0" />
@@ -773,10 +773,10 @@ export default function Home() {
                   <div className="w-[1px] h-6 bg-gray-200 dark:bg-white/10 shrink-0" />
 
                   {/* Right: Tools (Archive & Sort) */}
-                  <div className="flex items-center gap-1 pl-1 pr-1 shrink-0">
+                  <div className="flex items-center gap-1 pl-1 pr-1 dark:pr-2 shrink-0">
                     <button
                       onClick={toggleSortMode}
-                      className="flex items-center justify-center w-10 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 transition-colors"
+                      className="flex items-center justify-center w-10 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
                     >
                       <ArrowUpDown className="w-4 h-4" />
                     </button>
@@ -788,7 +788,7 @@ export default function Home() {
                           setShowSuggestions(false);
                           if (newState) setTimeout(scrollToSearchBar, 50);
                         }}
-                        className="flex items-center justify-center gap-1.5 px-3 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 transition-colors"
+                        className="flex items-center justify-center gap-1.5 px-3 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
                       >
                         <Calendar className="w-4 h-4" />
                         <span className="text-[13px] font-medium">{settings.lang === "sc" ? "存档" : "存檔"}</span>
@@ -819,17 +819,17 @@ export default function Home() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 overflow-hidden z-[200]"
+                      className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] bg-white/95 dark:bg-[#1a1a2e]/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 overflow-hidden z-[200]"
                     >
                       <div className="p-3">
                         <div className="mb-3">
-                          <div className="text-[10px] text-gray-400 mb-2 px-1">{settings.lang === "sc" ? "热门搜索" : "熱門搜索"}</div>
+                          <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "热门搜索" : "熱門搜索"}</div>
                           <div className="flex flex-wrap gap-1.5">
                             {trendingNow.map(k => (
                               <button
                                 key={k}
                                 onClick={() => handleSuggestionClick(k)}
-                                className="px-2.5 py-1 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs rounded-lg hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-colors"
+                                className="px-2.5 py-1 bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400 text-xs rounded-lg hover:bg-orange-100 dark:hover:bg-orange-500/25 transition-colors"
                               >
                                 {settings.lang === "sc" ? k : TC_MAP[k] || k}
                               </button>
@@ -839,7 +839,7 @@ export default function Home() {
 
                         {hotKeywords.length > 0 && (
                           <div className="mb-3">
-                            <div className="text-[10px] text-gray-400 mb-2 px-1">{settings.lang === "sc" ? "上升热词" : "上升熱詞"}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "上升热词" : "上升熱詞"}</div>
                             <div className="flex flex-wrap gap-1.5">
                               {hotKeywords.map(k => (
                                 <button
@@ -856,13 +856,13 @@ export default function Home() {
 
                         {hotSources.length > 0 && (
                           <div>
-                            <div className="text-[10px] text-gray-400 mb-2 px-1">{settings.lang === "sc" ? "热门媒体" : "熱門媒體"}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "热门媒体" : "熱門媒體"}</div>
                             <div className="flex flex-wrap gap-1.5">
                               {hotSources.map(s => (
                                 <button
                                   key={s}
                                   onClick={() => handleSuggestionClick(s)}
-                                  className="px-2.5 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                                  className="px-2.5 py-1 bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 text-xs rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition-colors"
                                 >
                                   {s}
                                 </button>
