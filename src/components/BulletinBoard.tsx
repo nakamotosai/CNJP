@@ -288,14 +288,14 @@ export default function BulletinBoard() {
                     }}
                     disabled={cooldownRemaining > 0}
                     className={cn(
-                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 py-1.5 rounded-xl font-bold ml-2 text-white",
+                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 py-1.5 dark:py-2 backdrop-blur-sm ml-2",
                         cooldownRemaining > 0
-                            ? "speak-button-disabled text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                            : "speak-button hover:brightness-110 active:scale-95"
+                            ? "category-tag-inactive text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                            : "category-tag-active text-gray-900 dark:text-white font-bold hover:brightness-105 active:scale-95"
                     )}
                 >
-                    <Send size={13} />
-                    <span className="pt-[1px]">{cooldownRemaining > 0 ? `${cooldownRemaining}s` : (settings.lang === 'tc' ? '發聲' : '发声')}</span>
+                    <span className="w-2.5 h-2.5 rounded-full rainbow-dot shrink-0" />
+                    <span className="">{cooldownRemaining > 0 ? `${cooldownRemaining}s` : (settings.lang === 'tc' ? '發聲' : '发声')}</span>
                 </button>
             </div>
 

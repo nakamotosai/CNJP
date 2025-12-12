@@ -30,7 +30,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // 1. 初始化 & 自动探测逻辑 (核心修改)
   useEffect(() => {
-    const saved = localStorage.getItem("site-settings-v2");
+    // 使用新的 key (v4) 强制所有用户重新初始化，默认深色模式
+    const saved = localStorage.getItem("site-settings-v4");
 
     // A. 如果是老用户 (有缓存)，使用缓存设置
     if (saved) {
@@ -49,8 +50,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     else {
       // --- 1. 探测语言 (简繁体) ---
       const navLang = navigator.language.toLowerCase();
-      // 只要包含 tw, hk, mo 就认为是繁体用户
-      const isTrad = ['tw', 'hk', 'mo'].some(code => navLang.includes(code));
+      // 只要包含 tw, hk, mo, hant 就认为是繁体用户
+      const isTrad = ['tw', 'hk', 'mo', 'hant'].some(code => navLang.includes(code));
       const detectedLang = isTrad ? 'tc' : 'sc';
 
       // --- 2. 探测设备 (字号适配) ---
@@ -101,7 +102,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.fontSize = `${settings.fontSize}px`;
 
     // --- 保存到本地存储 ---
-    localStorage.setItem("site-settings-v2", JSON.stringify(settings));
+    localStorage.setItem("site-settings-v4", JSON.stringify(settings));
 
   }, [settings, mounted]);
 

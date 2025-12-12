@@ -189,7 +189,7 @@ export default function LiveView() {
                 {/* Video Player */}
                 <div className="w-full flex flex-col gap-4">
                     {selectedStream ? (
-                        <div className="bg-white dark:bg-[#1e1e1e] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/5">
+                        <div className="luxury-card bg-white rounded-2xl overflow-hidden shadow-sm">
                             {selectedStream.isLive && selectedStream.videoId ? (
                                 <div className="aspect-video w-full bg-black relative group">
                                     <iframe

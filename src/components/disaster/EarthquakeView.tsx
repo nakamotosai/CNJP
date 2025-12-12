@@ -148,7 +148,7 @@ export default function EarthquakeView() {
         <div className="flex flex-col gap-6">
 
             {/* Abstract Dot Map Container with HUD */}
-            <div className="relative aspect-[16/10] w-full bg-slate-50 dark:bg-[#1a1a1a] rounded-[32px] border border-gray-100 dark:border-white/5 overflow-hidden shadow-inner">
+            <div className="luxury-card relative aspect-[16/10] w-full bg-slate-50 rounded-[32px] overflow-hidden shadow-inner">
 
                 {/* HUD Status Bar (Top Left) */}
                 <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-md border border-gray-100 dark:border-white/10 shadow-sm">
@@ -236,7 +236,7 @@ export default function EarthquakeView() {
             </div>
 
             {/* 3. Compact Recent List - Top 10 */}
-            <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#1a1a1a] overflow-hidden">
+            <div className="luxury-card rounded-2xl bg-white overflow-hidden">
                 <div className="px-4 py-3 bg-gray-50/50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex justify-between items-center">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                         {settings.lang === "sc" ? "地震记录" : "地震記錄"}

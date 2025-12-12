@@ -60,7 +60,7 @@ export default function SettingsModal({
                   onClick={() => updateSettings({ theme: opt.id as any })}
                   style={fontStyleObj}
                   className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-xl border transition-all ${settings.theme === opt.id
-                    ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md"
+                    ? "settings-modal-active"
                     : "bg-gray-50 dark:bg-white/[0.05] text-[var(--text-sub)] border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10"
                     }`}
                 >
@@ -98,7 +98,7 @@ export default function SettingsModal({
                       updateSettings({ ...settings }); // Dummy update to trigger re-render
                     }}
                     className={`py-2 rounded-xl border text-xs font-bold transition-all ${(typeof window !== 'undefined' && (localStorage.getItem("default_tab") || "news") === tab.id)
-                      ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md"
+                      ? "settings-modal-active"
                       : "bg-gray-50 dark:bg-white/[0.05] text-[var(--text-sub)] border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10"
                       }`}
                   >
@@ -118,7 +118,7 @@ export default function SettingsModal({
               <button
                 onClick={() => updateSettings({ fontStyle: "serif" })}
                 className={`py-2 rounded-xl border transition-all text-xs font-bold ${settings.fontStyle === "serif"
-                  ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md"
+                  ? "settings-modal-active"
                   : "bg-gray-50 dark:bg-white/[0.05] text-[var(--text-sub)] border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10"
                   }`}
               >
@@ -127,7 +127,7 @@ export default function SettingsModal({
               <button
                 onClick={() => updateSettings({ fontStyle: "sans" })}
                 className={`py-2 rounded-xl border transition-all text-xs font-bold ${settings.fontStyle === "sans"
-                  ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md"
+                  ? "settings-modal-active"
                   : "bg-gray-50 dark:bg-white/[0.05] text-[var(--text-sub)] border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10"
                   }`}
               >
@@ -155,7 +155,7 @@ export default function SettingsModal({
                 step="1"
                 value={settings.fontSize}
                 onChange={(e) => updateSettings({ fontSize: parseInt(e.target.value) })}
-                className="flex-1 h-1.5 bg-gray-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--primary)]"
+                className="settings-slider flex-1 h-1.5 bg-gray-200 dark:bg-white/10 rounded-lg cursor-pointer"
               />
               <span className="text-lg text-[var(--text-main)]">A</span>
             </div>

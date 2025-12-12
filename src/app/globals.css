@@ -346,38 +346,125 @@ body[data-font-style="sans"][data-lang="tc"] {
   box-shadow: none !important;
 }
 
-/* Speak Button - Light mode: red, Dark mode: refined gradient with neumorphic effect */
-.speak-button {
-  /* Light mode default */
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  box-shadow:
-    0 2px 4px rgba(220, 38, 38, 0.3),
-    0 4px 8px rgba(220, 38, 38, 0.2);
+/* Settings Modal Active State */
+.settings-modal-active {
+  /* Light mode default: Red */
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.dark .speak-button {
+.dark .settings-modal-active {
+  /* Dark mode: Purple Gradient & Glow */
   background:
     linear-gradient(rgba(30, 41, 59, 0.7), rgba(30, 41, 59, 0.7)) padding-box,
     linear-gradient(to right, #3b82f6, #8b5cf6) border-box !important;
+  color: white !important;
   border: 1px solid transparent !important;
   box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
 }
 
-.dark .speak-button:hover {
+/* Settings Slider Styling */
+.settings-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+/* Webkit Thumb (Chrome, Safari, Edge) */
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -7px;
+  /* Adjust based on track height if needed, but here simple alignment */
+
+  /* Light Mode Default: Red */
+  background: var(--primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.dark .settings-slider::-webkit-slider-thumb {
+  /* Dark Mode: Purple Gradient */
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .settings-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
+}
+
+/* Firefox Thumb */
+.settings-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+
+  /* Light Mode Default */
+  background: var(--primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.dark .settings-slider::-moz-range-thumb {
+  /* Dark Mode */
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .settings-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
+}
+
+/* Luxury Card Styling (Gradient Border in Dark Mode) */
+.luxury-card {
+  /* Light Mode Default */
+  background: white;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dark .luxury-card {
+  /* Dark Mode: Purple Gradient & Glow */
   background:
-    linear-gradient(rgba(40, 51, 69, 0.8), rgba(40, 51, 69, 0.8)) padding-box,
-    linear-gradient(to right, #60a5fa, #a78bfa) border-box !important;
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4) !important;
+    linear-gradient(rgba(30, 41, 59, 0.7), rgba(30, 41, 59, 0.7)) padding-box,
+    linear-gradient(to right, #3b82f6, #8b5cf6) border-box !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2) !important;
 }
 
-.speak-button-disabled {
-  /* Light mode */
-  background: #f3f4f6;
-  box-shadow: none;
+/* Animated Text Gradient (Header Title) */
+@keyframes text-shine {
+  to {
+    background-position: 200% center;
+  }
 }
 
-.dark .speak-button-disabled {
-  background: rgba(75, 85, 99, 0.3) !important;
-  border: 1px solid rgba(75, 85, 99, 0.2) !important;
-  box-shadow: none !important;
+
+
+.dark .text-gradient-animated {
+  background: linear-gradient(to right,
+      #ffffff 0%,
+      #3b82f6 30%,
+      #8b5cf6 50%,
+      #3b82f6 70%,
+      #ffffff 100%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: text-shine 10s linear infinite;
+  text-shadow: none !important;
+  /* Remove shadow to ensure clean gradient text */
 }

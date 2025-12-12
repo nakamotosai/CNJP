@@ -114,22 +114,21 @@ function NavButton({
             className={`
         relative flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all duration-300
         ${isActive
-                    ? "bg-white dark:bg-white/10 shadow-sm border border-gray-100 dark:border-white/5"
+                    ? "category-tag-active"
                     : "bg-transparent text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
                 }
       `}
         >
-            <span className={`${isActive ? color : "text-gray-400"}`}>{icon}</span>
+            <span className={`${isActive ? `${color} dark:text-white` : "text-gray-400"}`}>{icon}</span>
             <span className={`text-sm font-medium ${isActive ? "text-gray-900 dark:text-white font-bold" : ""}`}>
                 {label}
             </span>
             {isActive && (
                 <motion.div
                     layoutId="activeSubTab"
-                    className="absolute inset-0 border-2 border-[var(--primary)] rounded-xl opacity-0"
+                    className="absolute inset-0 rounded-xl"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0 }}
-                // Keeping layoutId for potential future enhancements but making it invisible or subtle for now to match glass style
                 />
             )}
         </button>

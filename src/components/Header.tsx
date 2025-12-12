@@ -129,7 +129,7 @@ export default function Header({
               <div className="flex flex-col justify-center w-fit ml-7 mt-1">
                 <h1
                   style={{ ...text3DStyle, fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
-                  className="text-xl font-bold tracking-wide text-[var(--text-main)] dark:text-white leading-none whitespace-nowrap"
+                  className="text-xl font-bold tracking-wide text-[var(--text-main)] text-gradient-animated leading-none whitespace-nowrap"
                 >
                   {settings.lang === "sc" ? "从日本看中国" : "從日本看中國"}
                 </h1>

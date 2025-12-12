@@ -121,7 +121,7 @@ export default function WeatherView({ onCityChange }: { onCityChange?: (cityName
     return (
         <div className="w-full">
             {/* Unified Weather Card - Static White/Gray Style */}
-            <div className="relative rounded-[32px] overflow-visible transition-all duration-300 bg-white dark:bg-[#1e1e1e] border border-gray-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-20">
+            <div className="luxury-card relative rounded-[32px] overflow-visible transition-all duration-300 z-20">
 
                 {/* 1. Header: Location & Date */}
                 <div className="p-8 pb-4 flex justify-between items-start">
@@ -205,7 +205,7 @@ export default function WeatherView({ onCityChange }: { onCityChange?: (cityName
                 </div>
 
                 {/* 3. Divider */}
-                <div className="w-full h-[1px] bg-gray-100 dark:bg-white/10 my-2" />
+
 
                 {/* 4. 5-Day Forecast Row */}
                 <div className="p-6 bg-gray-50/50 dark:bg-white/5 rounded-b-[32px]">

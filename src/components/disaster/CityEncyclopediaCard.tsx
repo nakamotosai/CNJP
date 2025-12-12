@@ -113,7 +113,7 @@ export default function CityEncyclopediaCard({ cityName }: CityEncyclopediaCardP
     const data = CITY_ENCYCLOPEDIA_DATA[tcKey] || CITY_ENCYCLOPEDIA_DATA["東京"];
 
     return (
-        <div className="w-full bg-white dark:bg-[#1e1e1e] rounded-[32px] border border-gray-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden z-20">
+        <div className="luxury-card w-full rounded-[32px] overflow-hidden z-20">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={data.name}
