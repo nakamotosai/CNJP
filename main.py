@@ -1,10 +1,10 @@
 import feedparser
 import calendar
-from deep_translator import GoogleTranslator
 import json
 import os
 import datetime
 import time
+import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import boto3
@@ -95,14 +95,14 @@ MEDIA_DOMAIN_MAP = {
     "毎日新聞": "mainichi.jp",
     "朝日新聞": "www.asahi.com",
     "読売新聞": "www.yomiuri.co.jp",
-    "産経": "www.sankei.com",
+    "产经": "www.sankei.com",
     "Sankei": "www.sankei.com",
     "共同": "www.kyodo.co.jp",
     "Kyodo": "www.kyodo.co.jp",
-    "時事": "www.jiji.com",
+    "时事": "www.jiji.com",
     "Jiji": "www.jiji.com",
-    "東洋経済": "toyokeizai.net",
-    "現代ビジネス": "gendai.media",
+    "东洋经济": "toyokeizai.net",
+    "现代ビジネス": "gendai.media",
     "Diamond": "diamond.jp",
     "ダイヤモンド": "diamond.jp",
     "JBpress": "jbpress.ismedia.jp",
@@ -125,19 +125,19 @@ MEDIA_DOMAIN_MAP = {
 # === 1. 假新闻过滤名单 ===
 IGNORE_KEYWORDS = [
     "中国地方", "中国地区", "中国５県", "中国五県",
-    "中国電力", "中国電", "中電",
-    "中国銀行", "中国銀",
-    "中国道", "中国自動車道",
-    "中国運輸局", "中国整備局", "中国経産局",
+    "中国電力", "中国电", "中电",
+    "中国银行", "中国银",
+    "中国道", "中国自动车道",
+    "中国运输局", "中国整備局", "中国经产局",
     "中国新人", "中国大会", "中国リーグ",
     "中国バス", "中国ジェイアール",
-    "鳥取", "島根", "岡山", "広島", "山口"
+    "鸟取", "岛根", "冈山", "广岛", "山口"
 ]
 # 白名单 (有这些词的就算有干扰词也不删)
 WHITELIST_KEYWORDS = [
     "北京", "上海", "深圳", "香港", "台湾", "習近平", "李強", "共産党", "中共", 
     "人民元", "外交部", "領事館", "総領事", "中国政府", "日中", "中日", "GDP",
-    "EV", "不動産", "軍", "ミサイル", "台湾有事", "尖閣"
+    "EV", "不动产", "军", "导弹", "台湾有事", "尖阁"
 ]
 
 def is_false_positive(title, source_name):
@@ -183,7 +183,7 @@ def classify_news(title):
         ],
         "体育": [
             "体育", "奥运", "足球", "篮球", "棒球", "选手", "比赛", "冠军", "大谷", "翔平", 
-            "羽生", "结弦", "乒乓", "网球", "游泳", "田径", "马拉松", "相扑", "柔道", 
+            "羽生", "结弦", "乒乓", "网球", "游泳", "田径", "マラソン", "相扑", "柔道", 
             "世界杯", "亚洲杯", "亚运会", "联赛", "俱乐部", "球队", "金牌"
         ],
         "娱乐": [
@@ -258,16 +258,74 @@ def get_clean_title_key(full_title):
         return full_title.rsplit(" - ", 1)[0].strip()
     return full_title.strip()
 
+def google_translate_batch(texts, target_lang='zh-CN', source_lang='ja'):
+    """
+    使用 Google Translate gtx 接口进行批量翻译
+    """
+    if not texts:
+        return []
+    
+    # 过滤掉空字符串，但保留原始索引
+    original_texts = texts
+    valid_texts = []
+    text_map = [] # 记录有效文本在原列表中的索引
+    
+    for i, t in enumerate(texts):
+        if t and t.strip():
+            valid_texts.append(t.strip())
+            text_map.append(i)
+            
+    if not valid_texts:
+        return texts
+
+    # 将文本用换行符拼接。注意：gtx 接口建议通过 POST 发送，单次内容不宜超过 5000 字符
+    combined_text = "\n".join(valid_texts)
+    
+    url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl={}&dt=t".format(target_lang)
+    data = {
+        "q": combined_text
+    }
+    
+    # 构建最终结果数组，预填为原文本（作为回退）
+    results = list(original_texts)
+    
+    try:
+        response = requests.post(url, data=data, timeout=15)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # 谷歌翻译返回的结构中，data[0] 是翻译片段列表
+        full_translation = ""
+        if data and data[0]:
+            for segment in data[0]:
+                if segment[0]:
+                    full_translation += segment[0]
+        
+        # 将翻译后的全文按换行符拆分
+        translated_lines = full_translation.strip().split('\n')
+        
+        # 如果拆分后的行数和输入一致，则一一对应
+        if len(translated_lines) == len(valid_texts):
+            for i, line in enumerate(translated_lines):
+                results[text_map[i]] = line.strip()
+        else:
+            print(f"⚠️ Warning: Translated line count ({len(translated_lines)}) mismatch with input ({len(valid_texts)})")
+            # 尝试部分匹配
+            for i, line in enumerate(translated_lines[:len(valid_texts)]):
+                results[text_map[i]] = line.strip()
+                
+    except Exception as e:
+        print(f"❌ Error in batch translation: {e}")
+        
+    return results
+
 def update_news():
     new_entries = fetch_all_china_news()
     
     news_by_date = {}
-    preview_items = []
     
-    translator_sc = GoogleTranslator(source='ja', target='zh-CN')
-    translator_tc = GoogleTranslator(source='ja', target='zh-TW')
-    
-    print("开始处理并翻译新闻...")
+    print("开始处理新闻...")
     
     valid_count = 0
     filtered_count = 0
@@ -275,32 +333,33 @@ def update_news():
     # 记录本次抓取的时间戳
     current_fetch_time = int(time.time())
 
-    for i, entry in enumerate(new_entries):
-        link = entry.link
+    # 1. 第一步：过滤新闻
+    candidates = []
+    for entry in new_entries:
         title_ja = entry.title
         source_title = entry.source.title if hasattr(entry, 'source') else ""
 
-        # === 核心过滤逻辑 ===
         if is_false_positive(title_ja, source_title):
-            print(f"  [过滤] 疑似地区新闻: {title_ja}")
+            # print(f"  [过滤] 疑似地区新闻: {title_ja}")
             filtered_count += 1
             continue
-        # ==================
+            
+        candidates.append(entry)
+    
+    print(f"过滤后剩余 {len(candidates)} 条新闻")
 
-        if i > 0 and i % 10 == 0:
-            print(f"已处理 {i} 条，休息 1 秒...")
-            time.sleep(1)
+    # 2. 第二步：批量翻译标题
+    ja_titles = [e.title for e in candidates]
+    print("正在进行批量翻译 (简体)...")
+    zh_titles = google_translate_batch(ja_titles, target_lang='zh-CN')
+    print("正在进行批量翻译 (繁体)...")
+    tc_titles = google_translate_batch(ja_titles, target_lang='zh-TW')
 
-        try:
-            title_zh = translator_sc.translate(title_ja)
-        except Exception as e:
-            print(f"简体翻译失败: {e}")
-            title_zh = title_ja
-        try:
-            title_tc = translator_tc.translate(title_ja)
-        except Exception as e:
-            print(f"繁体翻译失败: {e}")
-            title_tc = title_ja
+    # 3. 第三步：组合数据
+    for entry, title_zh, title_tc in zip(candidates, zh_titles, tc_titles):
+        title_ja = entry.title
+        link = entry.link
+        source_title = entry.source.title if hasattr(entry, 'source') else ""
         
         timestamp = calendar.timegm(entry.published_parsed)
         news_datetime = datetime.datetime.fromtimestamp(timestamp, JST)
@@ -316,21 +375,16 @@ def update_news():
             "image": extract_image(entry),
             "logo": logo_url,
             "summary": "",
-            # 使用新的分类逻辑
             "category": classify_news(title_zh),
             "time_str": time_str,
             "timestamp": timestamp,
-            "fetched_at": current_fetch_time,  # 抓取时间戳，用于按抓取顺序排序
+            "fetched_at": current_fetch_time,
             "origin": source_title
         }
         
         if news_date_str not in news_by_date:
             news_by_date[news_date_str] = []
         news_by_date[news_date_str].append(news_item)
-
-        if len(preview_items) < 5:
-            preview_items.append(news_item)
-        
         valid_count += 1
 
     print(f"抓取处理结束：有效 {valid_count} 条，过滤 {filtered_count} 条。")
@@ -342,9 +396,6 @@ def update_news():
     # 获取 R2 客户端
     r2_client = get_r2_client()
 
-    # === 关键修复：先从 R2 下载历史数据 ===
-    # 1. 确定需要同步的日期集合
-    #    包括：本次 RSS 抓到的日期 + 今天 + 昨天
     today = get_current_jst_time()
     yesterday = today - datetime.timedelta(days=1)
     
@@ -354,11 +405,9 @@ def update_news():
     
     print(f"需同步日期: {dates_to_sync}")
 
-    # 2. 从 R2 下载这些日期的存档 (如果存在)
     if r2_client:
         for date_str in dates_to_sync:
             download_file_from_r2(r2_client, f"archive/{date_str}.json", os.path.join(archive_dir, f"{date_str}.json"))
-    # ====================================
     
     total_updated = 0
     total_added = 0
@@ -370,8 +419,11 @@ def update_news():
         file_path = os.path.join(archive_dir, f"{date_key}.json")
         existing_list = []
         if os.path.exists(file_path):
-            with open(file_path, 'r', encoding='utf-8') as f:
-                existing_list = json.load(f)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    existing_list = json.load(f)
+            except:
+                existing_list = []
         
         data_map = {}
         for item in existing_list:
@@ -386,7 +438,6 @@ def update_news():
             if new_clean_key in data_map:
                 existing_item = data_map[new_clean_key]
                 if existing_item['link'] == new_item['link']:
-                    # 更新时保留原有的 fetched_at（首次抓取时间）
                     original_fetched_at = existing_item.get('fetched_at')
                     data_map[new_clean_key].update(new_item)
                     if original_fetched_at:
@@ -404,7 +455,6 @@ def update_news():
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(final_list, f, ensure_ascii=False, indent=2)
         
-        # 上传到 R2
         upload_to_r2(r2_client, file_path, f"archive/{date_key}.json")
         uploaded_archives.append(date_key)
             
@@ -413,12 +463,10 @@ def update_news():
     # === 生成 archive/index.json ===
     print("正在更新归档索引...")
     
-    # 1. 先下载现有的 index.json
     index_path = os.path.join(archive_dir, 'index.json')
     if r2_client:
         download_file_from_r2(r2_client, "archive/index.json", index_path)
 
-    # 2. 读取现有索引
     archive_index = {}
     if os.path.exists(index_path):
         try:
@@ -427,9 +475,6 @@ def update_news():
         except Exception as e:
             print(f"读取现有 index.json 失败: {e}, 将重建索引")
 
-    # 3. 更新本次修改过的日期的计数
-    #    只需要更新 dates_to_sync 中确实存在的文件的计数
-    #    (因为我们只修改了这些文件，其他日期的计数应该保持不变)
     for date_str in dates_to_sync:
         file_path = os.path.join(archive_dir, f"{date_str}.json")
         if os.path.exists(file_path):
@@ -440,18 +485,15 @@ def update_news():
             except Exception as e:
                 print(f"读取 {file_path} 计算索引失败: {e}")
 
-    # 4. 保存并上传
     with open(index_path, 'w', encoding='utf-8') as f:
         json.dump(archive_index, f, ensure_ascii=False, indent=2)
     print("归档索引更新完毕。")
     
-    # 上传 index.json 到 R2
     upload_to_r2(r2_client, index_path, "archive/index.json")
 
     # data.json 更新
     homepage_news = []
     seen_titles = set()
-    # today 和 yesterday 已经在上面定义过了
     target_dates = [
         today.strftime("%Y-%m-%d"),
         (today - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -479,7 +521,6 @@ def update_news():
     with open(data_json_path, 'w', encoding='utf-8') as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
     
-    # 上传 data.json 到 R2
     upload_to_r2(r2_client, data_json_path, "data.json")
     
     print(f"全部完成！首页数据 data.json 已包含 {len(homepage_news)} 条新闻。")
