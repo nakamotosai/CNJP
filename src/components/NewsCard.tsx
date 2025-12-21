@@ -127,7 +127,7 @@ export default function NewsCard({
                     <button
                         onClick={(e) => onToggleFav && onToggleFav(e, item)}
                         className={`p-2.5 rounded-full transition-all active:scale-90 ${isFav
-                            ? "text-[var(--primary)] bg-red-50 dark:bg-red-900/20"
+                            ? "text-[var(--primary)] bg-purple-50 dark:bg-purple-900/20"
                             : "text-gray-300 hover:text-[var(--primary)] hover:bg-gray-50 dark:hover:bg-white/5"
                             }`}
                     >
@@ -180,7 +180,7 @@ export default function NewsCard({
                         <button
                             onClick={(e) => onToggleFav && onToggleFav(e, item)}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${isFav
-                                ? "bg-red-50 dark:bg-red-900/20 text-red-500"
+                                ? "bg-purple-50 dark:bg-purple-900/20 text-purple-500"
                                 : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-sub hover:bg-gray-200 dark:hover:bg-white/10"
                                 }`}
                         >
@@ -202,7 +202,7 @@ export default function NewsCard({
                             href={item.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--primary)] text-white rounded-full text-xs font-medium hover:opacity-90 transition-all shadow-lg shadow-red-500/20"
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--primary)] text-white rounded-full text-xs font-medium hover:opacity-90 transition-all shadow-lg shadow-purple-500/20"
                         >
                             <span>{settings.lang === "sc" ? "阅读原文" : "閱讀原文"}</span>
                             <ExternalLink className="w-3.5 h-3.5" />

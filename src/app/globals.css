@@ -21,6 +21,8 @@
 
 .dark {
   /* Classic Dark Mode - Refined */
+  --primary: #8b5cf6;
+  --accent: #a855f7;
   --background: #0b0d12;
   --card: #1e1e1e;
   --text-main: #e4e4e7;
