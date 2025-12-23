@@ -54,7 +54,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
                 </button>
 
                 {/* Content Card - No Header Bar */}
-                <div className="bg-white dark:bg-[#1e1e1e] modal-content w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                <div className="bg-white dark:bg-[#1e1e1e] modal-content w-full rounded-2xl shadow-elevated overflow-hidden flex flex-col">
                     <div className="p-5 overflow-y-auto custom-scrollbar text-[var(--text-main)]">
                         {children}
                     </div>

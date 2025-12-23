@@ -29,7 +29,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
       />
 
       {/* 模态框主体 */}
-      <div className="relative w-full max-w-sm bg-white dark:bg-[#1e1e1e] modal-content rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+      <div className="relative w-full max-w-sm bg-white dark:bg-[#1e1e1e] modal-content rounded-3xl shadow-elevated overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
 
         {/* 标题栏 (固定) */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-black/5 dark:border-white/5 z-10 shrink-0">

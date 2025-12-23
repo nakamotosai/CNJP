@@ -79,7 +79,7 @@ export default function NewsCard({
         <>
             <div
                 onClick={() => setIsModalOpen(true)}
-                className="w-full bg-white dark:bg-white/[0.03] p-4 rounded-xl shadow-md dark:shadow-none md:hover:shadow-xl dark:md:hover:bg-white/[0.06] md:hover:-translate-y-1 active:scale-[0.98] md:active:scale-100 transition-all duration-300 cursor-pointer border border-transparent dark:border-white/5 group relative overflow-hidden"
+                className="w-full bg-white dark:bg-white/[0.03] p-4 rounded-2xl shadow-card dark:shadow-none md:hover:shadow-card-hover dark:md:hover:bg-white/[0.06] md:hover:-translate-y-1 active:scale-[0.98] md:active:scale-100 transition-all duration-300 cursor-pointer border border-transparent dark:border-white/5 group relative overflow-hidden"
             >
                 {/* Top Row: Category | Source • Time ... Fav */}
                 <div className="flex items-center justify-between mb-2">
@@ -202,7 +202,7 @@ export default function NewsCard({
                             href={item.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--primary)] text-white rounded-full text-xs font-medium hover:opacity-90 transition-all shadow-lg shadow-indigo-500/20"
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--primary)] text-white rounded-full text-xs font-medium hover:opacity-90 transition-all shadow-floating shadow-indigo-500/20"
                         >
                             <span>{settings.lang === "sc" ? "阅读原文" : "閱讀原文"}</span>
                             <ExternalLink className="w-3.5 h-3.5" />

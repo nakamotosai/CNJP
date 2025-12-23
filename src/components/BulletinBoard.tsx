@@ -232,7 +232,7 @@ export default function BulletinBoard() {
 
     return (
         <div className="w-full mb-3 mt-3">
-            <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] h-[44px] mx-auto flex items-center px-1 dark:px-0 overflow-hidden">
+            <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] h-[38px] mx-auto flex items-center px-1 dark:px-0">
 
                 {/* Left Label */}
                 <div className="flex items-center gap-1.5 pl-1 pr-3 border-r border-gray-100 dark:border-white/10 shrink-0 h-4">
@@ -244,7 +244,7 @@ export default function BulletinBoard() {
 
                 {/* Scrollable Marquee Area */}
                 <div
-                    className="flex-1 overflow-hidden relative h-full flex items-center cursor-pointer"
+                    className="flex-1 overflow-hidden relative h-full flex items-center cursor-pointer mask-fade-edges"
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                     onTouchStart={handleTouchStart}
@@ -288,7 +288,7 @@ export default function BulletinBoard() {
                     }}
                     disabled={cooldownRemaining > 0}
                     className={cn(
-                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[32px] dark:h-[34px] backdrop-blur-sm ml-2",
+                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[30px] dark:h-[32px] backdrop-blur-sm ml-2",
                         cooldownRemaining > 0
                             ? "category-tag-inactive text-gray-400 dark:text-gray-500 cursor-not-allowed"
                             : "category-tag-active text-gray-900 dark:text-white font-bold hover:brightness-105 active:scale-95"
@@ -303,7 +303,7 @@ export default function BulletinBoard() {
             {showStatsModal && typeof document !== 'undefined' && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 dark:bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-200">
                     <div
-                        className="bg-white dark:bg-[#1a1a2e] modal-content w-full max-w-sm rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-white/10 max-h-[70vh] flex flex-col"
+                        className="bg-white dark:bg-[#1a1a2e] modal-content w-full max-w-sm rounded-2xl shadow-elevated animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-white/10 max-h-[70vh] flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/10 shrink-0">
@@ -362,7 +362,7 @@ export default function BulletinBoard() {
             {showModal && typeof document !== 'undefined' && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 dark:bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-200">
                     <div
-                        className="bg-white dark:bg-[#1a1a2e] modal-content w-full max-w-sm rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-white/10 max-h-[80vh] flex flex-col"
+                        className="bg-white dark:bg-[#1a1a2e] modal-content w-full max-w-sm rounded-2xl shadow-elevated animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-white/10 max-h-[80vh] flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/10 shrink-0">

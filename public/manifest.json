@@ -3,8 +3,8 @@
   "short_name": "ChinaNewsJP",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#F9F9F7",
-  "theme_color": "#F9F9F7",
+  "background_color": "#050608",
+  "theme_color": "#050608",
   "icons": [
     {
       "src": "icon.png",

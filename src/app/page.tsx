@@ -647,7 +647,7 @@ export default function Home() {
           opacity: pullCurrentY > 0 ? Math.min(pullCurrentY / PULL_THRESHOLD, 1) : 0
         }}
       >
-        <div className="bg-white dark:bg-[#2c2c2c] rounded-full p-2 shadow-md mt-4">
+        <div className="bg-white dark:bg-[#2c2c2c] rounded-full p-2 shadow-card mt-4">
           <Loader2 className={`w-5 h-5 text-[var(--primary)] ${pullCurrentY > PULL_THRESHOLD || isRefreshing ? 'animate-spin' : ''}`} />
         </div>
       </div>
@@ -660,7 +660,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 text-sm font-medium rounded-xl shadow-lg backdrop-blur-sm"
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 text-sm font-medium rounded-xl shadow-floating backdrop-blur-sm"
           >
             {sortMode === 'publish'
               ? (settings.lang === "sc" ? "当前排序规则为新闻实际时间顺序" : "當前排序規則為新聞實際時間順序")
@@ -698,13 +698,12 @@ export default function Home() {
       />
 
       <main className="max-w-[600px] lg:max-w-[1200px] mx-auto pb-10 relative">
-        <AnimatePresence mode="wait">
-          {activeTab === 'news' && (
+        <div className="relative">
+          {/* News Tab - Kept mounted to prevent reload lag */}
+          <div className={activeTab === 'news' ? "block" : "hidden"}>
             <motion.div
-              key="news"
               initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              animate={activeTab === 'news' ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.2 }}
             >
               {/* Bulletin Board - Now outside Header */}
@@ -732,7 +731,7 @@ export default function Home() {
                     transition={{ duration: 0.3 }}
                     className="fixed inset-x-0 bottom-24 z-[300] flex justify-center pointer-events-none"
                   >
-                    <div className="px-4 py-2.5 bg-black/85 text-white text-sm rounded-full shadow-lg backdrop-blur-md whitespace-nowrap">
+                    <div className="px-4 py-2.5 bg-black/85 text-white text-sm rounded-full shadow-floating backdrop-blur-md whitespace-nowrap">
                       {categoryToast}
                     </div>
                   </motion.div>
@@ -741,7 +740,7 @@ export default function Home() {
 
               <div ref={searchBarRef} className={`relative max-w-[600px] lg:max-w-[1200px] mx-auto px-4 mb-3.5 ${(showSuggestions || showArchiveDrawer) ? "z-[200]" : "z-30"}`}>
                 {/* Search & Tool Bar */}
-                <div className="search-bar-container w-full max-w-[600px] lg:max-w-[1200px] h-[52px] mx-auto flex items-center px-1 dark:px-2 mt-2 backdrop-blur-md">
+                <div className="search-bar-container w-full max-w-[600px] lg:max-w-[1200px] h-[38px] mx-auto flex items-center px-1 dark:px-2 mt-1.5 backdrop-blur-md">
 
                   {/* Left: Search Input */}
                   <div className="flex-1 flex items-center h-full px-3 gap-2">
@@ -782,7 +781,7 @@ export default function Home() {
                   <div className="flex items-center gap-1 pl-1 pr-1 dark:pr-2 shrink-0">
                     <button
                       onClick={toggleSortMode}
-                      className="flex items-center justify-center w-10 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
+                      className="flex items-center justify-center w-8 h-[30px] dark:h-[32px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
                     >
                       <ArrowUpDown className="w-4 h-4" />
                     </button>
@@ -794,10 +793,10 @@ export default function Home() {
                           setShowSuggestions(false);
                           if (newState) setTimeout(scrollToSearchBar, 50);
                         }}
-                        className="flex items-center justify-center gap-1.5 px-3 h-[40px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
+                        className="flex items-center justify-center gap-1.5 px-3 h-[30px] dark:h-[32px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
                       >
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-[13px] font-medium">{settings.lang === "sc" ? "存档" : "存檔"}</span>
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="text-[12px] font-medium">{settings.lang === "sc" ? "存档" : "存檔"}</span>
                       </button>
                     </div>
                   </div>
@@ -825,7 +824,7 @@ export default function Home() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] bg-white/95 dark:bg-[#1a1a2e]/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 overflow-hidden z-[200]"
+                      className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] bg-white/95 dark:bg-[#1a1a2e]/95 backdrop-blur-md rounded-2xl shadow-elevated border border-gray-100 dark:border-white/10 overflow-hidden z-[200]"
                     >
                       <div className="p-3">
                         <div className="mb-3">
@@ -893,7 +892,7 @@ export default function Home() {
                   >
                     <button
                       onClick={loadNewContent}
-                      className="group flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg shadow-blue-500/30 transition-all active:scale-95"
+                      className="group flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-floating shadow-blue-500/30 transition-all active:scale-95"
                     >
                       <span className="relative flex h-2.5 w-2.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-200 opacity-75"></span>
@@ -950,34 +949,31 @@ export default function Home() {
                 )}
               </div>
             </motion.div>
-          )}
+          </div>
 
-
-
-          {activeTab === 'disaster' && (
+          {/* Disaster Tab - Kept mounted */}
+          <div className={activeTab === 'disaster' ? "block" : "hidden"}>
             <motion.div
-              key="disaster"
               initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
+              animate={activeTab === 'disaster' ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.2 }}
             >
               <DisasterSection />
             </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
 
-        {/* Persistent Live View (Hidden when inactive, Unmounted after timeout) */}
-        <div className={activeTab === 'live' ? "block" : "hidden"}>
-          {isLiveActive && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <LiveView />
-            </motion.div>
-          )}
+          {/* Persistent Live View (Hidden when inactive, Unmounted after timeout) */}
+          <div className={activeTab === 'live' ? "block" : "hidden"}>
+            {isLiveActive && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <LiveView />
+              </motion.div>
+            )}
+          </div>
         </div>
       </main>
 

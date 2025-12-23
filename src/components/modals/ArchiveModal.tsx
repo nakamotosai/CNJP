@@ -54,19 +54,19 @@ export default function ArchiveModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div 
+      <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-lg bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
-        
+      <div className="relative w-full max-w-lg bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-elevated overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+
         <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/5 bg-white dark:bg-[#1e1e1e] sticky top-0 z-10">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-[var(--primary)]" />
             <h2 className="text-xl font-bold font-serif text-[var(--text-main)]">
-               {settings.lang === "sc" ? "历史存档" : "歷史存檔"}
-               <span className="ml-2 font-sans font-normal opacity-80">{dateStr}</span>
+              {settings.lang === "sc" ? "历史存档" : "歷史存檔"}
+              <span className="ml-2 font-sans font-normal opacity-80">{dateStr}</span>
             </h2>
           </div>
           <button
@@ -88,7 +88,7 @@ export default function ArchiveModal({
                 const isFav = favorites.some((f) => f.link === item.link);
                 const rawCategory = item.category || "其他";
                 const categoryColor = getCategoryColor(rawCategory);
-                
+
                 let displayCategory = rawCategory.substring(0, 2);
                 if (settings.lang === "tc") {
                   displayCategory = SC_TO_TC[displayCategory] || displayCategory;
@@ -96,9 +96,9 @@ export default function ArchiveModal({
 
                 return (
                   <div key={`${item.link}-${idx}`} className="group flex items-start gap-4 p-5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-                    
+
                     <div className="flex flex-col items-center gap-3 shrink-0">
-                      <div 
+                      <div
                         style={fontStyleObj}
                         className={`w-10 h-10 flex flex-col items-center justify-center rounded-xl ${categoryColor} border border-black/5 dark:border-white/5`}
                       >
@@ -111,36 +111,35 @@ export default function ArchiveModal({
                         onClick={(e) => onToggleFav(e, item)}
                         className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                       >
-                         <Star 
-                            className={`w-5 h-5 transition-all ${
-                              isFav 
-                                ? "fill-[var(--primary)] text-[var(--primary)] scale-110" 
-                                : "text-[var(--text-sub)]/50 hover:text-[var(--text-main)] scale-100"
-                            }`} 
-                         />
+                        <Star
+                          className={`w-5 h-5 transition-all ${isFav
+                              ? "fill-[var(--primary)] text-[var(--primary)] scale-110"
+                              : "text-[var(--text-sub)]/50 hover:text-[var(--text-main)] scale-100"
+                            }`}
+                        />
                       </button>
                     </div>
 
                     <div className="flex-1 min-w-0 flex flex-col gap-2 pt-0.5">
-                      <div 
+                      <div
                         style={fontStyleObj}
                         className="text-[15px] font-bold text-[var(--text-main)] leading-snug cursor-text"
                       >
                         {item.title}
                       </div>
-                      
+
                       <div className="flex items-center gap-2 text-xs text-[var(--text-sub)] mt-0.5">
-                         <a 
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium opacity-80 hover:text-[var(--primary)] hover:opacity-100 underline decoration-2 underline-offset-2 transition-all flex items-center gap-1"
-                         >
-                            {item.origin}
-                            <ExternalLink className="w-3 h-3 opacity-50" />
-                         </a>
-                         <span className="w-[1px] h-2 bg-current opacity-20"></span>
-                         <span className="opacity-60">{item.time_str}</span>
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium opacity-80 hover:text-[var(--primary)] hover:opacity-100 underline decoration-2 underline-offset-2 transition-all flex items-center gap-1"
+                        >
+                          {item.origin}
+                          <ExternalLink className="w-3 h-3 opacity-50" />
+                        </a>
+                        <span className="w-[1px] h-2 bg-current opacity-20"></span>
+                        <span className="opacity-60">{item.time_str}</span>
                       </div>
                     </div>
                   </div>

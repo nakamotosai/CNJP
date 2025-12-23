@@ -65,14 +65,6 @@ export default function Header({
     localStorage.setItem("banner-last-seen-timestamp", Date.now().toString());
   };
 
-  const text3DStyle = {
-    textShadow: "0 2px 1px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)"
-  };
-
-  const icon3DStyle = {
-    filter: "drop-shadow(0 4px 3px rgba(0,0,0,0.15)) drop-shadow(0 2px 1px rgba(0,0,0,0.1))"
-  };
-
   const englishText = "https://cn.saaaai.com";
 
   const tabs = [
@@ -101,16 +93,20 @@ export default function Header({
 
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const SCROLL_THRESHOLD = 50; // Don't hide until scrolled past 50px
+  const DELTA = 5; // Minimum scroll distance to trigger a change
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
+      // If we haven't scrolled more than the delta, do nothing
+      if (Math.abs(currentScrollY - lastScrollY) < DELTA) return;
+
       // Show if scrolling up, hide if scrolling down
-      // But always show when at the top of the page
-      if (currentScrollY < 10) {
+      if (currentScrollY < SCROLL_THRESHOLD) {
         setIsVisible(true);
-      } else if (currentScrollY > lastScrollY) {
+      } else if (currentScrollY > lastScrollY && currentScrollY > SCROLL_THRESHOLD) {
         setIsVisible(false); // Scrolling down
       } else {
         setIsVisible(true); // Scrolling up
@@ -159,7 +155,7 @@ export default function Header({
               >
                 <div className="flex flex-col justify-center w-fit ml-7 lg:ml-0 mt-1 lg:items-center">
                   <h1
-                    style={{ ...text3DStyle, fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
+                    style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
                     className="text-xl lg:text-3xl font-bold tracking-wide text-[var(--text-main)] text-gradient-animated leading-none whitespace-nowrap"
                   >
                     {settings.lang === "sc" ? "从日本看中国" : "從日本看中國"}
@@ -167,7 +163,6 @@ export default function Header({
 
                   <div
                     className="w-full flex justify-between text-[0.6em] text-gray-400 font-sans mt-[3px] select-none font-medium"
-                    style={{ textShadow: "0 1px 1px rgba(0,0,0,0.1)" }}
                   >
                     {englishText.split('').map((char, index) => (
                       <span key={index} className={char === ' ' ? 'w-[0.5em]' : ''}>
@@ -185,35 +180,32 @@ export default function Header({
             <div className="flex items-center gap-1 z-20">
               <button
                 onClick={onOpenFav}
-                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative group"
-                style={icon3DStyle}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative group"
               >
                 <Heart className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
                 {favCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#0b0d12]" />
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#0b0d12]" />
                 )}
               </button>
 
               {/* Language Toggle Button */}
               <button
                 onClick={() => updateSettings({ lang: settings.lang === 'sc' ? 'tc' : 'sc' })}
-                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200"
-                style={icon3DStyle}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200"
                 title={settings.lang === 'sc' ? '切换到繁体' : '切換到簡體'}
               >
-                <span className="w-5 h-5 flex items-center justify-center text-base font-bold text-[var(--text-main)] dark:text-gray-200">
+                <span className="text-[15px] font-bold text-[var(--text-main)] dark:text-gray-200 leading-none">
                   {settings.lang === 'sc' ? '繁' : '简'}
                 </span>
               </button>
 
               <button
                 onClick={handleAboutClick}
-                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative"
-                style={icon3DStyle}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative"
               >
                 <Info className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
                 {showBadge && (
-                  <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 pointer-events-none">
+                  <span className="absolute top-2 right-2 flex h-2.5 w-2.5 pointer-events-none">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 text-[8px] text-white justify-center items-center font-bold">!</span>
                   </span>
@@ -222,8 +214,7 @@ export default function Header({
 
               <button
                 onClick={onOpenSettings}
-                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200"
-                style={icon3DStyle}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200"
               >
                 <Settings className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
               </button>
@@ -231,7 +222,7 @@ export default function Header({
           </div>
 
           {/* Tab Bar */}
-          <div className="tab-container w-full max-w-[600px] lg:max-w-[1200px] h-[44px] mx-auto flex items-center gap-2 dark:gap-3 px-1.5 dark:px-0 mt-3 overflow-hidden">
+          <div className="tab-container w-full max-w-[600px] lg:max-w-[1200px] h-[44px] mx-auto flex items-center gap-2 dark:gap-3 px-1.5 dark:px-0 mt-3">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
 

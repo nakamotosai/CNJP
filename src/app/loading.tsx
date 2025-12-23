@@ -47,7 +47,7 @@ export default function Loading() {
                     {[1, 2, 3, 4, 5, 6].map((i) => (
                         <div
                             key={i}
-                            className="bg-white dark:bg-[#1e1e1e] p-4 rounded-xl shadow-sm animate-pulse"
+                            className="bg-white dark:bg-[#1e1e1e] p-4 rounded-2xl shadow-card animate-pulse"
                         >
                             {/* Top row: category, source, time */}
                             <div className="flex items-center gap-2 mb-2">

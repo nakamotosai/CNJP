@@ -17,6 +17,11 @@
   --text-sub: #6b7280;
   --text-aux: #9ca3af;
   --border: #e5e7eb;
+  --radius-standard: 1rem;
+  --shadow-standard: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.18);
+  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.12);
 }
 
 .dark {
@@ -32,11 +37,25 @@
 }
 
 .shadow-card {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-standard);
 }
 
 .shadow-card-hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-hover);
+}
+
+.shadow-floating {
+  box-shadow: var(--shadow-floating) !important;
+}
+
+.shadow-elevated {
+  box-shadow: var(--shadow-elevated) !important;
+}
+
+/* Fading Edges for Scrolling Containers */
+.mask-fade-edges {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 30px, black calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 30px, black calc(100% - 30px), transparent);
 }
 
 /* Hidden Scrollbar - maintains scrolling but hides the bar */
@@ -157,6 +176,17 @@ body[data-font-style="sans"][data-lang="tc"] {
   background: #050608 !important;
 }
 
+/* PWA Safe Area Support - Only for standalone mode */
+@media (display-mode: standalone) {
+  header {
+    padding-top: env(safe-area-inset-top) !important;
+  }
+
+  main {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+}
+
 .dark .min-h-screen::before {
   content: "";
   position: fixed;
@@ -198,24 +228,24 @@ body[data-font-style="sans"][data-lang="tc"] {
 .search-bar-container {
   /* Light mode default */
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 1rem;
+  border: 1px solid #f3f4f6;
+  border-radius: var(--radius-standard);
+  box-shadow: var(--shadow-standard);
 }
 
 .dark .search-bar-container {
   background: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 1rem !important;
+  border-radius: var(--radius-standard) !important;
   box-shadow: none;
 }
 
-/* Tab Container - Light mode: white card, Dark mode: transparent */
+/* Tab Container - Transparent as requested */
 .tab-container {
-  /* Light mode default */
-  background: white;
-  border: 1px solid #f3f4f6;
+  background: transparent;
+  border: none;
   border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .dark .tab-container {
@@ -229,7 +259,7 @@ body[data-font-style="sans"][data-lang="tc"] {
   /* Light mode default */
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-standard) !important;
 }
 
 .dark .tab-active {
@@ -237,7 +267,7 @@ body[data-font-style="sans"][data-lang="tc"] {
     linear-gradient(rgba(30, 41, 59, 0.7), rgba(30, 41, 59, 0.7)) padding-box,
     linear-gradient(to right, #3b82f6, #8b5cf6) border-box !important;
   border: 1px solid transparent !important;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.45) !important;
 }
 
 /* Inactive Tab - Light mode: light bg, Dark mode: transparent */
@@ -261,7 +291,7 @@ body[data-font-style="sans"][data-lang="tc"] {
   /* Light mode default */
   background: white;
   border: 1px solid #f3f4f6;
-  border-radius: 1rem;
+  border-radius: var(--radius-standard);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
@@ -276,7 +306,7 @@ body[data-font-style="sans"][data-lang="tc"] {
   /* Light mode default */
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-standard) !important;
   border-radius: 0.75rem;
 }
 
@@ -286,7 +316,7 @@ body[data-font-style="sans"][data-lang="tc"] {
     linear-gradient(to right, #3b82f6, #8b5cf6) border-box !important;
   border: 1px solid transparent !important;
   border-radius: 0.75rem !important;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.45) !important;
 }
 
 /* Category Tag Inactive - Colored Borders (Dark Mode Only) */
@@ -333,13 +363,12 @@ body[data-font-style="sans"][data-lang="tc"] {
   background: rgba(34, 197, 94, 0.1) !important;
 }
 
-/* Bulletin Board Container */
+/* Bulletin Board Container - Transparent as requested */
 .bulletin-container {
-  /* Light mode default */
-  background: white;
-  border: 1px solid #f3f4f6;
+  background: transparent;
+  border: none;
   border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .dark .bulletin-container {
@@ -364,7 +393,7 @@ body[data-font-style="sans"][data-lang="tc"] {
     linear-gradient(to right, #3b82f6, #8b5cf6) border-box !important;
   color: white !important;
   border: 1px solid transparent !important;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.45) !important;
 }
 
 /* Settings Slider Styling */
@@ -434,7 +463,7 @@ body[data-font-style="sans"][data-lang="tc"] {
   /* Light Mode Default */
   background: white;
   border: 1px solid #f3f4f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-standard) !important;
 }
 
 .dark .luxury-card {

@@ -33,7 +33,7 @@ export default function SettingsModal({
       />
 
       {/* Modal Container */}
-      <div className="custom-scrollbar relative w-full max-w-sm bg-white dark:bg-[#1e1e1e] modal-content rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+      <div className="custom-scrollbar relative w-full max-w-sm bg-white dark:bg-[#1e1e1e] modal-content rounded-3xl shadow-elevated p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 style={fontStyleObj} className="text-xl font-bold text-[var(--text-main)]">
             {settings.lang === "sc" ? "设置" : "設置"}

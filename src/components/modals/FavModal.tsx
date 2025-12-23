@@ -37,7 +37,7 @@ export default function FavModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-md bg-white dark:bg-[#1e1e1e] modal-content rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#1e1e1e] modal-content rounded-2xl shadow-elevated overflow-hidden flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200">
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/5">
           <h2 style={fontStyleObj} className="text-lg font-bold text-[var(--text-main)]">

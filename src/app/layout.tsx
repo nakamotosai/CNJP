@@ -21,17 +21,17 @@ export const metadata: Metadata = {
   title: "China News from Japan | 从日本看中国",
   description: "100条日媒最新发布的中国新闻聚合",
   manifest: "/manifest.json",
-  
+
   // ✅ iOS 桌面标题配置
   appleWebApp: {
     capable: true,
-    title: "从日本看中国", 
-    statusBarStyle: "default",
+    title: "从日本看中国",
+    statusBarStyle: "black-translucent",
   },
 
   // ✅ iOS 图标配置：直接指向 logo.png
   icons: {
-    icon: "/favicon.ico", 
+    icon: "/favicon.ico",
     apple: [
       { url: "/logo.png" }, // iPhone 会自动把大图缩放成适合它的大小
     ],
@@ -43,6 +43,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#050608",
 };
 
 export default function RootLayout({

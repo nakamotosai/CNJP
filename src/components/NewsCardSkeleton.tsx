@@ -2,7 +2,7 @@
 
 export default function NewsCardSkeleton() {
     return (
-        <div className="w-full bg-white dark:bg-[#1e1e1e] p-4 rounded-xl shadow-card border border-transparent animate-pulse">
+        <div className="w-full bg-white dark:bg-[#1e1e1e] p-4 rounded-2xl shadow-card border border-transparent animate-pulse">
             {/* Top Row Skeleton */}
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">

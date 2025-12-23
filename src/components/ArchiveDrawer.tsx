@@ -85,7 +85,7 @@ export default function ArchiveDrawer({ archiveData, archiveIndex, onSelectDate,
         }
       `}</style>
 
-            <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-xl shadow-2xl rounded-2xl border border-gray-200/60 dark:border-white/10 overflow-hidden ring-1 ring-black/5">
+            <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-xl shadow-elevated rounded-2xl border border-gray-200/60 dark:border-white/10 overflow-hidden ring-1 ring-black/5">
                 <div className="max-w-full">
                     <div
                         ref={containerRef}

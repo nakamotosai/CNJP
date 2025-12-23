@@ -190,8 +190,8 @@ export default function CategoryNav({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <nav className="category-nav-container w-full max-w-[600px] lg:max-w-[1200px] h-[44px] mx-auto flex items-center px-1 dark:px-0 mt-3 overflow-hidden dark:py-1">
-        <div className="relative flex-1 overflow-hidden">
+      <nav className="category-nav-container w-full max-w-[600px] lg:max-w-[1200px] h-[38px] mx-auto flex items-center px-1 dark:px-0 mt-3 dark:py-1">
+        <div className="relative flex-1 overflow-hidden mask-fade-edges">
           <div
             ref={contentRef}
             className="flex items-center h-full gap-2.5 dark:gap-2 w-max px-2 dark:px-1 py-2 dark:py-1.5 will-change-transform"
@@ -212,7 +212,7 @@ export default function CategoryNav({
                   onClick={() => handleCategoryClick(cat.key, cat.label)}
                   className={`
                     relative flex items-center gap-1.5 text-[13px] transition-all duration-200 
-                    whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[32px] dark:h-[34px] backdrop-blur-sm
+                    whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[30px] dark:h-[32px] backdrop-blur-sm
                     ${isActive
                       ? `category-tag-active text-gray-900 dark:text-white font-bold`
                       : `category-tag-inactive ${tagColorClass} text-gray-700 dark:text-gray-300 font-medium`
