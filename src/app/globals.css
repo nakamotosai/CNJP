@@ -176,14 +176,25 @@ body[data-font-style="sans"][data-lang="tc"] {
   background: #050608 !important;
 }
 
-/* PWA Safe Area Support - Only for standalone mode */
-@media (display-mode: standalone) {
+/* PWA Safe Area Support - For standalone mode & black-translucent */
+@media (display-mode: standalone),
+(display-mode: fullscreen) {
+  :root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body {
+    padding-top: var(--safe-area-inset-top);
+  }
+
   header {
-    padding-top: env(safe-area-inset-top) !important;
+    /* Adjusted padding to sit nicely below the status bar */
+    padding-top: calc(var(--safe-area-inset-top) + 0.5rem) !important;
   }
 
   main {
-    padding-bottom: env(safe-area-inset-bottom) !important;
+    padding-bottom: calc(var(--safe-area-inset-bottom) + 2rem) !important;
   }
 }
 
