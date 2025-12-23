@@ -183,14 +183,14 @@ export default function CategoryNav({
 
   return (
     <div
-      className={`w-full ${disableSticky ? '' : 'sticky top-[200px]'} z-50 px-4 pb-1`}
+      className="w-full z-50 px-4 pb-1"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <nav className="category-nav-container w-full max-w-[600px] lg:max-w-[1200px] h-[52px] dark:h-auto mx-auto flex items-center px-1 dark:px-0 mt-3 overflow-hidden dark:py-1">
+      <nav className="category-nav-container w-full max-w-[600px] lg:max-w-[1200px] h-[44px] mx-auto flex items-center px-1 dark:px-0 mt-3 overflow-hidden dark:py-1">
         <div className="relative flex-1 overflow-hidden">
           <div
             ref={contentRef}
@@ -212,7 +212,7 @@ export default function CategoryNav({
                   onClick={() => handleCategoryClick(cat.key, cat.label)}
                   className={`
                     relative flex items-center gap-1.5 text-[13px] transition-all duration-200 
-                    whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 py-1.5 dark:py-2 backdrop-blur-sm
+                    whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[32px] dark:h-[34px] backdrop-blur-sm
                     ${isActive
                       ? `category-tag-active text-gray-900 dark:text-white font-bold`
                       : `category-tag-inactive ${tagColorClass} text-gray-700 dark:text-gray-300 font-medium`

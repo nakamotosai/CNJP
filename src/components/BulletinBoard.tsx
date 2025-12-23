@@ -231,8 +231,8 @@ export default function BulletinBoard() {
     }
 
     return (
-        <div className="w-full mb-3">
-            <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] h-[52px] mx-auto flex items-center px-1 dark:px-0 mt-3 overflow-hidden">
+        <div className="w-full mb-3 mt-3">
+            <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] h-[44px] mx-auto flex items-center px-1 dark:px-0 overflow-hidden">
 
                 {/* Left Label */}
                 <div className="flex items-center gap-1.5 pl-1 pr-3 border-r border-gray-100 dark:border-white/10 shrink-0 h-4">
@@ -288,7 +288,7 @@ export default function BulletinBoard() {
                     }}
                     disabled={cooldownRemaining > 0}
                     className={cn(
-                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 py-1.5 dark:py-2 backdrop-blur-sm ml-2",
+                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[32px] dark:h-[34px] backdrop-blur-sm ml-2",
                         cooldownRemaining > 0
                             ? "category-tag-inactive text-gray-400 dark:text-gray-500 cursor-not-allowed"
                             : "category-tag-active text-gray-900 dark:text-white font-bold hover:brightness-105 active:scale-95"

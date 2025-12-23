@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import Header from "@/components/Header";
+import BulletinBoard from "@/components/BulletinBoard";
 import CategoryNav from "@/components/CategoryNav";
 import NewsList from "@/components/NewsList";
 import { NewsItem } from "@/components/NewsCard";
@@ -706,7 +707,12 @@ export default function Home() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
             >
-              {/* CategoryNav - 吸顶 */}
+              {/* Bulletin Board - Now outside Header */}
+              <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] mx-auto mb-3 px-4">
+                <BulletinBoard />
+              </div>
+
+              {/* CategoryNav */}
               <CategoryNav
                 currentFilter={currentFilter}
                 onFilterChange={handleFilterChange}

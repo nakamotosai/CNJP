@@ -5,7 +5,7 @@ import { Settings, Info, Heart, Tv, Sparkles, Newspaper, X, CloudRain } from "lu
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import BulletinBoard from "./BulletinBoard";
+
 
 interface HeaderProps {
   onOpenFav: () => void;
@@ -99,6 +99,30 @@ export default function Header({
     }
   ];
 
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Show if scrolling up, hide if scrolling down
+      // But always show when at the top of the page
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY) {
+        setIsVisible(false); // Scrolling down
+      } else {
+        setIsVisible(true); // Scrolling up
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
   return (
     <>
       {showBanner && (
@@ -117,7 +141,12 @@ export default function Header({
         </div>
       )}
 
-      <header className={`${disableSticky ? '' : 'sticky top-0'} w-full bg-white/95 dark:bg-transparent backdrop-blur-md z-50 shadow-sm dark:shadow-none transition-all duration-300 border-b border-gray-200/50 dark:border-white/5`}>
+      <motion.header
+        initial={{ y: 0 }}
+        animate={{ y: isVisible ? 0 : -150 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className={`${disableSticky ? '' : 'sticky top-0'} w-full bg-white/95 dark:bg-transparent backdrop-blur-md z-50 shadow-sm dark:shadow-none transition-all duration-300 border-b border-gray-200/50 dark:border-white/5`}
+      >
         <div className="relative max-w-[600px] lg:max-w-[1200px] mx-auto px-4 pt-4 pb-3">
 
           <div className="flex items-center justify-between mb-4 lg:mb-8 relative">
@@ -201,12 +230,8 @@ export default function Header({
             </div>
           </div>
 
-          <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] mx-auto">
-            <BulletinBoard />
-          </div>
-
           {/* Tab Bar */}
-          <div className="tab-container w-full max-w-[600px] lg:max-w-[1200px] h-[52px] mx-auto flex items-center gap-2 dark:gap-3 px-1.5 dark:px-0 mt-3 overflow-hidden">
+          <div className="tab-container w-full max-w-[600px] lg:max-w-[1200px] h-[44px] mx-auto flex items-center gap-2 dark:gap-3 px-1.5 dark:px-0 mt-3 overflow-hidden">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
 
@@ -215,8 +240,8 @@ export default function Header({
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
                   className={`
-                    relative h-[42px] dark:h-[44px] flex items-center justify-center text-sm font-medium 
-                    transition-all duration-300 ease-in-out rounded-xl dark:rounded-2xl backdrop-blur-sm overflow-hidden
+                    relative h-[32px] dark:h-[34px] flex items-center justify-center text-[13px] font-medium 
+                    transition-all duration-300 ease-in-out rounded-xl backdrop-blur-sm overflow-hidden
                     ${isActive
                       ? 'flex-[2] tab-active text-[var(--text-main)] dark:text-white'
                       : 'flex-1 tab-inactive text-gray-500 dark:text-gray-400 hover:bg-white/60'
@@ -240,8 +265,10 @@ export default function Header({
               );
             })}
           </div>
+
+
         </div>
-      </header>
+      </motion.header>
     </>
   );
 }
