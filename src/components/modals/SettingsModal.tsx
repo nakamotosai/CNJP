@@ -79,6 +79,7 @@ export default function SettingsModal({
             <button
               onClick={() => {
                 localStorage.removeItem("pwa-prompt-dismissed");
+                sessionStorage.setItem("pwa-force-guide", "true");
                 window.location.reload();
               }}
               className="w-full py-2.5 rounded-xl border bg-gray-50 dark:bg-white/[0.05] text-[var(--text-main)] border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2 group"

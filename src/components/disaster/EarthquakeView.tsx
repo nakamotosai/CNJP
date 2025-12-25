@@ -56,9 +56,15 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
                 mapInstanceRef.current.remove();
             }
 
+            const isMobile = window.innerWidth < 768;
+            const mobileCenter: [number, number] = [36.5, 138]; // Slightly adjusted for portrait
+            const desktopCenter: [number, number] = [37.0, 138.5];
+            const mobileZoom = 5; // Zoom out slightly on mobile to fit width
+            const desktopZoom = 6;
+
             const map = L.map(mapRef.current!, {
-                center: [37.0, 138.5], // Japan center with better framing
-                zoom: 6, // Zoom in to show less ocean
+                center: isMobile ? mobileCenter : desktopCenter,
+                zoom: isMobile ? mobileZoom : desktopZoom,
                 scrollWheelZoom: false,
                 zoomControl: false,
                 attributionControl: false,
@@ -188,12 +194,12 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
     }, [mapInstanceRef.current]);
 
     return (
-        <div className="relative w-full h-full min-h-[300px]">
+        <div className="relative w-full h-full min-h-[500px] lg:min-h-[300px]">
             {/* Main Map */}
             <div ref={mapRef} className="w-full h-full z-0" />
 
-            {/* Zoom Slider (Vertical) */}
-            <div className="absolute left-6 top-32 bottom-20 z-[1000] w-6 flex flex-col items-center justify-center pointer-events-none">
+            {/* Zoom Slider (Vertical) - Repositioned for mobile */}
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 z-[1000] w-6 flex flex-col items-center justify-center pointer-events-none">
                 <div className="h-48 w-8 flex items-center justify-center p-2 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-md border border-gray-100 dark:border-white/10 shadow-lg pointer-events-auto">
                     <input
                         type="range"
@@ -207,8 +213,8 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
                 </div>
             </div>
 
-            {/* Okinawa Inset Map */}
-            <div className="absolute bottom-4 right-4 z-[1000] w-40 h-40 rounded-xl overflow-hidden border-2 border-white/20 shadow-lg">
+            {/* Okinawa Inset Map - Smaller on mobile */}
+            <div className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 z-[1000] w-28 h-28 lg:w-40 lg:h-40 rounded-xl overflow-hidden border-2 border-white/20 shadow-lg">
                 <div ref={okinawaMapRef} className="w-full h-full" />
                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[10px] text-center text-white/80 py-0.5">
                     沖縄
@@ -264,7 +270,7 @@ export default function EarthquakeView() {
         <div className="flex flex-col lg:flex-row gap-4">
 
             {/* Map Container - 2/3 width on desktop */}
-            <div className="luxury-card relative aspect-[16/10] lg:aspect-auto lg:flex-[2] w-full bg-slate-900 rounded-2xl overflow-hidden shadow-inner lg:min-h-[300px]">
+            <div className="luxury-card relative h-[500px] lg:h-auto lg:aspect-auto lg:flex-[2] w-full bg-slate-900 rounded-2xl overflow-hidden shadow-inner lg:min-h-[300px]">
 
                 {/* HUD Status Card (Top Left) - Square Format */}
                 <div className={`absolute top-4 left-4 z-[1000] w-24 h-24 flex flex-col items-center justify-center gap-2 rounded-2xl backdrop-blur-md border shadow-lg transition-all ${majorAlert

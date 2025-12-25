@@ -2,8 +2,8 @@
 // Version: 1.0.0
 // Strategy: Network First with Cache Fallback
 
-const CACHE_NAME = 'cnjp-cache-v1';
-const STATIC_CACHE_NAME = 'cnjp-static-v1';
+const CACHE_NAME = 'cnjp-cache-v2';
+const STATIC_CACHE_NAME = 'cnjp-static-v2';
 
 // Core assets to pre-cache during install
 const PRECACHE_ASSETS = [
