@@ -25,6 +25,15 @@ interface QuakeData {
     };
 }
 
+// Singleton Leaflet Loader to prevent race conditions during rapid tab switching
+let leafletPromise: Promise<any> | null = null;
+const loadLeaflet = () => {
+    if (typeof window === "undefined") return Promise.reject();
+    if (leafletPromise) return leafletPromise;
+    leafletPromise = import("leaflet").then(m => m.default);
+    return leafletPromise;
+};
+
 // Separate Map Component to handle Leaflet loading
 function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
     const mapRef = useRef<HTMLDivElement>(null);
@@ -32,138 +41,92 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
     const mapInstanceRef = useRef<any>(null);
     const okinawaMapInstanceRef = useRef<any>(null);
     const [leafletLoaded, setLeafletLoaded] = useState(false);
-    const initAttemptRef = useRef(0);
     const isMountedRef = useRef(true);
+    const isInitializingRef = useRef(false);
+    const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         isMountedRef.current = true;
         return () => { isMountedRef.current = false; };
     }, []);
 
-    // Function to invalidate map size (fix white screen issue)
     const invalidateMaps = useCallback(() => {
-        if (mapInstanceRef.current) {
-            mapInstanceRef.current.invalidateSize();
-        }
-        if (okinawaMapInstanceRef.current) {
-            okinawaMapInstanceRef.current.invalidateSize();
-        }
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+        if (okinawaMapInstanceRef.current) okinawaMapInstanceRef.current.invalidateSize();
     }, []);
 
-    // --- Dynamic initialization logic ---
     const tryInitMap = useCallback(async () => {
-        if (typeof window === "undefined" || !mapRef.current || !isMountedRef.current) return;
+        if (!mapRef.current || !isMountedRef.current || isInitializingRef.current) return;
 
-        // Increase attempt counter to track this specific call
-        initAttemptRef.current += 1;
-        const currentAttempt = initAttemptRef.current;
+        // Final check on dimensions - ensures Leaflet has a valid target
+        const rect = mapRef.current.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
 
-        // Make sure container has dimensions before initializing
-        const containerRect = mapRef.current.getBoundingClientRect();
-        if (containerRect.width === 0 || containerRect.height === 0) {
-            return;
-        }
+        isInitializingRef.current = true;
 
-        // Dynamically import Leaflet
-        const L = (await import("leaflet")).default;
+        try {
+            const L = await loadLeaflet();
 
-        // Add Leaflet CSS dynamically if not present
-        if (!document.getElementById("leaflet-css")) {
-            const link = document.createElement("link");
-            link.id = "leaflet-css";
-            link.rel = "stylesheet";
-            link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-            document.head.appendChild(link);
+            // Core CSS injection with deduplication
+            if (!document.getElementById("leaflet-css")) {
+                const link = document.createElement("link");
+                link.id = "leaflet-css";
+                link.rel = "stylesheet";
+                link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+                document.head.appendChild(link);
+                await new Promise(r => setTimeout(r, 600)); // Grace period for CSS parsing
+            }
 
-            // Wait for CSS or timeout
-            await new Promise<void>((resolve) => {
-                link.onload = () => resolve();
-                link.onerror = () => resolve();
-                setTimeout(resolve, 1000);
-            });
-        }
+            if (!isMountedRef.current || !mapRef.current) return;
 
-        // Check if we were preempted or unmounted during async operations
-        if (!isMountedRef.current || !mapRef.current || currentAttempt !== initAttemptRef.current) return;
-
-        setLeafletLoaded(true);
-
-        // cleanup function to be used before new init or on unmount
-        const cleanupMaps = () => {
+            // Cleanup previous instances to prevent "Map container is already initialized"
             if (mapInstanceRef.current) {
-                try {
-                    mapInstanceRef.current.off();
-                    mapInstanceRef.current.remove();
-                } catch (e) { console.warn("Map remove error", e); }
+                try { mapInstanceRef.current.remove(); } catch (e) { }
                 mapInstanceRef.current = null;
             }
             if (okinawaMapInstanceRef.current) {
-                try {
-                    okinawaMapInstanceRef.current.off();
-                    okinawaMapInstanceRef.current.remove();
-                } catch (e) { }
+                try { okinawaMapInstanceRef.current.remove(); } catch (e) { }
                 okinawaMapInstanceRef.current = null;
             }
-        };
 
-        // Clean up existing map instances before creating new ones
-        cleanupMaps();
+            const isMobile = window.innerWidth < 768;
 
-
-        const isMobile = window.innerWidth < 768;
-        const mobileCenter: [number, number] = [36.5, 138];
-        const desktopCenter: [number, number] = [37.0, 138.5];
-        const mobileZoom = 5;
-        const desktopZoom = 6;
-
-        try {
-            // 1. Main Map (Japan Mainland)
-            const map = L.map(mapRef.current!, {
-                center: isMobile ? mobileCenter : desktopCenter,
-                zoom: isMobile ? mobileZoom : desktopZoom,
+            // 1. Initialize Main Map
+            const map = L.map(mapRef.current, {
+                center: isMobile ? [36.5, 138] : [37.0, 138.5],
+                zoom: isMobile ? 5 : 6,
                 scrollWheelZoom: false,
                 zoomControl: false,
                 attributionControl: false
             });
 
-            L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
+            L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png").addTo(map);
 
-            // 2. Okinawa/Ogasawara Inset Map
+            // 2. Initialize Inset Map
             if (okinawaMapRef.current) {
-                const okMap = L.map(okinawaMapRef.current!, {
+                const okMap = L.map(okinawaMapRef.current, {
                     center: [26.2, 127.7],
                     zoom: 4,
-                    scrollWheelZoom: false,
                     zoomControl: false,
                     dragging: false,
-                    touchZoom: false,
-                    doubleClickZoom: false,
                     attributionControl: false
                 });
-
                 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png").addTo(okMap);
                 okinawaMapInstanceRef.current = okMap;
             }
 
-            // Define custom icon generators
+            // Define icons based on scale
             const getIcon = (scale: number) => {
-                let color = "#3b82f6"; // Default Blue
-                let size = 20;
-                let pulseSize = "w-2 h-2";
-
-                if (scale >= 30) { color = "#3b82f6"; size = 24; pulseSize = "w-2.5 h-2.5"; }
-                if (scale >= 40) { color = "#fbbf24"; size = 30; pulseSize = "w-3 h-3"; } // Shindo 4 (Yellow)
-                if (scale >= 45) { color = "#f59e0b"; size = 38; pulseSize = "w-4 h-4"; } // Shindo 5- (Orange)
-                if (scale >= 55) { color = "#ef4444"; size = 46; pulseSize = "w-5 h-5"; } // Shindo 6- (Red)
-                if (scale >= 70) { color = "#7c3aed"; size = 56; pulseSize = "w-6 h-6"; } // Shindo 7 (Purple)
+                let color = "#3b82f6", size = 20, pulseSize = "w-2 h-2";
+                if (scale >= 30) { size = 24; }
+                if (scale >= 40) { color = "#fbbf24"; size = 30; pulseSize = "w-3 h-3"; }
+                if (scale >= 45) { color = "#f59e0b"; size = 38; pulseSize = "w-4 h-4"; }
+                if (scale >= 55) { color = "#ef4444"; size = 46; pulseSize = "w-5 h-5"; }
+                if (scale >= 70) { color = "#7c3aed"; size = 56; pulseSize = "w-6 h-6"; }
 
                 return L.divIcon({
                     className: "custom-div-icon",
-                    html: `<div class="rounded-full flex items-center justify-center shadow-2xl border-2 border-white/60 transition-all duration-500" 
+                    html: `<div class="rounded-full flex items-center justify-center border-2 border-white/60" 
                                 style="background-color: ${color}; width: ${size}px; height: ${size}px;">
                             <div class="${pulseSize} rounded-full bg-white animate-ping"></div>
                           </div>`,
@@ -172,22 +135,24 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
                 });
             };
 
-            // Add markers
-            quakes.forEach((quake) => {
-                const { latitude: lat, longitude: lon } = quake.earthquake.hypocenter;
+            // Populate markers with detailed popups
+            quakes.forEach(q => {
+                const { latitude: lat, longitude: lon } = q.earthquake.hypocenter;
                 if (lat && lon) {
-                    const icon = getIcon(quake.earthquake.maxScale);
+                    const icon = getIcon(q.earthquake.maxScale);
                     const marker = L.marker([lat, lon], { icon }).addTo(map);
 
                     marker.bindPopup(`
                         <div class="p-2 text-slate-800">
-                            <strong class="text-sm">${quake.earthquake.hypocenter.name}</strong><br/>
-                            <span class="text-xs">M ${quake.earthquake.hypocenter.magnitude} | 深度 ${quake.earthquake.hypocenter.depth}km</span><br/>
-                            <span class="text-xs font-bold text-red-500">最大震度 ${quake.earthquake.maxScale / 10}</span>
+                            <strong class="text-sm font-bold">${q.earthquake.hypocenter.name}</strong><br/>
+                            <div class="text-[11px] mt-1 space-y-0.5">
+                                <p>震级: M${q.earthquake.hypocenter.magnitude}</p>
+                                <p>深度: ${q.earthquake.hypocenter.depth}km</p>
+                                <p class="text-red-600 font-black">最大震度: ${q.earthquake.maxScale / 10}</p>
+                            </div>
                         </div>
                     `);
 
-                    // Also add to Okinawa map if in that region
                     if (lat < 30 && okinawaMapInstanceRef.current) {
                         L.marker([lat, lon], { icon }).addTo(okinawaMapInstanceRef.current);
                     }
@@ -195,57 +160,60 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
             });
 
             mapInstanceRef.current = map;
+            setLeafletLoaded(true);
+            setTimeout(invalidateMaps, 200);
 
-            // Final layout fix - multiple calls to ensure tiles are ready
-            setTimeout(invalidateMaps, 100);
-            setTimeout(invalidateMaps, 500);
-
-        } catch (error) {
-            console.error("Failed to initialize Leaflet map:", error);
+        } catch (e) {
+            console.error("Leaflet initialization failed:", e);
+        } finally {
+            isInitializingRef.current = false;
         }
     }, [quakes, invalidateMaps]);
 
-    // Track initialization requirement
-    useEffect(() => {
-        tryInitMap();
-    }, [tryInitMap]);
-
-    // --- Observors for visibility/layout ---
-    useEffect(() => {
-        if (!mapRef.current || !okinawaMapRef.current) return;
-
-        const resizeObserver = new ResizeObserver(() => {
-            // Just trigger a refresh on any resize of the main container
-            setTimeout(invalidateMaps, 100);
-        });
-
-        resizeObserver.observe(mapRef.current);
-        return () => resizeObserver.disconnect();
-    }, [invalidateMaps]);
+    // Track initialization requirements
+    useEffect(() => { tryInitMap(); }, [tryInitMap]);
 
     useEffect(() => {
         if (!mapRef.current) return;
-
-        const intersectionObserver = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    if (!mapInstanceRef.current) {
-                        tryInitMap();
-                    } else {
-                        setTimeout(invalidateMaps, 100);
-                        setTimeout(invalidateMaps, 600);
-                    }
-                }
-            });
-        }, { threshold: 0.1 });
-
-        intersectionObserver.observe(mapRef.current);
-        return () => intersectionObserver.disconnect();
+        const ro = new ResizeObserver(() => {
+            if (!mapInstanceRef.current) {
+                tryInitMap();
+            } else {
+                if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current);
+                resizeTimeoutRef.current = setTimeout(invalidateMaps, 150);
+            }
+        });
+        ro.observe(mapRef.current);
+        return () => ro.disconnect();
     }, [tryInitMap, invalidateMaps]);
 
+    // Retry mechanism - stops after 30 seconds (15 attempts * 2s)
+    useEffect(() => {
+        let attempts = 0;
+        const maxAttempts = 15;
+
+        const timer = setInterval(() => {
+            if (leafletLoaded || isInitializingRef.current) {
+                if (leafletLoaded) clearInterval(timer);
+                return;
+            }
+
+            attempts++;
+            if (attempts >= maxAttempts) {
+                console.warn("Map loading timed out after 30 seconds.");
+                clearInterval(timer);
+                return;
+            }
+
+            tryInitMap();
+        }, 2000);
+
+        return () => clearInterval(timer);
+    }, [leafletLoaded, tryInitMap]);
+
     return (
-        <div className="relative w-full h-full min-h-[400px] md:min-h-[500px] bg-slate-900 rounded-[32px] overflow-hidden border border-white/5 shadow-lg group">
-            <div ref={mapRef} className="w-full h-full z-0" />
+        <div className="relative w-full h-full min-h-[400px] md:min-h-[600px] bg-slate-900 rounded-[32px] overflow-hidden border border-white/5 shadow-lg group">
+            <div ref={mapRef} className="absolute inset-0 z-0" style={{ height: '100%' }} />
 
             {/* Okinawa Inset - Bottom Right */}
             <div className="absolute bottom-4 right-4 w-32 h-40 md:w-40 md:h-52 bg-slate-950/90 backdrop-blur-md rounded-2xl border border-white/10 z-10 overflow-hidden shadow-2xl">

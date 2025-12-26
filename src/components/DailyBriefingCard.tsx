@@ -202,8 +202,11 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                             {lang === "tc" ? "Highlights 當日熱點" : "Highlights 当日热点"}
                         </h3>
                     </div>
-                    {/* 手机端：垂直排列，电脑端：3列网格 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+                    {/* 手机端：水平横滑，提升阅读空间效率 | 电脑端：标准网格 */}
+                    <div className="
+                        flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-3 pb-6 -mx-2 px-2
+                        sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible sm:snap-none sm:gap-4 sm:mx-0 sm:px-0
+                    ">
                         {briefing.key_highlights.map((item, idx) => {
                             const displayTitle = (lang === "tc" && item.title_tc) ? item.title_tc : item.title;
                             return (
@@ -213,20 +216,28 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                                         e.stopPropagation();
                                         onHighlightSelect(item, dateForHighlight);
                                     }}
-                                    className="highlight-card group/link p-5 rounded-2xl bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-indigo-500/[0.03] hover:border-red-500/30 dark:hover:border-indigo-400/30 transition-all flex flex-col justify-between text-left"
+                                    className="
+                                        highlight-card group/link snap-center shrink-0
+                                        w-[85vw] sm:w-auto
+                                        p-4 md:p-5 rounded-2xl 
+                                        bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 
+                                        hover:bg-gray-50 dark:hover:bg-indigo-500/[0.03] 
+                                        hover:border-red-500/30 dark:hover:border-indigo-400/30 
+                                        transition-all flex flex-col justify-between text-left
+                                    "
                                 >
                                     <div>
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <span className="text-[9px] font-black px-1.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-sub rounded-md uppercase tracking-wider">
+                                        <div className="flex items-center gap-2 mb-2 md:mb-3">
+                                            <span className="text-[8px] md:text-[9px] font-black px-1.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-sub rounded-md uppercase tracking-wider">
                                                 {item.origin}
                                             </span>
                                         </div>
-                                        <h4 className="text-[14px] font-black text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight group-hover/link:text-red-600 dark:group-hover/link:text-indigo-400 transition-colors">
+                                        <h4 className="text-[13px] md:text-[14px] font-black text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight group-hover/link:text-red-600 dark:group-hover/link:text-indigo-400 transition-colors">
                                             {displayTitle}
                                         </h4>
                                     </div>
-                                    <div className="mt-4 flex items-center justify-between opacity-40 group-hover/link:opacity-100 transition-opacity">
-                                        <span className="text-[11px] italic text-gray-500 dark:text-sub">{lang === "tc" ? "解析詳情" : "解析详情"}</span>
+                                    <div className="mt-3 md:mt-4 flex items-center justify-between opacity-40 group-hover/link:opacity-100 transition-opacity">
+                                        <span className="text-[10px] md:text-[11px] italic text-gray-500 dark:text-sub">{lang === "tc" ? "解析詳情" : "解析详情"}</span>
                                         <ExternalLink className="w-3 h-3" />
                                     </div>
                                 </button>
@@ -423,7 +434,7 @@ export default function DailyBriefingCard({ data, className = "" }: DailyBriefin
                     className={`
                         relative overflow-hidden cursor-pointer
                         transition-[max-height] duration-500 ease-out
-                        ${isExpanded ? "max-h-[3000px]" : "max-h-[260px]"}
+                        ${isExpanded ? "max-h-[3000px]" : "max-h-[750px]"}
                     `}
                     style={{ willChange: 'max-height' }}
                     onClick={(e) => toggleExpand(e)}

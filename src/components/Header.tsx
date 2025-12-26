@@ -5,6 +5,7 @@ import { Settings, Info, Heart, Tv, Sparkles, Newspaper, X, CloudRain, AlertTria
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationBanner from "./NotificationBanner";
 
 
 interface HeaderProps {
@@ -30,7 +31,6 @@ export default function Header({
 }: HeaderProps) {
   const { settings, updateSettings } = useTheme();
   const [showBadge, setShowBadge] = useState(false);
-  const [showBanner, setShowBanner] = useState(false);
 
   /* - EARTHQUAKE ALERT LOGIC - */
   const [quakeAlert, setQuakeAlert] = useState<{
@@ -50,34 +50,34 @@ export default function Header({
 
         if (!Array.isArray(data)) return;
 
-        // Thresholds: Magnitude >= 5.5 OR Max Scale >= 45 (Shindo 5-)
+        // Thresholds: Magnitude >= 6.0 (User request) OR Max Scale >= 55 (Shindo 6-)
         // Time window: Last 1 hour
         const ONE_HOUR = 60 * 60 * 1000;
         const now = Date.now();
 
         const majorQuake = data.find((item: any) => {
+          if (!item.earthquake || !item.earthquake.hypocenter) return false;
+
           const quakeTime = new Date(item.earthquake.time).getTime();
           const isRecent = (now - quakeTime) < ONE_HOUR;
-          const mag = item.earthquake.hypocenter.magnitude;
-          const scale = item.earthquake.maxScale;
+          const mag = item.earthquake.hypocenter.magnitude || 0;
+          const scale = item.earthquake.maxScale || 0;
 
           // P2PQuake Scale: 45=5-, 50=5+, 55=6-, 60=6+, 70=7
-          const isMajor = mag >= 5.5 || scale >= 45;
+          const isMajor = mag >= 6.0 || scale >= 55;
           return isRecent && isMajor;
         });
 
         if (majorQuake) {
           const dismissedId = localStorage.getItem("dismissed_quake_id");
           if (dismissedId !== majorQuake.id) {
-            // Helper to convert scale to string
             const getShindoStr = (scale: number) => {
               if (scale >= 70) return "7";
               if (scale >= 60) return "6强";
               if (scale >= 55) return "6弱";
               if (scale >= 50) return "5强";
               if (scale >= 45) return "5弱";
-              if (scale >= 40) return "4";
-              return "?";
+              return "4";
             };
 
             setQuakeAlert({
@@ -88,6 +88,9 @@ export default function Header({
               time: majorQuake.earthquake.time
             });
           }
+        } else {
+          // No major quake anymore, clear alert if it was showing
+          setQuakeAlert(null);
         }
       } catch (e) {
         console.error("Failed to check earthquake alerts", e);
@@ -95,8 +98,7 @@ export default function Header({
     };
 
     checkEarthquake(); // Initial check
-
-    const interval = setInterval(checkEarthquake, 5 * 60 * 1000); // Check every 5 minutes
+    const interval = setInterval(checkEarthquake, 2 * 60 * 1000); // Check every 2 minutes for better timeliness
     return () => clearInterval(interval);
   }, []);
 
@@ -113,18 +115,6 @@ export default function Header({
     if (lastClicked !== today) {
       setShowBadge(true);
     }
-
-    // Banner: check if 7 days have passed since last dismissal
-    const lastSeenTimestamp = localStorage.getItem("banner-last-seen-timestamp");
-    if (lastSeenTimestamp) {
-      const daysSinceDismiss = (Date.now() - parseInt(lastSeenTimestamp)) / (1000 * 60 * 60 * 24);
-      if (daysSinceDismiss >= 7) {
-        setShowBanner(true);
-      }
-    } else {
-      // First time visitor, show banner
-      setShowBanner(true);
-    }
   }, []);
 
   const handleAboutClick = () => {
@@ -132,12 +122,6 @@ export default function Header({
     localStorage.setItem("about_badge_date", today);
     setShowBadge(false);
     onOpenAbout();
-  };
-
-  const closeBanner = () => {
-    setShowBanner(false);
-    // Store timestamp for 7-day check
-    localStorage.setItem("banner-last-seen-timestamp", Date.now().toString());
   };
 
   const englishText = "https://cn.saaaai.com";
@@ -232,21 +216,7 @@ export default function Header({
         )}
       </AnimatePresence>
 
-      {showBanner && (
-        <div className="w-full bg-gradient-to-r from-red-600 to-rose-700 text-white text-sm font-medium">
-          <div className="relative max-w-[600px] mx-auto px-4 py-1.5 flex items-center justify-center gap-2">
-            请收藏本站全新域名
-            <span className="font-bold mx-1">cn.saaaai.com</span>
-            <button
-              onClick={closeBanner}
-              className="absolute right-4 p-1 rounded-full hover:bg-white/20 active:scale-90 transition-all"
-              aria-label="关闭公告"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      <NotificationBanner />
 
       <motion.header
         initial={{ y: 0 }}

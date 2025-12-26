@@ -46,6 +46,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'news' | 'live' | 'disaster'>('news');
   const [mountNews, setMountNews] = useState(true); // News tab retention state
   const [isSearchingAll, setIsSearchingAll] = useState(false); // 正在后台加载历史数据
+  const [loadedDates, setLoadedDates] = useState<Set<string>>(new Set());
 
   // Tab 偏好
   useEffect(() => {
@@ -181,59 +182,45 @@ export default function Home() {
     }
   }, []);
 
-  // 加载所有归档数据 (Eager Load)并与 rawData 合并
-  // 只有当获取到 archiveIndex 后才调用
-  const loadAllArchiveData = async (indexData: Record<string, number>, currentRawData: NewsItem[]) => {
-    if (Object.keys(indexData).length === 0 || isHistoryLoaded) return;
+  // 加载下一页归档数据 (Lazy Load)
+  const loadMoreHistory = async () => {
+    if (Object.keys(archiveIndex).length === 0 || isHistoryLoaded || isSearchingAll) return;
+
+    const allDates = Object.keys(archiveIndex).sort().reverse();
+    const nextDate = allDates.find(d => !loadedDates.has(d));
+
+    if (!nextDate) {
+      setIsHistoryLoaded(true);
+      return;
+    }
 
     setIsSearchingAll(true);
     try {
-      const allDates = Object.keys(indexData).sort().reverse();
-      const allItems: NewsItem[] = [];
-      const seenLinks = new Set<string>();
+      const archiveUrl = R2_PUBLIC_URL
+        ? `${R2_PUBLIC_URL}/archive/${nextDate}.json`
+        : `/archive/${nextDate}.json`;
 
-      // 1. 先加入当前的 rawNewsData
-      currentRawData.forEach(item => {
-        seenLinks.add(item.link);
-        allItems.push(item);
-      });
+      const r = await fetch(archiveUrl);
+      if (r.ok) {
+        const items: NewsItem[] = await r.json();
 
-      // 2. 并行加载所有归档
-      const promises = allDates.map(async (dateStr) => {
-        try {
-          const archiveUrl = R2_PUBLIC_URL
-            ? `${R2_PUBLIC_URL} /archive/${dateStr}.json`
-            : `/ archive / ${dateStr}.json`;
-          const r = await fetch(archiveUrl);
-          if (r.ok) {
-            return await r.json();
-          }
-        } catch (e) {
-          console.error(`Failed to load archive ${dateStr} `, e);
-        }
-        return [];
-      });
-
-      const results = await Promise.all(promises);
-
-      // 3. 合并归档数据
-      results.forEach((items: NewsItem[]) => {
-        items.forEach(item => {
-          if (!seenLinks.has(item.link)) {
-            seenLinks.add(item.link);
-            allItems.push(item);
-          }
+        // 合并数据并去重
+        setAllNewsData(prev => {
+          const combined = [...prev, ...items];
+          // 彻底去重（基于 link）
+          const seen = new Set();
+          return combined.filter(item => {
+            if (!item.link || seen.has(item.link)) return false;
+            seen.add(item.link);
+            return true;
+          }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         });
-      });
 
-      // 4. 按时间排序
-      allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-      setAllNewsData(allItems);
-      setIsHistoryLoaded(true);
-      console.log(`📚 已加载全部 ${allItems.length} 条新闻(历史 + 最新)`);
+        setLoadedDates(prev => new Set([...prev, nextDate]));
+        console.log(`📚 已加载历史归档: ${nextDate} (${items.length} 条)`);
+      }
     } catch (e) {
-      console.error("Failed to load full history", e);
+      console.error(`Failed to load archive ${nextDate}`, e);
     } finally {
       setIsSearchingAll(false);
     }
@@ -306,9 +293,8 @@ export default function Home() {
 
         if (indexData) {
           setArchiveIndex(indexData);
-          // 3. 立即触发加载所有历史数据
-          // 传递 indexData 和 capturedRawData 避免闭包 stale 问题
-          loadAllArchiveData(indexData, capturedRawData);
+          // 初始状态下，allNewsData 先同步 rawNewsData
+          setAllNewsData(capturedRawData);
         }
       } catch (e) {
         console.error("Failed to fetch archive index", e);
@@ -417,26 +403,38 @@ export default function Home() {
     setArchiveData(newData);
   }, [rawNewsData]);
 
-  // 无限滚动主要逻辑（仅增加 visibleCount）
+  // Data Source Decision: Always use allNewsData for consistency
+  const dataSource = useMemo(() => {
+    if (allNewsData.length > 0) return allNewsData;
+    return rawNewsData;
+  }, [allNewsData, rawNewsData]);
+
+
+  // 无限滚动主要逻辑
   useEffect(() => {
     const handleScroll = () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
-        setVisibleCount((prev) => prev + 25);
+      const scrollPos = window.innerHeight + window.scrollY;
+      const threshold = document.body.offsetHeight - 800; // 提前 800px 触发
+
+      if (scrollPos >= threshold) {
+        setVisibleCount((prev) => {
+          const nextCount = prev + 25;
+
+          // 如果显示数量接近当前已加载的总数，且还有历史可以加载，则触发加载历史
+          if (nextCount >= dataSource.length - 10 && !isHistoryLoaded && !isSearchingAll) {
+            loadMoreHistory();
+          }
+
+          return nextCount;
+        });
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [dataSource.length, isHistoryLoaded, isSearchingAll]);
 
 
 
-  // Data Source Decision: Full History vs Raw
-  const dataSource = useMemo(() => {
-    if (isHistoryLoaded && allNewsData.length > 0) {
-      return allNewsData;
-    }
-    return rawNewsData;
-  }, [isHistoryLoaded, allNewsData, rawNewsData]);
 
   // Section: Hot Keywords (Full Scope Support)
   const hotKeywords = useMemo(() => {
