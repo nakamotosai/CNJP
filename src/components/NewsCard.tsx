@@ -88,7 +88,7 @@ function NewsCardComponent({
         <>
             <div
                 onClick={() => setIsModalOpen(true)}
-                className="w-full bg-white dark:bg-white/[0.03] p-4 rounded-2xl shadow-card dark:shadow-none md:hover:shadow-card-hover dark:md:hover:bg-white/[0.06] md:hover:-translate-y-1 active:scale-[0.98] md:active:scale-100 transition-all duration-300 cursor-pointer border border-transparent dark:border-white/5 group relative overflow-hidden"
+                className="news-card-container w-full bg-white dark:bg-white/[0.03] p-4 rounded-2xl shadow-card dark:shadow-none md:hover:shadow-card-hover dark:md:hover:bg-white/[0.06] md:hover:-translate-y-1 active:scale-[0.98] md:active:scale-100 transition-all duration-300 cursor-pointer border border-transparent dark:border-white/5 group relative overflow-hidden"
             >
                 {/* Top Row: Category | Source • Time ... Fav */}
                 <div className="flex items-center justify-between mb-2">

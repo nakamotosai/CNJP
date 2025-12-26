@@ -53,19 +53,14 @@ export default function DisasterSection() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
-                            className="flex flex-col lg:flex-row gap-4"
+                            className="flex flex-col lg:flex-row items-stretch gap-4"
                         >
-                            <div className="flex-1 min-w-0 h-full">
+                            <div className="flex-1 min-w-0">
                                 <WeatherView onCityChange={setCurrentCity} />
                             </div>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1 }}
-                                className="flex-1 min-w-0 h-full"
-                            >
+                            <div className="flex-1 min-w-0">
                                 <CityEncyclopediaCard cityName={currentCity} />
-                            </motion.div>
+                            </div>
                         </motion.div>
                     )}
 
@@ -129,9 +124,10 @@ function NavButton({
             {isActive && (
                 <motion.div
                     layoutId="activeSubTab"
-                    className="absolute inset-0 rounded-xl"
+                    className="absolute inset-0 bg-white/10 dark:bg-white/5 rounded-xl border border-white/20"
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
             )}
         </button>

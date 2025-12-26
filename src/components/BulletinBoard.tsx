@@ -22,6 +22,10 @@ interface AggregatedBulletin {
     color: string;
 }
 
+interface BulletinBoardProps {
+    isActive?: boolean; // NEW: Controls whether animation runs
+}
+
 const COLORS = Object.values(CATEGORY_DOT_COLORS).filter(c => c !== 'bg-gray-900' && c !== 'bg-gray-400');
 const COOLDOWN_MS = 60 * 1000;
 
@@ -34,7 +38,7 @@ const getColorForContent = (content: string) => {
     return COLORS[index];
 };
 
-export default function BulletinBoard() {
+export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
     const { settings } = useTheme();
     const [bulletins, setBulletins] = useState<Bulletin[]>([]);
     const [loading, setLoading] = useState(true);
@@ -78,8 +82,16 @@ export default function BulletinBoard() {
         }
     }, [bulletins]);
 
+    // Animation loop - now respects isActive prop
     useEffect(() => {
-        if (contentWidth === 0) return;
+        if (contentWidth === 0 || !isActive) {
+            // Stop animation when not active
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+                animationRef.current = null;
+            }
+            return;
+        }
 
         const scrollSpeed = 30;
 
@@ -88,7 +100,7 @@ export default function BulletinBoard() {
             const deltaTime = timestamp - lastTimeRef.current;
             lastTimeRef.current = timestamp;
 
-            if (!isPaused) {
+            if (!isPaused && isActive) {
                 setOffset(prev => {
                     const newOffset = prev + (scrollSpeed * deltaTime) / 1000;
                     if (newOffset >= contentWidth) {
@@ -104,34 +116,38 @@ export default function BulletinBoard() {
         return () => {
             if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
-    }, [isPaused, contentWidth]);
+    }, [isPaused, contentWidth, isActive]);
 
     const pauseAndResume = useCallback(() => {
+        if (!isActive) return;
         setIsPaused(true);
         if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
         pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
-    }, []);
+    }, [isActive]);
 
     const handleMouseEnter = useCallback(() => {
         pauseAndResume();
     }, [pauseAndResume]);
 
     const handleMouseLeave = useCallback(() => {
+        if (!isActive) return;
         if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
         pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
-    }, []);
+    }, [isActive]);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        if (!isActive) return;
         const touch = e.touches[0];
         touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
         pauseAndResume();
-    }, [pauseAndResume]);
+    }, [pauseAndResume, isActive]);
 
     const handleTouchEnd = useCallback(() => {
+        if (!isActive) return;
         if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
         pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
         touchStartRef.current = null;
-    }, []);
+    }, [isActive]);
 
     const handleMarqueeClick = useCallback(() => {
         setShowStatsModal(true);
@@ -253,9 +269,10 @@ export default function BulletinBoard() {
                 >
                     <div
                         ref={contentRef}
-                        className="inline-flex items-center will-change-transform"
+                        className="inline-flex items-center"
                         style={{
                             transform: `translate3d(-${offset}px, 0, 0)`,
+                            willChange: isActive ? 'transform' : 'auto',
                         }}
                     >
                         {displayList.map((item, i) => (

@@ -9,9 +9,10 @@ interface ModalProps {
     onClose: () => void;
     title: string; // Kept for interface compatibility but not used in new layout
     children: React.ReactNode;
+    size?: "default" | "wide"; // 新增宽度选项
 }
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, size = "default" }: ModalProps) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -29,6 +30,11 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     if (!mounted) return null;
     if (!isOpen) return null;
 
+    // 根据 size 确定最大宽度
+    const maxWidthClass = size === "wide"
+        ? "max-w-[90vw] md:max-w-[800px] lg:max-w-[900px]"
+        : "max-w-[360px]";
+
     return createPortal(
         <div
             className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
@@ -41,13 +47,13 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
 
             {/* Modal Container */}
             <div
-                className="relative w-full max-w-[360px] max-h-[80vh] animate-in zoom-in-95 fade-in duration-300"
+                className={`relative w-full ${maxWidthClass} max-h-[85vh] animate-in zoom-in-95 fade-in duration-300`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close Button - Outside Top Right */}
                 <button
                     onClick={onClose}
-                    className="absolute -top-12 right-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md"
+                    className="absolute -top-12 right-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md cursor-pointer"
                     aria-label="Close"
                 >
                     <X className="w-6 h-6" />

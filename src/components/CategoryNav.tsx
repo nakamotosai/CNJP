@@ -24,6 +24,7 @@ interface CategoryNavProps {
   onShowToast?: (message: string) => void;
   totalCount?: number;
   getCategoryCount?: (category: string) => number;
+  isActive?: boolean; // NEW: Controls whether animation runs
 }
 
 export default function CategoryNav({
@@ -32,7 +33,8 @@ export default function CategoryNav({
   disableSticky = false,
   onShowToast,
   totalCount = 0,
-  getCategoryCount
+  getCategoryCount,
+  isActive = true // Default to active
 }: CategoryNavProps) {
   const { settings } = useTheme();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -56,8 +58,16 @@ export default function CategoryNav({
     }
   }, []);
 
+  // Animation loop - now respects isActive prop
   useEffect(() => {
-    if (contentWidth === 0 || isStopped) return;
+    if (contentWidth === 0 || isStopped || !isActive) {
+      // Stop animation when not active
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
 
     const scrollSpeed = 30;
 
@@ -66,7 +76,7 @@ export default function CategoryNav({
       const deltaTime = timestamp - lastTimeRef.current;
       lastTimeRef.current = timestamp;
 
-      if (!isPaused && !isStopped) {
+      if (!isPaused && !isStopped && isActive) {
         setOffset(prev => {
           const newOffset = prev + (scrollSpeed * deltaTime) / 1000;
           if (newOffset >= contentWidth) {
@@ -83,30 +93,30 @@ export default function CategoryNav({
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [isPaused, isStopped, contentWidth]);
+  }, [isPaused, isStopped, contentWidth, isActive]);
 
   const handleMouseEnter = useCallback(() => {
-    if (isStopped) return;
+    if (isStopped || !isActive) return;
     setIsPaused(true);
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
-  }, [isStopped]);
+  }, [isStopped, isActive]);
 
   const handleMouseLeave = useCallback(() => {
-    if (isStopped) return;
+    if (isStopped || !isActive) return;
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
-  }, [isStopped]);
+  }, [isStopped, isActive]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (isStopped) return;
+    if (isStopped || !isActive) return;
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
     isDraggingRef.current = false;
-  }, [isStopped]);
+  }, [isStopped, isActive]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isStopped || !touchStartRef.current) return;
+    if (isStopped || !touchStartRef.current || !isActive) return;
     const touch = e.touches[0];
     const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
     const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
@@ -116,15 +126,15 @@ export default function CategoryNav({
       setIsPaused(true);
       if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     }
-  }, [isStopped]);
+  }, [isStopped, isActive]);
 
   const handleTouchEnd = useCallback(() => {
-    if (isStopped) return;
+    if (isStopped || !isActive) return;
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
     touchStartRef.current = null;
     isDraggingRef.current = false;
-  }, [isStopped]);
+  }, [isStopped, isActive]);
 
   const handleToggleStop = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -174,7 +184,7 @@ export default function CategoryNav({
       }
     }
 
-    if (!isStopped) {
+    if (!isStopped && isActive) {
       setIsPaused(true);
       if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
       pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 1000);
@@ -194,14 +204,15 @@ export default function CategoryNav({
         <div className="relative flex-1 overflow-hidden mask-fade-edges">
           <div
             ref={contentRef}
-            className="flex items-center h-full gap-2.5 dark:gap-2 w-max px-2 dark:px-1 py-2 dark:py-1.5 will-change-transform"
+            className="flex items-center h-full gap-2.5 dark:gap-2 w-max px-2 dark:px-1 py-2 dark:py-1.5"
             style={{
               transform: isStopped ? 'translate3d(0, 0, 0)' : `translate3d(-${offset}px, 0, 0)`,
+              willChange: isActive ? 'transform' : 'auto',
             }}
           >
             {marqueeItems.map((cat, index) => {
               const uniqueKey = `${cat.key}-${index}`;
-              const isActive = currentFilter === cat.key;
+              const isActiveFilter = currentFilter === cat.key;
               const isAllButton = cat.key === 'all';
               const dotColor = CATEGORY_DOT_COLORS[cat.key] || "bg-gray-400";
               const tagColorClass = TAG_COLOR_CLASSES[cat.key] || "";
@@ -213,7 +224,7 @@ export default function CategoryNav({
                   className={`
                     relative flex items-center gap-1.5 text-[13px] transition-all duration-200 
                     whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[30px] dark:h-[32px] backdrop-blur-sm
-                    ${isActive
+                    ${isActiveFilter
                       ? `category-tag-active text-gray-900 dark:text-white font-bold`
                       : `category-tag-inactive ${tagColorClass} text-gray-700 dark:text-gray-300 font-medium`
                     }

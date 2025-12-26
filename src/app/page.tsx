@@ -19,6 +19,7 @@ import { Search, Loader2, X, Flame, Calendar, ArrowUpDown } from "lucide-react";
 import { useTheme } from "@/components/ThemeContext";
 import { CATEGORY_MAP } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
+import { DailyBriefingData } from "@/components/DailyBriefingCard";
 
 // R2 公开访问 URL - 使用自定义域名以便中国用户访问
 const R2_PUBLIC_URL = "https://r2.cn.saaaai.com";
@@ -33,6 +34,7 @@ export default function Home() {
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false); // 是否已加载完全部历史
   const [lastUpdated, setLastUpdated] = useState("");
   const [favorites, setFavorites] = useState<NewsItem[]>([]);
+  const [dailyBriefing, setDailyBriefing] = useState<DailyBriefingData | null>(null);
 
   // 归档相关
   const [archiveData, setArchiveData] = useState<Record<string, NewsItem[]>>({});
@@ -42,6 +44,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'news' | 'live' | 'disaster'>('news');
+  const [mountNews, setMountNews] = useState(true); // News tab retention state
   const [isSearchingAll, setIsSearchingAll] = useState(false); // 正在后台加载历史数据
 
   // Tab 偏好
@@ -56,6 +59,7 @@ export default function Home() {
   // Live View Persistence
   const [isLiveActive, setIsLiveActive] = useState(false);
   const liveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const newsUnmountRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle Live View Persistence and Timeout
   useEffect(() => {
@@ -142,6 +146,30 @@ export default function Home() {
     "香港": "香港"
   };
 
+  const handleTabChange = (tab: 'news' | 'live' | 'disaster') => {
+    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    if (liveTimeoutRef.current) clearTimeout(liveTimeoutRef.current);
+
+    const prevTab = activeTab;
+    setActiveTab(tab);
+    localStorage.setItem("default_tab", tab);
+
+    // News Retention Logic
+    if (tab === 'news') {
+      setMountNews(true);
+      if (newsUnmountRef.current) {
+        clearTimeout(newsUnmountRef.current);
+        newsUnmountRef.current = null;
+      }
+    } else if (prevTab === 'news') {
+      // Start 5-minute countdown to unmount News
+      if (newsUnmountRef.current) clearTimeout(newsUnmountRef.current);
+      newsUnmountRef.current = setTimeout(() => {
+        setMountNews(false);
+      }, 5 * 60 * 1000);
+    }
+  };
+
   // --- Initial Mount ---
   // --- Initial Mount ---
   useEffect(() => {
@@ -174,14 +202,14 @@ export default function Home() {
       const promises = allDates.map(async (dateStr) => {
         try {
           const archiveUrl = R2_PUBLIC_URL
-            ? `${R2_PUBLIC_URL}/archive/${dateStr}.json`
-            : `/archive/${dateStr}.json`;
+            ? `${R2_PUBLIC_URL} /archive/${dateStr}.json`
+            : `/ archive / ${dateStr}.json`;
           const r = await fetch(archiveUrl);
           if (r.ok) {
             return await r.json();
           }
         } catch (e) {
-          console.error(`Failed to load archive ${dateStr}`, e);
+          console.error(`Failed to load archive ${dateStr} `, e);
         }
         return [];
       });
@@ -203,7 +231,7 @@ export default function Home() {
 
       setAllNewsData(allItems);
       setIsHistoryLoaded(true);
-      console.log(`📚 已加载全部 ${allItems.length} 条新闻 (历史+最新)`);
+      console.log(`📚 已加载全部 ${allItems.length} 条新闻(历史 + 最新)`);
     } catch (e) {
       console.error("Failed to load full history", e);
     } finally {
@@ -243,6 +271,18 @@ export default function Home() {
       } else if (Array.isArray(data)) {
         setRawNewsData(data);
         capturedRawData = data;
+      }
+
+      // 1.5 获取每日简报 (ollama/latest.json)
+      try {
+        const briefingUrl = `${R2_PUBLIC_URL}/ollama/latest.json?t=${Date.now()}`;
+        const rBriefing = await fetch(briefingUrl);
+        if (rBriefing.ok) {
+          const briefingData = await rBriefing.json();
+          setDailyBriefing(briefingData);
+        }
+      } catch (e) {
+        console.error("Failed to fetch daily briefing", e);
       }
 
       // 2. 获取归档索引
@@ -299,6 +339,14 @@ export default function Home() {
           setPendingNewsData(data.news);
           setPendingLastUpdated(data.last_updated || "");
         }
+      }
+
+      // Check briefing updates
+      const briefingUrl = `${R2_PUBLIC_URL}/ollama/latest.json?t=${Date.now()}`;
+      const rBriefing = await fetch(briefingUrl);
+      if (rBriefing.ok) {
+        const briefingData = await rBriefing.json();
+        setDailyBriefing(briefingData);
       }
     } catch (e) {
       console.error("Check for new content failed", e);
@@ -678,7 +726,7 @@ export default function Home() {
         onRefresh={handleRefresh}
         favCount={favorites.length}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         disableSticky={showSuggestions || showArchiveDrawer}
       />
 
@@ -699,294 +747,301 @@ export default function Home() {
       />
 
       <main className="max-w-[600px] lg:max-w-[1200px] mx-auto pb-10 relative">
-        <div className="relative">
-          {/* News Tab - Kept mounted to prevent reload lag */}
-          <div className={activeTab === 'news' ? "block" : "hidden"}>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={activeTab === 'news' ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.2 }}
-            >
-              {/* Bulletin Board - Now outside Header */}
-              <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] mx-auto mb-3 px-4">
-                <BulletinBoard />
-              </div>
-
-              {/* CategoryNav */}
-              <CategoryNav
-                currentFilter={currentFilter}
-                onFilterChange={handleFilterChange}
-                disableSticky={showSuggestions || showArchiveDrawer}
-                onShowToast={handleShowCategoryToast}
-                totalCount={dataSource.length} // 使用全部数据总数
-                getCategoryCount={getCategoryCount}
-              />
-
-              {/* Category Toast - Bottom of Screen */}
-              <AnimatePresence>
-                {categoryToast && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    transition={{ duration: 0.3 }}
-                    className="fixed inset-x-0 bottom-24 z-[300] flex justify-center pointer-events-none"
-                  >
-                    <div className="px-4 py-2.5 bg-black/85 text-white text-sm rounded-full shadow-floating backdrop-blur-md whitespace-nowrap">
-                      {categoryToast}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div ref={searchBarRef} className={`relative max-w-[600px] lg:max-w-[1200px] mx-auto px-4 mb-3.5 ${(showSuggestions || showArchiveDrawer) ? "z-[200]" : "z-30"}`}>
-                {/* Search & Tool Bar */}
-                <div className="search-bar-container w-full max-w-[600px] lg:max-w-[1200px] h-[38px] mx-auto flex items-center px-1 dark:px-2 mt-1.5 backdrop-blur-md">
-
-                  {/* Left: Search Input */}
-                  <div className="flex-1 flex items-center h-full px-3 gap-2">
-                    {!searchInput ? (
-                      <Flame className="w-5 h-5 text-orange-500 shrink-0 fire-emoji" />
-                    ) : (
-                      <Search className="w-5 h-5 text-gray-400 shrink-0" />
-                    )}
-                    <input
-                      ref={input => {
-                        // @ts-ignore
-                        searchContainerRef.current = input?.parentElement;
-                      }}
-                      type="text"
-                      value={searchInput}
-                      onChange={(e) => handleSearchInput(e.target.value)}
-                      onFocus={() => {
-                        setShowSuggestions(true);
-                        setShowArchiveDrawer(false);
-                        setTimeout(scrollToSearchBar, 50);
-                      }}
-                      placeholder={settings.lang === "sc" ? "大家都在搜…" : "大家都在搜…"}
-                      className="w-full h-full bg-transparent border-none outline-none text-[15px] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
-                    />
-                    {isSearchingAll && (
-                      <Loader2 className="w-4 h-4 text-gray-400 animate-spin shrink-0" />
-                    )}
-                    {searchInput && (
-                      <button onClick={handleClearSearch}>
-                        <X className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="w-[1px] h-6 bg-gray-200 dark:bg-white/10 shrink-0" />
-
-                  {/* Right: Tools (Archive & Sort) */}
-                  <div className="flex items-center gap-1 pl-1 pr-1 dark:pr-2 shrink-0">
-                    <button
-                      onClick={toggleSortMode}
-                      className="flex items-center justify-center w-8 h-[30px] dark:h-[32px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
-                    >
-                      <ArrowUpDown className="w-4 h-4" />
-                    </button>
-                    <div className="relative">
-                      <button
-                        onClick={() => {
-                          const newState = !showArchiveDrawer;
-                          setShowArchiveDrawer(newState);
-                          setShowSuggestions(false);
-                          if (newState) setTimeout(scrollToSearchBar, 50);
-                        }}
-                        className="flex items-center justify-center gap-1.5 px-3 h-[30px] dark:h-[32px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
-                      >
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span className="text-[12px] font-medium">{settings.lang === "sc" ? "存档" : "存檔"}</span>
-                      </button>
-                    </div>
-                  </div>
+        <div className="relative w-full overflow-hidden">
+          {/* News Tab - 5-Min Retention Strategy */}
+          {mountNews && (
+            <div className={activeTab === 'news' ? "block" : "hidden"}>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15 }}
+                className="w-full max-w-[600px] lg:max-w-[1200px] mx-auto overflow-hidden"
+              >
+                {/* Bulletin Board - Now outside Header */}
+                <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] mx-auto mb-3 px-4">
+                  <BulletinBoard isActive={activeTab === 'news'} />
                 </div>
 
-                {/* Archive Drawer (Moved here for correct positioning) */}
-                <AnimatePresence>
-                  {showArchiveDrawer && (
-                    <div className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] z-[200]">
-                      <ArchiveDrawer
-                        archiveData={archiveData}
-                        archiveIndex={archiveIndex}
-                        onSelectDate={handleSelectArchiveDate}
-                        isOpen={showArchiveDrawer}
-                      />
-                    </div>
-                  )}
-                </AnimatePresence>
+                {/* CategoryNav */}
+                <CategoryNav
+                  currentFilter={currentFilter}
+                  onFilterChange={handleFilterChange}
+                  disableSticky={showSuggestions || showArchiveDrawer}
+                  onShowToast={handleShowCategoryToast}
+                  totalCount={dataSource.length}
+                  getCategoryCount={getCategoryCount}
+                  isActive={activeTab === 'news'}
+                />
 
-                {/* Search Suggestions Dropdown */}
+                {/* Category Toast - Bottom of Screen */}
                 <AnimatePresence>
-                  {showSuggestions && (
+                  {categoryToast && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] bg-white/95 dark:bg-[#1a1a2e]/95 backdrop-blur-md rounded-2xl shadow-elevated border border-gray-100 dark:border-white/10 overflow-hidden z-[200]"
+                      exit={{ opacity: 0, y: 20 }}
+                      transition={{ duration: 0.3 }}
+                      className="fixed inset-x-0 bottom-24 z-[300] flex justify-center pointer-events-none"
                     >
-                      <div className="p-3">
-                        <div className="mb-3">
-                          <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "热门搜索" : "熱門搜索"}</div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {trendingNow.map(k => (
-                              <button
-                                key={k}
-                                onClick={() => handleSuggestionClick(k)}
-                                className="px-2.5 py-1 bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400 text-xs rounded-lg hover:bg-orange-100 dark:hover:bg-orange-500/25 transition-colors"
-                              >
-                                {settings.lang === "sc" ? k : TC_MAP[k] || k}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {hotKeywords.length > 0 && (
-                          <div className="mb-3">
-                            <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "上升热词" : "上升熱詞"}</div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {hotKeywords.map(k => (
-                                <button
-                                  key={k}
-                                  onClick={() => handleSuggestionClick(k)}
-                                  className="px-2.5 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 text-xs rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                                >
-                                  {k}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {hotSources.length > 0 && (
-                          <div>
-                            <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "热门媒体" : "熱門媒體"}</div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {hotSources.map(s => (
-                                <button
-                                  key={s}
-                                  onClick={() => handleSuggestionClick(s)}
-                                  className="px-2.5 py-1 bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 text-xs rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition-colors"
-                                >
-                                  {s}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                      <div className="px-4 py-2.5 bg-black/85 text-white text-sm rounded-full shadow-floating backdrop-blur-md whitespace-nowrap">
+                        {categoryToast}
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
 
-              {/* New Content Notification */}
-              <AnimatePresence>
-                {newContentCount > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                    className="flex justify-center mt-4 mb-2 relative z-30"
-                  >
-                    <button
-                      onClick={loadNewContent}
-                      className="group flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-floating shadow-blue-500/30 transition-all active:scale-95"
+                <div ref={searchBarRef} className={`relative max-w-[600px] lg:max-w-[1200px] mx-auto px-4 mb-3.5 ${(showSuggestions || showArchiveDrawer) ? "z-[200]" : "z-30"}`}>
+                  {/* Search & Tool Bar */}
+                  <div className="search-bar-container w-full max-w-[600px] lg:max-w-[1200px] h-[38px] mx-auto flex items-center px-1 dark:px-2 mt-1.5 backdrop-blur-md">
+
+                    {/* Left: Search Input */}
+                    <div className="flex-1 flex items-center h-full px-3 gap-2">
+                      {!searchInput ? (
+                        <Flame className="w-5 h-5 text-orange-500 shrink-0 fire-emoji" />
+                      ) : (
+                        <Search className="w-5 h-5 text-gray-400 shrink-0" />
+                      )}
+                      <input
+                        ref={input => {
+                          // @ts-ignore
+                          searchContainerRef.current = input?.parentElement;
+                        }}
+                        type="text"
+                        value={searchInput}
+                        onChange={(e) => handleSearchInput(e.target.value)}
+                        onFocus={() => {
+                          setShowSuggestions(true);
+                          setShowArchiveDrawer(false);
+                          setTimeout(scrollToSearchBar, 50);
+                        }}
+                        placeholder={settings.lang === "sc" ? "大家都在搜…" : "大家都在搜…"}
+                        className="w-full h-full bg-transparent border-none outline-none text-[15px] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
+                      />
+                      {isSearchingAll && (
+                        <Loader2 className="w-4 h-4 text-gray-400 animate-spin shrink-0" />
+                      )}
+                      {searchInput && (
+                        <button onClick={handleClearSearch}>
+                          <X className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="w-[1px] h-6 bg-gray-200 dark:bg-white/10 shrink-0" />
+
+                    {/* Right: Tools (Archive & Sort) */}
+                    <div className="flex items-center gap-1 pl-1 pr-1 dark:pr-2 shrink-0">
+                      <button
+                        onClick={toggleSortMode}
+                        className="flex items-center justify-center w-8 h-[30px] dark:h-[32px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
+                      >
+                        <ArrowUpDown className="w-4 h-4" />
+                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={() => {
+                            const newState = !showArchiveDrawer;
+                            setShowArchiveDrawer(newState);
+                            setShowSuggestions(false);
+                            if (newState) setTimeout(scrollToSearchBar, 50);
+                          }}
+                          className="flex items-center justify-center gap-1.5 px-3 h-[30px] dark:h-[32px] rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span className="text-[12px] font-medium">{settings.lang === "sc" ? "存档" : "存檔"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Archive Drawer (Moved here for correct positioning) */}
+                  <AnimatePresence>
+                    {showArchiveDrawer && (
+                      <div className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] z-[200]">
+                        <ArchiveDrawer
+                          archiveData={archiveData}
+                          archiveIndex={archiveIndex}
+                          onSelectDate={handleSelectArchiveDate}
+                          isOpen={showArchiveDrawer}
+                        />
+                      </div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Search Suggestions Dropdown */}
+                  <AnimatePresence>
+                    {showSuggestions && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-[60px] left-0 right-0 mx-auto w-[300px] bg-white/95 dark:bg-[#1a1a2e]/95 backdrop-blur-md rounded-2xl shadow-elevated border border-gray-100 dark:border-white/10 overflow-hidden z-[200]"
+                      >
+                        <div className="p-3">
+                          <div className="mb-3">
+                            <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "热门搜索" : "熱門搜索"}</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {trendingNow.map(k => (
+                                <button
+                                  key={k}
+                                  onClick={() => handleSuggestionClick(k)}
+                                  className="px-2.5 py-1 bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400 text-xs rounded-lg hover:bg-orange-100 dark:hover:bg-orange-500/25 transition-colors"
+                                >
+                                  {settings.lang === "sc" ? k : TC_MAP[k] || k}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {hotKeywords.length > 0 && (
+                            <div className="mb-3">
+                              <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "上升热词" : "上升熱詞"}</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {hotKeywords.map(k => (
+                                  <button
+                                    key={k}
+                                    onClick={() => handleSuggestionClick(k)}
+                                    className="px-2.5 py-1 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 text-xs rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                                  >
+                                    {k}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {hotSources.length > 0 && (
+                            <div>
+                              <div className="text-[10px] text-gray-400 dark:text-gray-500 mb-2 px-1">{settings.lang === "sc" ? "热门媒体" : "熱門媒體"}</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {hotSources.map(s => (
+                                  <button
+                                    key={s}
+                                    onClick={() => handleSuggestionClick(s)}
+                                    className="px-2.5 py-1 bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 text-xs rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition-colors"
+                                  >
+                                    {s}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* New Content Notification */}
+                <AnimatePresence>
+                  {newContentCount > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                      className="flex justify-center mt-4 mb-2 relative z-30"
                     >
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-200 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-                      </span>
-                      <span className="text-[13px] font-medium tracking-wide">
-                        {settings.lang === "sc" ? `发现 ${newContentCount} 条新内容` : `發現 ${newContentCount} 條新內容`}
-                      </span>
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      <button
+                        onClick={loadNewContent}
+                        className="group flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-floating shadow-blue-500/30 transition-all active:scale-95"
+                      >
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-200 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+                        </span>
+                        <span className="text-[13px] font-medium tracking-wide">
+                          {settings.lang === "sc" ? `发现 ${newContentCount} 条新内容` : `發現 ${newContentCount} 條新內容`}
+                        </span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-              {/* News List */}
-              <NewsList
-                news={displayItems}
-                isLoading={isLoading}
-                onToggleFav={handleToggleFav}
-                favorites={favorites}
-                onShowArchive={handleSelectArchiveDate}
-                onFilterCategory={handleFilterChange}
-                archiveData={archiveData}
-              />
+                {/* News List */}
+                <NewsList
+                  key={activeTab}
+                  news={displayItems}
+                  isLoading={isLoading}
+                  onToggleFav={handleToggleFav}
+                  favorites={favorites}
+                  onShowArchive={handleSelectArchiveDate}
+                  onFilterCategory={handleFilterChange}
+                  archiveData={archiveData}
+                  dailyBriefing={dailyBriefing}
+                />
 
-              {/* Footer / Status */}
-              <div className="py-8 text-center">
-                {isLoading ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-5 h-5 text-gray-300 animate-spin" />
-                    <p className="text-xs text-gray-400">
-                      {settings.lang === "sc" ? "正在加载内容..." : "正在加載內容..."}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-xs text-gray-300 dark:text-white/20">
-                      {filteredItems.length === 0
-                        ? (settings.lang === "sc" ? "没有找到相关内容" : "沒有找到相關內容")
-                        : (
-                          <>
-                            {settings.lang === "sc" ? "已加载" : "已加載"} {filteredItems.length} {settings.lang === "sc" ? "条内容" : "條內容"}
-                            {isSearchingAll && (
-                              <span className="ml-2 inline-flex items-center gap-1 text-orange-400">
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                                {settings.lang === "sc" ? "仍在加载更多历史..." : "仍在加載更多歷史..."}
-                              </span>
-                            )}
-                          </>
-                        )
-                      }
-                    </p>
-                    <BackToTop />
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
+                {/* Footer / Status */}
+                <div className="py-8 text-center">
+                  {isLoading ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="w-5 h-5 text-gray-300 animate-spin" />
+                      <p className="text-xs text-gray-400">
+                        {settings.lang === "sc" ? "正在加载内容..." : "正在加載內容..."}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-300 dark:text-white/20">
+                        {filteredItems.length === 0
+                          ? (settings.lang === "sc" ? "没有找到相关内容" : "沒有找到相關內容")
+                          : (
+                            <>
+                              {settings.lang === "sc" ? "已加载" : "已加載"} {filteredItems.length} {settings.lang === "sc" ? "条内容" : "條內容"}
+                              {isSearchingAll && (
+                                <span className="ml-2 inline-flex items-center gap-1 text-orange-400">
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                  {settings.lang === "sc" ? "仍在加载更多历史..." : "仍在加載更多歷史..."}
+                                </span>
+                              )}
+                            </>
+                          )
+                        }
+                      </p>
+                      <BackToTop />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
 
-          {/* Disaster Tab - Kept mounted */}
-          <div className={activeTab === 'disaster' ? "block" : "hidden"}>
+          {/* Disaster Tab - HARD REMOUNT */}
+          {activeTab === 'disaster' && (
             <motion.div
+              key="disaster-tab"
               initial={{ opacity: 0, x: 20 }}
-              animate={activeTab === 'disaster' ? { opacity: 1, x: 0 } : {}}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2 }}
+              className="w-full"
             >
               <DisasterSection />
             </motion.div>
-          </div>
+          )}
 
-          {/* Persistent Live View (Hidden when inactive, Unmounted after timeout) */}
-          <div className={activeTab === 'live' ? "block" : "hidden"}>
-            {isLiveActive && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                <LiveView />
-              </motion.div>
-            )}
-          </div>
+          {/* Persistent Live View - HARD REMOUNT */}
+          {activeTab === 'live' && isLiveActive && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LiveView />
+            </motion.div>
+          )}
         </div>
-      </main>
+      </main >
 
       {/* Settings Modal */}
-      <SettingsModal
+      < SettingsModal
         isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
+        onClose={() => setShowSettings(false)
+        }
         onClearFavorites={handleClearFav}
       />
 
       {/* About Modal */}
-      <AboutModal
+      < AboutModal
         isOpen={showAbout}
         onClose={() => setShowAbout(false)}
       />
@@ -1013,6 +1068,6 @@ export default function Home() {
 
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
-    </div>
+    </div >
   );
 }

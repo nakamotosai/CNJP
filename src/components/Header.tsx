@@ -3,7 +3,7 @@
 import { useTheme } from "./ThemeContext";
 import { Settings, Info, Heart, Tv, Sparkles, Newspaper, X, CloudRain, AlertTriangle } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 
@@ -167,13 +167,13 @@ export default function Header({
   ];
 
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
   const SCROLL_THRESHOLD = 50; // Don't hide until scrolled past 50px
   const DELTA = 5; // Minimum scroll distance to trigger a change
-
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      const lastScrollY = lastScrollYRef.current;
 
       // If we haven't scrolled more than the delta, do nothing
       if (Math.abs(currentScrollY - lastScrollY) < DELTA) return;
@@ -187,12 +187,12 @@ export default function Header({
         setIsVisible(true); // Scrolling up
       }
 
-      setLastScrollY(currentScrollY);
+      lastScrollYRef.current = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   return (
     <>

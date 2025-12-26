@@ -8,6 +8,8 @@
 */
 
 :root {
+  /* Enforce scrollbar to prevent layout shift */
+  overflow-y: scroll;
   /* Light Mode */
   --primary: #c62828;
   --accent: #d32f2f;
@@ -505,7 +507,45 @@ body[data-font-style="sans"][data-lang="tc"] {
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
+}
+
+/* Gentle bounce animation for expand button - more performant than Framer Motion */
+@keyframes bounce-gentle {
+
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+
+  25% {
+    transform: translateY(-8px) scaleY(0.95);
+  }
+
+  50% {
+    transform: translateY(-2px) scaleY(1.02);
+  }
+
+  75% {
+    transform: translateY(-4px) scaleY(0.98);
+  }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+/* Content visibility optimization for news cards - native browser lazy rendering */
+.news-card-container {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
+  /* Estimated card height */
+}
+
+/* Optimize transform performance for marquee elements */
+.will-change-transform {
+  will-change: transform;
 }
