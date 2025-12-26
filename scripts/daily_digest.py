@@ -175,20 +175,16 @@ def call_ollama_safe(prompt, system, format_json=False):
     if format_json:
         payload["format"] = "json"
 
-    # 构建 curl 命令参数
+    # 构建 curl 命令参数 - 模仿本地 100% 成功的极简格式
+    # 不加 Content-Type 和 User-Agent，因为本地测试时没加也通了
     curl_cmd = [
-        "curl", "-s", "-X", "POST", api_url,
-        "-H", "Content-Type: application/json",
-        "-H", f"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "curl", "-s", "-L", "-X", "POST", api_url,
+        "-H", f"CF-Access-Client-Id: {CF_ACCESS_CLIENT_ID.strip()}",
+        "-H", f"CF-Access-Client-Secret: {CF_ACCESS_CLIENT_SECRET.strip()}",
         "-d", json.dumps(payload)
     ]
     
-    if CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET:
-        curl_cmd.extend([
-            "-H", f"CF-Access-Client-Id: {CF_ACCESS_CLIENT_ID.strip()}",
-            "-H", f"CF-Access-Client-Secret: {CF_ACCESS_CLIENT_SECRET.strip()}"
-        ])
-        print(f"[-] [Auth] Using System Curl with Service Token (ID: {CF_ACCESS_CLIENT_ID[:4]}***)")
+    print(f"[-] [Auth] Replicating local curl format (ID: {CF_ACCESS_CLIENT_ID[:4]}***)")
 
     # 执行命令
     try:
@@ -261,14 +257,16 @@ def preprocess_data(news_data, limit=300):
     titles_for_ai = []
     lookup_dict = {}
     if isinstance(news_data, list):
-        for item in news_data:
-            title = item.get('title_cn') or item.get('title')
+        for idx, item in enumerate(news_data):
+            title = (item.get('title_cn') or item.get('title') or "").strip()
             origin = item.get('origin', '未知媒体')
             if title:
-                full_title_str = f"{title.strip()} (来源: {origin})"
+                # 给每个标题加一个索引 ID，让 AI 返回这个 ID，避免标题匹配失败
+                ref_id = f"REF_{idx}"
+                full_title_str = f"[{ref_id}] {title} (来源: {origin})"
                 titles_for_ai.append(full_title_str)
-                clean_title = title.strip()
-                lookup_dict[clean_title] = {
+                lookup_dict[ref_id] = {
+                    "original_title": title,
                     "link": item.get('link', ''),
                     "origin": origin,
                     "id": item.get('id', None)
@@ -340,7 +338,19 @@ def generate_structured_summary(titles, web_context, prev_context_str, keywords,
     )
 
     res_json_str = call_ollama_safe(prompt, system, format_json=True)
-    return extract_json_from_text(res_json_str)
+    obj = extract_json_from_text(res_json_str)
+    
+    # 鲁棒性处理：兼容多种可能的 Key 名
+    if obj:
+        normalized = {}
+        # 态势定调
+        normalized['stance'] = obj.get('stance') or obj.get('situation') or obj.get('态势定调')
+        # 关键事件
+        normalized['events'] = obj.get('events') or obj.get('event') or obj.get('key_events') or obj.get('关键事件')
+        # 风向预测
+        normalized['forecast'] = obj.get('forecast') or obj.get('prediction') or obj.get('风向预测')
+        return normalized
+    return None
 
 # 【核心更新】强制凑数逻辑：务必凑够 5 条
 def select_highlights_json(titles):
@@ -348,17 +358,16 @@ def select_highlights_json(titles):
     titles_text = "\n".join([f"- {t}" for t in titles])
     
     system = (
-        "你是一个政治编辑。请筛选 **5 条** 关键新闻。\n"
+        "你是一个政治编辑。请从提供的列表中筛选 **5 条** 最关键的新闻。\n"
         "【数量铁律】\n"
         "**必须严格输出 5 条新闻，一条都不能少！**\n"
-        "如果最具战略意义的新闻不足5条，请从列表中挑选重要的社会、经济或文化新闻来**凑足数量**。\n"
         "【语言要求】\n"
         "**必须使用简体中文输出。**\n"
         "【输出格式 JSON】\n"
         "{\n"
         "  \"highlights\": [\n"
         "    {\n"
-        "      \"title\": \"(原标题)\",\n"
+        "      \"ref_id\": \"(标题前的 REF_XX)\",\n"
         "      \"comment\": \"(一句话犀利点评)\"\n"
         "    }\n"
         "  ],\n"
@@ -366,10 +375,10 @@ def select_highlights_json(titles):
         "}"
     )
     
-    prompt = f"新闻列表：\n{titles_text}\n\n请生成 JSON（简体中文，强制输出5条）："
+    prompt = f"新闻列表（带 ID）：\n{titles_text}\n\n请生成 JSON（简体中文，使用 ref_id，强制输出5条）："
     return call_ollama_safe(prompt, system, format_json=True)
 
-def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count, target_date_str):
+def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count, target_date_str, keywords):
     print(f"[-] [Data] 正在组装数据...")
     date_obj = datetime.strptime(target_date_str, '%Y-%m-%d')
     
@@ -425,33 +434,41 @@ def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count,
     editorial_vibe_sc = "复杂博弈"
     
     if highlights_obj:
-        editorial_vibe_sc = sanitize_field(highlights_obj.get("editorial_vibe"), "复杂博弈")
+        vibe_val = highlights_obj.get("editorial_vibe") or highlights_obj.get("vibe")
+        editorial_vibe_sc = sanitize_field(vibe_val, "复杂博弈")
         raw_list = highlights_obj.get("highlights", [])
         
         for item in raw_list:
-            raw_title = item.get("title", "").strip()
+            ref_id = item.get("ref_id", "")
             comment_sc = item.get("comment", "")
             
-            info = None
-            if raw_title in lookup_dict:
-                info = lookup_dict[raw_title]
-            if not info:
-                for k, v in lookup_dict.items():
-                    if raw_title in k or k in raw_title:
-                        info = v
-                        raw_title = k
-                        break
-            
+            info = lookup_dict.get(ref_id)
             if info:
                 final_highlights.append({
-                    "title": raw_title,
-                    "title_tc": to_tc(raw_title),
+                    "title": info['original_title'],
+                    "title_tc": to_tc(info['original_title']),
                     "link": info['link'],
                     "origin": info['origin'],
                     "id": info['id'],
                     "analysis": sanitize_field(comment_sc, ""),
                     "analysis_tc": to_tc(comment_sc)
                 })
+            else:
+                # 兼容性匹配（由于标题可能被 AI 部分改写）
+                t = item.get("title", "")
+                if t:
+                    for rid, rinfo in lookup_dict.items():
+                        if t in rinfo['original_title'] or rinfo['original_title'] in t:
+                            final_highlights.append({
+                                "title": rinfo['original_title'],
+                                "title_tc": to_tc(rinfo['original_title']),
+                                "link": rinfo['link'],
+                                "origin": rinfo['origin'],
+                                "id": rinfo['id'],
+                                "analysis": sanitize_field(comment_sc, ""),
+                                "analysis_tc": to_tc(comment_sc)
+                            })
+                            break
 
     editorial_vibe_tc = to_tc(editorial_vibe_sc)
     title_sc = f"{date_obj.year}年{date_obj.month}月{date_obj.day}日 态势简报"
@@ -480,7 +497,8 @@ def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count,
         "id": f"{date_obj.strftime('%Y%m%d')}_DAILY",
         "type": "DAILY",
         "generated_at": datetime.now().isoformat(),
-        "news_count": total_count
+        "news_count": total_count,
+        "keywords": keywords # 保留关键词供调试
     }
 
 def save_local_txt(final_data, date_str):
@@ -554,7 +572,7 @@ def main():
     highlights_json = select_highlights_json(titles_for_ai)
     
     # 组装数据
-    final_data = construct_final_data(summary_obj, highlights_json or "{}", lookup_dict, len(lookup_dict), target_date)
+    final_data = construct_final_data(summary_obj, highlights_json or "{}", lookup_dict, len(lookup_dict), target_date, keywords)
     
     print("\n--- 摘要预览 (态势) ---")
     print(final_data.get('section_stance', '')[:100] + "...")
