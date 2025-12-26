@@ -17,7 +17,9 @@ except ImportError:
 # --- [OpenCC 繁体支持] ---
 try:
     import opencc
-    cc_converter = opencc.OpenCC('s2twp.json')
+    # 针对 opencc-python-reimplemented 库的正确初始化方式
+    # 不要带 .json 后缀，库会自动处理路径
+    cc_converter = opencc.OpenCC('s2twp') 
 except ImportError:
     cc_converter = None
     print("[!] 未检测到 opencc，将无法生成繁体字段。")
