@@ -172,40 +172,43 @@ def call_ollama_safe(prompt, system, format_json=False):
     if format_json:
         payload["format"] = "json"
 
-    # 构建 Headers - 进一步模拟真实浏览器
+    # 构建 Headers - 极度简化并去除可能触发 WAF 的固定字段
     headers = {
         "Content-Type": "application/json",
-        "Accept": "application/json, text/plain, */*",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Origin": "https://news.saaaai.com",
-        "Referer": "https://news.saaaai.com/"
+        "Connection": "keep-alive",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     
     if CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET:
-        cid = CF_ACCESS_CLIENT_ID.strip()
-        csec = CF_ACCESS_CLIENT_SECRET.strip()
-        headers["CF-Access-Client-Id"] = cid
-        headers["CF-Access-Client-Secret"] = csec
-        # 调试信息：打印 ID 的开头确认没读错空值
-        print(f"[-] [Auth] Headers Loaded: ID={cid[:4]}***, Secret={csec[:4]}***")
-    else:
-        print("[!] [Warn] CF Access Key Not Found in environment!")
+        headers["CF-Access-Client-Id"] = CF_ACCESS_CLIENT_ID.strip()
+        headers["CF-Access-Client-Secret"] = CF_ACCESS_CLIENT_SECRET.strip()
+        print(f"[-] [Auth] Headers Attached (ID: {headers['CF-Access-Client-Id'][:4]}***)")
 
-    try:
-        response = requests.post(api_url, json=payload, headers=headers, timeout=120)
-        if response.status_code == 403:
-            print(f"\n[!!!] Cloudflare 拒绝访问 (403)。")
-            print(f"      请检查 CF Access 策略是否包含当前的 Service Token，")
-            print(f"      且域名 {api_url} 穿透是否正常。")
-        response.raise_for_status()
-        res_json = response.json()
-        if 'error' in res_json:
-            print(f"\n[!!!] 模型报错: {res_json['error']}")
+    # 增加重试逻辑处理 403
+    max_retries = 2
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.post(api_url, json=payload, headers=headers, timeout=180)
+            
+            if response.status_code == 403:
+                if attempt < max_retries:
+                    print(f"[!] 遭遇 403 拦截，正在进行第 {attempt+1} 次重试...")
+                    time.sleep(5)
+                    continue
+                else:
+                    print(f"\n[!!!] Cloudflare 拒绝访问 (403)。")
+                    print(f"      本地测试已通但云端 403，通常是由于 GitHub Actions IP 被 CF 软拦截。")
+            
+            response.raise_for_status()
+            res_json = response.json()
+            return res_json['response']
+            
+        except Exception as e:
+            if attempt < max_retries:
+                time.sleep(5)
+                continue
+            print(f"\n[!!!] API 调用最终失败 (URL: {api_url}): {e}\n")
             return None
-        return res_json['response']
-    except Exception as e:
-        print(f"\n[!!!] API 调用失败 (URL: {api_url}): {e}\n")
-        return None
 
 def unload_model():
     """强制卸载模型以释放显存"""
