@@ -4,7 +4,7 @@ import boto3
 import requests
 import time
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from botocore.exceptions import ClientError
 
@@ -64,7 +64,7 @@ def get_r2_client():
 def get_target_date_str():
     # 默认处理昨天 (强制使用 JST 时间)
     # GitHub Actions 默认为 UTC，需 +9 小时转换为 JST
-    jst = datetime.timezone(datetime.timedelta(hours=9))
+    jst = timezone(timedelta(hours=9))
     target_date = datetime.now(jst) - timedelta(days=1)
     return target_date.strftime('%Y-%m-%d')
 
