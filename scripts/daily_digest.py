@@ -60,8 +60,10 @@ def get_r2_client():
     )
 
 def get_target_date_str():
-    # 默认处理昨天
-    target_date = datetime.now() - timedelta(days=1)
+    # 默认处理昨天 (强制使用 JST 时间)
+    # GitHub Actions 默认为 UTC，需 +9 小时转换为 JST
+    jst = datetime.timezone(datetime.timedelta(hours=9))
+    target_date = datetime.now(jst) - timedelta(days=1)
     return target_date.strftime('%Y-%m-%d')
 
 def load_previous_context(current_date_str):
