@@ -153,6 +153,11 @@ def to_tc(text):
     return text 
 
 def call_ollama_safe(prompt, system, format_json=False):
+    # 自动更正 URL：如果用户只提供了域名，补全路径
+    api_url = OLLAMA_API_URL
+    if not api_url.endswith('/api/generate') and not api_url.endswith('/api/chat'):
+        api_url = api_url.rstrip('/') + '/api/generate'
+
     payload = {
         "model": OLLAMA_MODEL,
         "prompt": prompt,
@@ -168,15 +173,21 @@ def call_ollama_safe(prompt, system, format_json=False):
         payload["format"] = "json"
 
     # 构建 Headers
+    # 添加 User-Agent 伪装浏览器，防止 Cloudflare 拦截默认机器人请求
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
+    
+    auth_status = "None"
     if CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET:
-        headers["CF-Access-Client-Id"] = CF_ACCESS_CLIENT_ID
-        headers["CF-Access-Client-Secret"] = CF_ACCESS_CLIENT_SECRET
+        headers["CF-Access-Client-Id"] = CF_ACCESS_CLIENT_ID.strip()
+        headers["CF-Access-Client-Secret"] = CF_ACCESS_CLIENT_SECRET.strip()
+        auth_status = "Enabled"
 
     try:
-        response = requests.post(OLLAMA_API_URL, json=payload, headers=headers)
+        # print(f"[-] DEBUG: Requesting {api_url} (Auth: {auth_status})")
+        response = requests.post(api_url, json=payload, headers=headers, timeout=120)
         response.raise_for_status()
         res_json = response.json()
         if 'error' in res_json:
@@ -184,7 +195,7 @@ def call_ollama_safe(prompt, system, format_json=False):
             return None
         return res_json['response']
     except Exception as e:
-        print(f"\n[!!!] API 调用失败: {e}\n")
+        print(f"\n[!!!] API 调用失败 (URL: {api_url}): {e}\n")
         return None
 
 def unload_model():
