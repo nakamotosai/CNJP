@@ -2,11 +2,9 @@ name: Daily Report Generation
 
 on:
   schedule:
-    # 每天每4小时的第1分钟触发 (00:01, 04:01, 08:01 ...)
-    # 注意：GitHub Actions 使用 UTC 时间，日本时间(JST) = UTC+9
-    # 00:01 JST = 15:01 UTC (前一天)
-    # 所以简单的 */4 可能不能完美对应具体的 JST 小时，但作为每4小时检测一次的机制是足够的
-    - cron: '1 */4 * * *'
+    # 每天 JST 00:01 (UTC 15:01) 启动，每 4 小时重试一次
+    # UTC 时间点: 15:01, 19:01, 23:01, 03:01, 07:01, 11:01
+    - cron: '1 3,7,11,15,19,23 * * *'
   workflow_dispatch:
 
 jobs:

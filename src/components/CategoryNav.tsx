@@ -172,8 +172,8 @@ export default function CategoryNav({
       const categoryLabel = getCategoryLabel(key, label);
       if (key === 'all') {
         const msg = settings.lang === 'sc'
-          ? `至今共抓取记录到 ${totalCount} 篇中国新闻`
-          : `至今共抓取記錄到 ${totalCount} 篇中國新聞`;
+          ? `当前已加载 ${totalCount} 篇新闻`
+          : `當前已加載 ${totalCount} 篇新聞`;
         onShowToast(msg);
       } else {
         const count = getCategoryCount(key);

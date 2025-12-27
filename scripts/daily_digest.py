@@ -340,15 +340,33 @@ def generate_structured_summary(titles, web_context, prev_context_str, keywords,
     res_json_str = call_ollama_safe(prompt, system, format_json=True)
     obj = extract_json_from_text(res_json_str)
     
-    # 鲁棒性处理：兼容多种可能的 Key 名
+    # 鲁棒性处理：兼容多种可能的 Key 名 (大小写不敏感)
     if obj:
         normalized = {}
+        
+        def get_fuzzy(target_keys):
+            # 1. 精确匹配
+            for k in target_keys:
+                if obj.get(k): return obj[k]
+            # 2. 大小写不敏感匹配
+            for k in target_keys:
+                for obj_k in obj.keys():
+                    if obj_k.lower() == k.lower() and obj[obj_k]:
+                        return obj[obj_k]
+            return None
+
         # 态势定调
-        normalized['stance'] = obj.get('stance') or obj.get('situation') or obj.get('态势定调')
+        normalized['stance'] = get_fuzzy(['stance', 'situation', '态势定调', 'trend', 'overview'])
         # 关键事件
-        normalized['events'] = obj.get('events') or obj.get('event') or obj.get('key_events') or obj.get('关键事件')
+        normalized['events'] = get_fuzzy(['events', 'event', 'key_events', '关键事件', 'highlights', 'impact', 'news', 'main_events'])
         # 风向预测
-        normalized['forecast'] = obj.get('forecast') or obj.get('prediction') or obj.get('风向预测')
+        normalized['forecast'] = get_fuzzy(['forecast', 'prediction', '风向预测', 'outlook', 'future'])
+        
+        # Debug Log: 如果还是没提取到，打印原始 keys 以便调试
+        if not normalized['events']:
+            print(f"[!] Warning: Failed to extract 'events'. Raw keys: {list(obj.keys())}")
+            print(f"[!] Raw excerpt: {str(obj)[:200]}")
+
         return normalized
     return None
 

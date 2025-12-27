@@ -540,7 +540,7 @@ export default function DailyBriefingCard({ data, className = "" }: DailyBriefin
                 title=""
             >
                 {selectedHighlight && (
-                    <div className="space-y-4">
+                    <div className="space-y-4 p-5">
                         <h2 className="text-lg font-bold leading-snug text-[var(--text-main)]">
                             {(settings.lang === "tc" && selectedHighlight.highlight.title_tc) ? selectedHighlight.highlight.title_tc : selectedHighlight.highlight.title}
                         </h2>

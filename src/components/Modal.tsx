@@ -47,7 +47,7 @@ export default function Modal({ isOpen, onClose, title, children, size = "defaul
 
             {/* Modal Container */}
             <div
-                className={`relative w-full ${maxWidthClass} max-h-[85vh] animate-in zoom-in-95 fade-in duration-300`}
+                className={`relative w-full ${maxWidthClass} max-h-[80dvh] flex flex-col animate-in zoom-in-95 fade-in duration-300`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close Button - Outside Top Right */}
@@ -60,10 +60,8 @@ export default function Modal({ isOpen, onClose, title, children, size = "defaul
                 </button>
 
                 {/* Content Card - No Header Bar */}
-                <div className="bg-white dark:bg-[#1e1e1e] modal-content w-full rounded-2xl shadow-elevated overflow-hidden flex flex-col">
-                    <div className="p-5 overflow-y-auto custom-scrollbar text-[var(--text-main)]">
-                        {children}
-                    </div>
+                <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/20 modal-content w-full flex-1 min-h-0 rounded-2xl shadow-elevated overflow-hidden flex flex-col text-[var(--text-main)]">
+                    {children}
                 </div>
             </div>
         </div>,

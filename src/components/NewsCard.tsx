@@ -1,13 +1,13 @@
 "use client";
 
-import React, { memo, useState, useMemo } from "react";
+import React, { memo, useState, useMemo, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useTheme } from "./ThemeContext";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN, zhTW } from "date-fns/locale";
 import Modal from "./Modal";
 import { CATEGORY_MAP, CATEGORY_DOT_COLORS } from "@/lib/constants";
-import { Heart, ExternalLink, Tag } from "lucide-react";
+import { Heart, ExternalLink, Tag, Sparkles, Loader2, AlertCircle, Clock, Zap, Users, WifiOff } from "lucide-react";
 
 export interface NewsItem {
     title: string;
@@ -22,6 +22,21 @@ export interface NewsItem {
     description?: string;
 }
 
+interface AnalysisResult {
+    title: string;
+    simplified: string;
+    traditional: string;
+    original_url: string;
+    analyzed_at: string;
+}
+
+interface AnalyzeResponse {
+    source: "cache" | "generate";
+    hash_id: string;
+    data: AnalysisResult;
+    queue_position?: number;
+}
+
 interface NewsCardProps {
     item: NewsItem;
     isFav?: boolean;
@@ -34,6 +49,8 @@ const SC_TO_TC_CATEGORY: Record<string, string> = {
     "科技": "科技", "体育": "體育", "其他": "其他",
 };
 
+const AI_ANALYZE_API = "/api";
+
 function NewsCardComponent({
     item,
     isFav = false,
@@ -44,7 +61,100 @@ function NewsCardComponent({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [logoError, setLogoError] = useState(false);
 
-    // Memoize time display to avoid recalculating on every render
+    // AI 解读状态
+    const [aiAnalysis, setAiAnalysis] = useState<AnalysisResult | null>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+    const [isOffline, setIsOffline] = useState(false);
+    const [analyzeSource, setAnalyzeSource] = useState<"cache" | "generate" | null>(null);
+    const [showAnalysis, setShowAnalysis] = useState(false);
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [totalTime, setTotalTime] = useState<number | null>(null);
+    const [queuePosition, setQueuePosition] = useState(0);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
+
+    // 本地已读记录状态
+    const [isLocallyAnalyzed, setIsLocallyAnalyzed] = useState(false);
+
+    // 初始化时从 localStorage 检查
+    useEffect(() => {
+        try {
+            const analyzedList = JSON.parse(localStorage.getItem('cnjp_ai_history') || '[]');
+            if (analyzedList.includes(item.link)) {
+                setIsLocallyAnalyzed(true);
+            }
+        } catch (e) {
+            console.error("Local storage error:", e);
+        }
+    }, [item.link]);
+
+    // 记录到本地的方法
+    const markAsAnalyzedLocally = () => {
+        try {
+            const analyzedList = JSON.parse(localStorage.getItem('cnjp_ai_history') || '[]');
+            if (!analyzedList.includes(item.link)) {
+                analyzedList.push(item.link);
+                // 只保留最近 200 条记录，防止 storage 过大
+                const limitedList = analyzedList.slice(-200);
+                localStorage.setItem('cnjp_ai_history', JSON.stringify(limitedList));
+                setIsLocallyAnalyzed(true);
+            }
+        } catch (e) {
+            console.error("Local storage save error:", e);
+        }
+    };
+
+    // 缓存状态（是否已解读）
+    const [hasCachedAnalysis, setHasCachedAnalysis] = useState<boolean | null>(null);
+    const [isCheckingCache, setIsCheckingCache] = useState(false);
+
+    // 暂时禁用自动缓存检查，避免请求过多
+    // 缓存状态会在用户点击时通过正常分析流程获取
+    /*
+    useEffect(() => {
+        const checkCache = async () => {
+            if (hasCachedAnalysis !== null) return; // 已检查过
+            setIsCheckingCache(true);
+            try {
+                // 使用 HEAD 请求检查缓存（更快）
+                const response = await fetch(`${AI_ANALYZE_API}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: item.link, check_only: true })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    // 如果 source 是 cache，说明已解读
+                    if (data.cached === true || data.source === "cache") {
+                        setHasCachedAnalysis(true);
+                        setAiAnalysis(data.data);
+                        setAnalyzeSource("cache");
+                    } else {
+                        setHasCachedAnalysis(false);
+                    }
+                } else {
+                    setHasCachedAnalysis(false);
+                }
+            } catch {
+                setHasCachedAnalysis(false);
+            } finally {
+                setIsCheckingCache(false);
+            }
+        };
+
+        // 延迟检查，避免页面加载时大量请求
+        const timer = setTimeout(checkCache, Math.random() * 2000 + 500);
+        return () => clearTimeout(timer);
+    }, [item.link, hasCachedAnalysis]);
+    */
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, []);
+
     const timeDisplay = useMemo(() => {
         if (item.time_str) return item.time_str;
         if (item.timestamp) {
@@ -53,14 +163,11 @@ function NewsCardComponent({
                     addSuffix: true,
                     locale: settings.lang === "sc" ? zhCN : zhTW,
                 });
-            } catch (e) {
-                return "";
-            }
+            } catch { return ""; }
         }
         return "";
     }, [item.time_str, item.timestamp, settings.lang]);
 
-    // Memoize category display
     const { displayCategory, categoryKey, dotColor } = useMemo(() => {
         const rawCategory = item.category || "其他";
         let displayCat = rawCategory.substring(0, 2);
@@ -72,7 +179,6 @@ function NewsCardComponent({
         return { displayCategory: displayCat, categoryKey: catKey, dotColor: color };
     }, [item.category, settings.lang]);
 
-    // Memoize title display
     const displayTitle = useMemo(() => {
         return (settings.lang === "tc" && item.title_tc) ? item.title_tc : item.title;
     }, [settings.lang, item.title, item.title_tc]);
@@ -84,21 +190,155 @@ function NewsCardComponent({
         }
     };
 
+    const handleAiAnalyze = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (aiAnalysis) {
+            setShowAnalysis(!showAnalysis);
+            return;
+        }
+
+        if (isAnalyzing || isBackgroundLoading) return;
+
+        setIsAnalyzing(true);
+        setAnalyzeError(null);
+        setIsOffline(false);
+        setElapsedTime(0);
+        setTotalTime(null);
+        setQueuePosition(0);
+
+        const startTime = Date.now();
+        timerRef.current = setInterval(() => {
+            setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+        }, 1000);
+
+        try {
+            const response = await fetch(`${AI_ANALYZE_API}/analyze?t=${Date.now()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: item.link }),
+            });
+
+            if (timerRef.current) clearInterval(timerRef.current);
+            const finalTime = Math.floor((Date.now() - startTime) / 1000);
+            setTotalTime(finalTime);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorData: any = {};
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    // 如果无法解析 JSON，可能返回的是 HTML 错误页（如 502/504）
+                    // 截取前 100 个字符作为错误概要
+                    errorData = { detail: `服务器错误 (${response.status}): ${errorText.slice(0, 100)}` };
+                }
+
+                if (errorData.offline || response.status === 503) {
+                    setIsOffline(true);
+                    throw new Error(settings.lang === "sc"
+                        ? "站长电脑关机中，AI服务暂时不可用"
+                        : "站長電腦關機中，AI服務暫時不可用");
+                }
+                throw new Error(errorData.detail || errorData.error || `请求失败: ${response.status}`);
+            }
+
+            const result: AnalyzeResponse = await response.json();
+            setAiAnalysis(result.data);
+            setAnalyzeSource(result.source);
+            setShowAnalysis(true);
+            markAsAnalyzedLocally(); // 成功后记录到本地
+            setIsBackgroundLoading(false);
+
+        } catch (err) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network'))) {
+                setIsOffline(true);
+                setAnalyzeError(settings.lang === "sc"
+                    ? "站长电脑关机中，AI服务暂时不可用"
+                    : "站長電腦關機中，AI服務暫時不可用");
+            } else {
+                setAnalyzeError(err instanceof Error ? err.message : "分析失败，请重试");
+            }
+            setIsBackgroundLoading(false);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    // Modal 打开时，如果已有缓存，直接展示
+    const handleCardClick = () => {
+        setIsModalOpen(true);
+        if (aiAnalysis) {
+            setShowAnalysis(true);
+        }
+    };
+
+    const handleModalClose = () => {
+        if (isAnalyzing) setIsBackgroundLoading(true);
+        setIsModalOpen(false);
+    };
+
+    const analysisContent = useMemo(() => {
+        if (!aiAnalysis) return null;
+        return settings.lang === "tc" ? aiAnalysis.traditional : aiAnalysis.simplified;
+    }, [aiAnalysis, settings.lang]);
+
+    const loadingHint = useMemo(() => {
+        if (queuePosition > 1) {
+            return settings.lang === "sc"
+                ? `排队中，前方还有 ${queuePosition - 1} 人...`
+                : `排隊中，前方還有 ${queuePosition - 1} 人...`;
+        }
+        if (elapsedTime < 5) {
+            return settings.lang === "sc" ? "正在解析网页..." : "正在解析網頁...";
+        } else if (elapsedTime < 10) {
+            return settings.lang === "sc" ? "AI 正在分析内容..." : "AI 正在分析內容...";
+        } else if (elapsedTime < 20) {
+            return settings.lang === "sc" ? "生成中，请耐心等待..." : "生成中，請耐心等待...";
+        } else {
+            return settings.lang === "sc" ? "即将完成..." : "即將完成...";
+        }
+    }, [elapsedTime, queuePosition, settings.lang]);
+
+    // AI 状态文本和样式
+    const aiStatusText = useMemo(() => {
+        if (isBackgroundLoading || isAnalyzing) {
+            return settings.lang === "sc" ? "解读中..." : "解讀中...";
+        }
+        if (isLocallyAnalyzed || aiAnalysis) {
+            return settings.lang === "sc" ? "AI已解读" : "AI已解讀";
+        }
+        return settings.lang === "sc" ? "待AI解读" : "待AI解讀";
+    }, [isLocallyAnalyzed, aiAnalysis, isBackgroundLoading, isAnalyzing, settings.lang]);
+
+    const isAnalyzed = isLocallyAnalyzed || aiAnalysis !== null;
+
     return (
         <>
             <div
-                onClick={() => setIsModalOpen(true)}
+                onClick={handleCardClick}
                 className="news-card-container w-full bg-white dark:bg-white/[0.03] p-4 rounded-2xl shadow-card dark:shadow-none md:hover:shadow-card-hover dark:md:hover:bg-white/[0.06] md:hover:-translate-y-1 active:scale-[0.98] md:active:scale-100 transition-all duration-300 cursor-pointer border border-transparent dark:border-white/5 group relative overflow-hidden"
             >
-                {/* Top Row: Category | Source • Time ... Fav */}
+                {/* 顶部行：收藏 | 分类 | 来源 | 时间 ... AI状态 */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 text-[11px]">
-                        {/* Category Tag */}
+                        {/* 收藏按钮 - 左侧 */}
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleCategoryClick();
-                            }}
+                            onClick={(e) => { e.stopPropagation(); onToggleFav && onToggleFav(e, item); }}
+                            className={`p-1.5 rounded-full transition-all active:scale-90 ${isFav
+                                ? "text-[var(--primary)] bg-indigo-50 dark:bg-indigo-900/20"
+                                : "text-gray-300 hover:text-[var(--primary)] hover:bg-gray-50 dark:hover:bg-white/5"
+                                }`}
+                        >
+                            <Heart className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
+                        </button>
+
+                        <span className="text-gray-300 dark:text-gray-700">|</span>
+
+                        {/* 分类 */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleCategoryClick(); }}
                             className="flex items-center gap-1.5 group/cat"
                         >
                             <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
@@ -109,89 +349,54 @@ function NewsCardComponent({
 
                         <span className="text-gray-300 dark:text-gray-700">|</span>
 
-                        {/* Source with optimized logo */}
+                        {/* 来源 */}
                         <div className="flex items-center gap-1.5">
                             {item.logo && !logoError && (
-                                <Image
-                                    src={item.logo}
-                                    alt=""
-                                    width={12}
-                                    height={12}
+                                <Image src={item.logo} alt="" width={12} height={12}
                                     className="object-contain opacity-60 grayscale"
-                                    onError={() => setLogoError(true)}
-                                    loading="lazy"
-                                    unoptimized // External URLs need this
-                                />
+                                    onError={() => setLogoError(true)} loading="lazy" unoptimized />
                             )}
-                            <span className="text-[var(--text-aux)] font-medium tracking-wide">
-                                {item.origin}
-                            </span>
+                            <span className="text-[var(--text-aux)] font-medium tracking-wide">{item.origin}</span>
                         </div>
 
                         <span className="text-[var(--text-aux)] opacity-60">•</span>
 
-                        {/* Time */}
-                        <span className="text-[var(--text-aux)] tracking-wide opacity-80">
-                            {timeDisplay}
-                        </span>
+                        {/* 时间 */}
+                        <span className="text-[var(--text-aux)] tracking-wide opacity-80">{timeDisplay}</span>
                     </div>
 
-                    {/* Star Icon - Larger & Circular */}
-                    <button
-                        onClick={(e) => onToggleFav && onToggleFav(e, item)}
-                        className={`p-2.5 rounded-full transition-all active:scale-90 ${isFav
-                            ? "text-[var(--primary)] bg-indigo-50 dark:bg-indigo-900/20"
-                            : "text-gray-300 hover:text-[var(--primary)] hover:bg-gray-50 dark:hover:bg-white/5"
+                    {/* AI 状态标签 - 右侧 */}
+                    <div
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all ${isBackgroundLoading || isAnalyzing
+                            ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                            : isAnalyzed
+                                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-sm"
+                                : "bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400"
                             }`}
                     >
-                        <Heart className={`w-4 h-4 ${isFav ? "fill-current" : ""}`} />
-                    </button>
+                        {isBackgroundLoading || isAnalyzing ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                            <Sparkles className={`w-3 h-3 ${isAnalyzed ? "" : "opacity-50"}`} />
+                        )}
+                        <span>{aiStatusText}</span>
+                    </div>
                 </div>
 
-                {/* Title - with subtle text shadow */}
-                <h3
-                    style={{
-                        textShadow: '0 1px 2px rgba(0,0,0,0.08)'
-                    }}
-                    className="text-[16px] font-bold leading-[1.5] text-[var(--text-main)] line-clamp-2 md:group-hover:text-[var(--primary)] transition-colors"
-                >
+                {/* 标题 */}
+                <h3 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.08)' }}
+                    className="text-[16px] font-bold leading-[1.5] text-[var(--text-main)] line-clamp-2 md:group-hover:text-[var(--primary)] transition-colors">
                     {displayTitle}
                 </h3>
             </div>
 
-            <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="" // Empty title for custom layout
-            >
-                <div className="space-y-4">
-                    {/* 1. Chinese Title - Smaller (text-lg) */}
-                    <h2
-                        className="text-lg font-bold leading-snug text-[var(--text-main)]"
-                    >
-                        {displayTitle}
-                    </h2>
-
-                    {/* 2. Japanese Title - Smaller (text-sm) */}
-                    {item.title_ja && (
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-sub leading-relaxed">
-                            {item.title_ja}
-                        </h3>
-                    )}
-
-                    {/* 3. Source & Time - Smaller (text-xs) */}
-                    <div className="flex items-center gap-3 text-xs text-[var(--text-sub)] pb-2 border-b border-gray-100 dark:border-border">
-                        <span className="font-medium">{item.origin}</span>
-                        <span>•</span>
-                        <span>{timeDisplay}</span>
-                    </div>
-
-                    {/* 4. Bottom Buttons Row - Smaller (py-1.5 px-3 text-xs) */}
-                    <div className="pt-2 flex items-center justify-between gap-2">
-                        {/* Left: Fav Button */}
+            <Modal isOpen={isModalOpen} onClose={handleModalClose} title="" size={showAnalysis && aiAnalysis ? "wide" : "default"}>
+                <div className="flex flex-col h-full px-5 pt-5 pb-5">
+                    {/* ===== 顶部按钮栏 ===== */}
+                    <div className="flex items-stretch gap-2 pb-3 border-b border-gray-100 dark:border-border">
                         <button
                             onClick={(e) => onToggleFav && onToggleFav(e, item)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${isFav
+                            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${isFav
                                 ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500"
                                 : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-sub hover:bg-gray-200 dark:hover:bg-white/10"
                                 }`}
@@ -199,26 +404,159 @@ function NewsCardComponent({
                             <Heart className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
                             <span>{settings.lang === "sc" ? "收藏" : "收藏"}</span>
                         </button>
-
-                        {/* Middle: Category Tag Button */}
                         <button
                             onClick={handleCategoryClick}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-sub text-xs font-medium hover:bg-gray-200 dark:hover:bg-white/10 transition-all"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-sub text-xs font-medium hover:bg-gray-200 dark:hover:bg-white/10 transition-all"
                         >
                             <Tag className="w-3.5 h-3.5" />
                             <span>{displayCategory}</span>
                         </button>
-
-                        {/* Right: Read Original Button */}
                         <a
                             href={item.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--primary)] text-white rounded-full text-xs font-medium hover:opacity-90 transition-all shadow-floating shadow-indigo-500/20"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-sub text-xs font-medium hover:bg-gray-200 dark:hover:bg-white/10 transition-all"
                         >
                             <span>{settings.lang === "sc" ? "阅读原文" : "閱讀原文"}</span>
                             <ExternalLink className="w-3.5 h-3.5" />
                         </a>
+                    </div>
+
+                    {/* ===== 中间内容区 ===== */}
+                    <div className="flex-1 py-4 space-y-3 overflow-y-auto">
+                        <h2 className="text-lg font-bold leading-snug text-[var(--text-main)]">
+                            {displayTitle}
+                        </h2>
+
+                        {item.title_ja && (
+                            <h3 className="text-sm font-medium text-gray-500 dark:text-sub leading-relaxed">
+                                {item.title_ja}
+                            </h3>
+                        )}
+
+                        <div className="flex items-center gap-3 text-xs text-[var(--text-sub)]">
+                            <span className="font-medium">{item.origin}</span>
+                            <span>•</span>
+                            <span>{timeDisplay}</span>
+                        </div>
+
+                        {/* 加载状态 */}
+                        {isAnalyzing && (
+                            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 space-y-3 border border-indigo-100 dark:border-indigo-800/30">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        {queuePosition > 1 ? (
+                                            <Users className="w-4 h-4 text-orange-500" />
+                                        ) : (
+                                            <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                                        )}
+                                        <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                                            {loadingHint}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-xs text-indigo-500">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span>{elapsedTime}s</span>
+                                    </div>
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {settings.lang === "sc"
+                                        ? "站长电脑开机时，通常15-30秒出结果"
+                                        : "站長電腦開機時，通常15-30秒出結果"}
+                                </div>
+                                <div className="h-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000"
+                                        style={{ width: `${Math.min((elapsedTime / 25) * 100, 95)}%` }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* AI 解读区域 */}
+                        {showAnalysis && aiAnalysis && (
+                            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 space-y-3 border border-indigo-100 dark:border-indigo-800/30">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                                        <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                                            AI {settings.lang === "sc" ? "解读" : "解讀"}
+                                        </span>
+                                        {analyzeSource === "cache" ? (
+                                            <span className="flex items-center gap-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
+                                                <Zap className="w-3 h-3" />
+                                                {settings.lang === "sc" ? "秒出" : "秒出"}
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-full">
+                                                <Sparkles className="w-3 h-3" />
+                                                {settings.lang === "sc" ? "新生成" : "新生成"}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {totalTime !== null && (
+                                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                            <Clock className="w-3 h-3" />
+                                            <span>{settings.lang === "sc" ? `耗时 ${totalTime} 秒` : `耗時 ${totalTime} 秒`}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
+                                    <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                        {analysisContent}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 错误提示 */}
+                        {analyzeError && (
+                            <div className="flex items-start gap-2 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-100 dark:border-red-800/30">
+                                {isOffline ? <WifiOff className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />}
+                                <div>
+                                    <div className="font-medium text-red-600 dark:text-red-400">{analyzeError}</div>
+                                    {isOffline && (
+                                        <div className="text-xs text-red-500/80 mt-1">
+                                            {settings.lang === "sc" ? "请稍后重试，或联系站长" : "請稍後重試，或聯繫站長"}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ===== 底部 AI 解读大按钮 ===== */}
+                    <div className="pt-3 border-t border-gray-100 dark:border-border">
+                        <button
+                            onClick={handleAiAnalyze}
+                            disabled={isAnalyzing}
+                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${aiAnalysis
+                                ? showAnalysis
+                                    ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
+                                    : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/25"
+                                : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/25"
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                            {isAnalyzing ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <span>{settings.lang === "sc" ? `AI 解读中... ${elapsedTime}s` : `AI 解讀中... ${elapsedTime}s`}</span>
+                                </>
+                            ) : aiAnalysis ? (
+                                <>
+                                    <Sparkles className="w-5 h-5" />
+                                    <span>{showAnalysis
+                                        ? (settings.lang === "sc" ? "收起 AI 解读" : "收起 AI 解讀")
+                                        : (settings.lang === "sc" ? "展开 AI 解读" : "展開 AI 解讀")
+                                    }</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-5 h-5" />
+                                    <span>{settings.lang === "sc" ? "AI 智能解读" : "AI 智能解讀"}</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </Modal>
@@ -226,7 +564,6 @@ function NewsCardComponent({
     );
 }
 
-// React.memo with custom comparison to prevent unnecessary re-renders
 const NewsCard = memo(NewsCardComponent, (prevProps, nextProps) => {
     return (
         prevProps.item.link === nextProps.item.link &&

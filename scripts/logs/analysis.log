@@ -1,0 +1,234 @@
+2025-12-27 23:38:05 | INFO | QUEUE_JOIN | 25b4d3fe | position=1 | url=https://news.yahoo.co.jp/articles/1d45eeab3325b8ab...
+2025-12-27 23:38:05 | INFO | OLLAMA_START | 25b4d3fe | 中国外務省「軍国主義復活の悪意を露呈」 日本の防衛予算増額に...
+2025-12-27 23:38:25 | INFO | OLLAMA_DONE | 25b4d3fe | 中国外務省「軍国主義復活の悪意を露呈」 日本の防衛予算増額に... | 20.3s
+2025-12-27 23:38:25 | INFO | CACHE_SAVE | 25b4d3fe | 中国外務省「軍国主義復活の悪意を露呈」 日本の防衛予算増額に...
+2025-12-27 23:38:27 | INFO | QUEUE_JOIN | 9ab300ba | position=1 | url=https://www.yomiuri.co.jp/world/20251227-GYT1T0011...
+2025-12-27 23:38:27 | INFO | OLLAMA_START | 9ab300ba | 中国政府の米軍需関連企業への制裁に米国務省が抗議…「台湾への...
+2025-12-27 23:38:42 | INFO | OLLAMA_DONE | 9ab300ba | 中国政府の米軍需関連企業への制裁に米国務省が抗議…「台湾への... | 15.1s
+2025-12-27 23:38:42 | INFO | CACHE_SAVE | 9ab300ba | 中国政府の米軍需関連企業への制裁に米国務省が抗議…「台湾への...
+2025-12-27 23:38:43 | INFO | QUEUE_JOIN | ccba7a02 | position=1 | url=https://news.yahoo.co.jp/articles/afe8cfd815cb8f88...
+2025-12-27 23:38:47 | INFO | OLLAMA_START | ccba7a02 | 日本の防衛予算過去最大の9兆円超えに中国外務省報道官「平和発...
+2025-12-27 23:39:05 | INFO | OLLAMA_DONE | ccba7a02 | 日本の防衛予算過去最大の9兆円超えに中国外務省報道官「平和発... | 21.2s
+2025-12-27 23:39:06 | INFO | CACHE_SAVE | ccba7a02 | 日本の防衛予算過去最大の9兆円超えに中国外務省報道官「平和発...
+2025-12-27 23:39:08 | INFO | QUEUE_JOIN | fc1028e7 | position=1 | url=https://news.yahoo.co.jp/articles/bc2c4e78e498475b...
+2025-12-27 23:39:08 | INFO | OLLAMA_START | fc1028e7 | 台湾海底ケーブル損傷事件 中国当局が「貨物船は台湾人首謀の密...
+2025-12-27 23:39:25 | INFO | OLLAMA_DONE | fc1028e7 | 台湾海底ケーブル損傷事件 中国当局が「貨物船は台湾人首謀の密... | 17.4s
+2025-12-27 23:39:26 | INFO | CACHE_SAVE | fc1028e7 | 台湾海底ケーブル損傷事件 中国当局が「貨物船は台湾人首謀の密...
+2025-12-27 23:39:27 | INFO | QUEUE_JOIN | 2c23ddfa | position=1 | url=https://www.sankei.com/article/20251227-WNCDLTVWYN...
+2025-12-27 23:39:28 | INFO | OLLAMA_START | 2c23ddfa | 中国、インフルエンサーの「不適切行為」リスト公表 SNS事業...
+2025-12-27 23:39:43 | INFO | OLLAMA_DONE | 2c23ddfa | 中国、インフルエンサーの「不適切行為」リスト公表 SNS事業... | 15.8s
+2025-12-27 23:39:43 | INFO | CACHE_SAVE | 2c23ddfa | 中国、インフルエンサーの「不適切行為」リスト公表 SNS事業...
+2025-12-27 23:39:44 | INFO | QUEUE_JOIN | bc0e82a5 | position=1 | url=https://jp.reuters.com/markets/japan/HN2XBWPJIRIG7...
+2025-12-27 23:39:46 | INFO | QUEUE_JOIN | a0a7ed5f | position=1 | url=https://jp.news.cn/20251226/bb5f1171828346509c80d4...
+2025-12-27 23:39:46 | INFO | OLLAMA_START | a0a7ed5f | 革命の聖地・延安に通じる初の高速鉄道開通 中国陝西省...
+2025-12-27 23:40:04 | INFO | OLLAMA_DONE | a0a7ed5f | 革命の聖地・延安に通じる初の高速鉄道開通 中国陝西省... | 17.6s
+2025-12-27 23:40:04 | INFO | CACHE_SAVE | a0a7ed5f | 革命の聖地・延安に通じる初の高速鉄道開通 中国陝西省...
+2025-12-27 23:44:33 | INFO | CACHE_HIT | 79671b35 | 低賃金労働者の「怒り」を「感動」へ変換する、中国共産党のプロ
+2025-12-27 23:44:34 | INFO | CACHE_HIT | 67beec9c | 中国版コミケ、消えた日本要素 街には参加あきらめた鬼滅ファン
+2025-12-27 23:44:35 | INFO | CACHE_HIT | e824095a | 中国全人代、来年3月5日に開幕 経済目標や民族団結法を審議（
+2025-12-27 23:44:37 | INFO | CACHE_HIT | 690ef0d5 | 絶景スポットでポーズを決めていた中国人女性 次の瞬間、巨大な
+2025-12-27 23:44:41 | INFO | CACHE_HIT | b0c02367 | 中国系メディア 沖縄への言及急増 - Yahoo!ニュース
+2025-12-27 23:46:05 | INFO | CACHE_HIT | 6d56c5ef | 中国・人民日報国際評論「消えぬ日本軍国主義の亡霊に警戒を」
+2025-12-27 23:46:10 | INFO | CACHE_HIT | f22f41ee | 米国務省 台湾への武器売却めぐる中国の制裁 “強く反対” |
+2025-12-27 23:46:16 | INFO | CACHE_HIT | 51942b4b | 中国公安省 ミャンマーから1000人近く送還 「KKパーク」
+2025-12-27 23:46:37 | INFO | CACHE_HIT | 25b4d3fe | 中国外務省「軍国主義復活の悪意を露呈」 日本の防衛予算増額に
+2025-12-27 23:48:42 | INFO | CACHE_HIT | df232ff6 | 沖縄言及の記事２０倍に 中国系、日本帰属を疑問視 高市首相答
+2025-12-27 23:48:49 | INFO | CACHE_HIT | 935ae25b | 【2026年の日中関係】中国の強硬姿勢はいつまで？／高市首相
+2025-12-27 23:48:58 | INFO | CACHE_HIT | 690ef0d5 | 絶景スポットでポーズを決めていた中国人女性 次の瞬間、巨大な
+2025-12-27 23:49:00 | INFO | CACHE_HIT | 79671b35 | 低賃金労働者の「怒り」を「感動」へ変換する、中国共産党のプロ
+2025-12-27 23:49:02 | INFO | CACHE_HIT | e824095a | 中国全人代、来年3月5日に開幕 経済目標や民族団結法を審議（
+2025-12-27 23:49:03 | INFO | CACHE_HIT | 67beec9c | 中国版コミケ、消えた日本要素 街には参加あきらめた鬼滅ファン
+2025-12-27 23:49:10 | INFO | CACHE_HIT | b0c02367 | 中国系メディア 沖縄への言及急増 - Yahoo!ニュース
+2025-12-27 23:49:19 | INFO | CACHE_HIT | 6399125a | 中国、対外貿易法を改正 貿易戦争への備え進める（時事通信） 
+2025-12-27 23:49:21 | INFO | CACHE_HIT | e042164b | 中国政府、人型ロボットやフィジカルAI産業化狙う 米と対立、
+2025-12-27 23:49:47 | INFO | CACHE_HIT | 127ab631 | 日本は侵略の歴史を直視し反省を 中国外交部
+2025-12-27 23:50:06 | INFO | QUEUE_JOIN | caab6f7f | position=1 | url=https://www.yaeyama-nippo.co.jp/archives/28471...
+2025-12-27 23:50:06 | INFO | OLLAMA_START | caab6f7f | 尖閣周辺に中国船４隻 43日連続航行 - 八重山日報 -Ya...
+2025-12-27 23:50:31 | INFO | OLLAMA_DONE | caab6f7f | 尖閣周辺に中国船４隻 43日連続航行 - 八重山日報 -Ya... | 24.2s
+2025-12-27 23:50:31 | INFO | CACHE_SAVE | caab6f7f | 尖閣周辺に中国船４隻 43日連続航行 - 八重山日報 -Ya...
+2025-12-27 23:52:07 | INFO | CACHE_HIT | caab6f7f | 尖閣周辺に中国船４隻 43日連続航行 - 八重山日報 -Ya
+2025-12-27 23:52:21 | INFO | CACHE_HIT | 67beec9c | 中国版コミケ、消えた日本要素 街には参加あきらめた鬼滅ファン
+2025-12-27 23:59:02 | INFO | CACHE_HIT | caab6f7f | 尖閣周辺に中国船４隻 43日連続航行 - 八重山日報 -Ya
+2025-12-28 00:14:55 | INFO | QUEUE_JOIN | caab6f7f | pos=1
+2025-12-28 00:14:55 | INFO | OLLAMA_START | caab6f7f | 尖閣周辺に中国船４隻 43日連続航行 - 八重山日報 -Ya
+2025-12-28 00:14:56 | ERROR | OLLAMA_ERROR | caab6f7f | Expecting value: line 1 column 1 (char 0)
+2025-12-28 00:20:40 | INFO | QUEUE_JOIN | caab6f7f | pos=1
+2025-12-28 00:20:40 | INFO | OLLAMA_START | caab6f7f | 尖閣周辺に中国船４隻 43日連続航行 - 八重山日報 -Ya
+2025-12-28 00:20:42 | ERROR | OLLAMA_ERROR | caab6f7f | Expecting value: line 1 column 1 (char 0)
+2025-12-28 00:25:38 | INFO | CACHE_HIT | caab6f7f
+2025-12-28 00:25:44 | INFO | CACHE_HIT | 67beec9c
+2025-12-28 00:27:38 | INFO | CACHE_HIT | b0c02367
+2025-12-28 00:27:46 | INFO | CACHE_HIT | e042164b
+2025-12-28 00:27:56 | INFO | CACHE_HIT | 690ef0d5
+2025-12-28 00:31:54 | INFO | QUEUE_JOIN | b98724f2 | pos=1
+2025-12-28 00:31:58 | INFO | OLLAMA_START | b98724f2 | 曽我 大地選手 福山シティFC（中国サッカーリーグ）へ完全移
+2025-12-28 00:31:58 | ERROR | OLLAMA_ERROR | b98724f2 | Expecting value: line 1 column 1 (char 0)
+2025-12-28 00:32:06 | INFO | QUEUE_JOIN | 7963e398 | pos=1
+2025-12-28 00:32:06 | INFO | OLLAMA_START | 7963e398 | 中国、ベトナムなどと領有争う南シナ海の島にショッピングモール
+2025-12-28 00:32:06 | ERROR | OLLAMA_ERROR | 7963e398 | Expecting value: line 1 column 1 (char 0)
+2025-12-28 00:34:27 | INFO | QUEUE_JOIN | 4bf65285 | pos=1
+2025-12-28 00:34:28 | INFO | OLLAMA_START | 4bf65285 | 中国外務省が米企業20社に制裁 台湾への武器売却に反発（テレ
+2025-12-28 00:34:28 | ERROR | OLLAMA_ERROR | 4bf65285 | model 'qwen2.5:7b' not found (status code: 404)
+2025-12-28 00:34:37 | INFO | QUEUE_JOIN | c80c7b46 | pos=1
+2025-12-28 00:34:37 | INFO | OLLAMA_START | c80c7b46 | 中国外務省、アメリカ軍事関連企業20社に国内資産凍結などの制
+2025-12-28 00:34:37 | ERROR | OLLAMA_ERROR | c80c7b46 | model 'qwen2.5:7b' not found (status code: 404)
+2025-12-28 00:36:30 | INFO | QUEUE_JOIN | 4bf65285 | pos=1
+2025-12-28 00:36:31 | INFO | OLLAMA_START | 4bf65285 | 中国外務省が米企業20社に制裁 台湾への武器売却に反発（テレ
+2025-12-28 00:36:49 | INFO | OLLAMA_DONE | 4bf65285 | 18.5s
+2025-12-28 00:36:49 | INFO | CACHE_SAVE | 4bf65285
+2025-12-28 00:39:20 | INFO | CACHE_HIT | 2c23ddfa
+2025-12-28 00:39:37 | INFO | QUEUE_JOIN | 513397c6 | pos=1
+2025-12-28 00:39:38 | INFO | OLLAMA_START | 513397c6 | 尖閣周辺に中国船４隻 42日連続航行 - 八重山日報 -Ya
+2025-12-28 00:39:55 | INFO | OLLAMA_DONE | 513397c6 | 17.2s
+2025-12-28 00:39:55 | INFO | CACHE_SAVE | 513397c6
+2025-12-28 00:40:38 | INFO | QUEUE_JOIN | 5589de87 | pos=1
+2025-12-28 00:40:38 | INFO | OLLAMA_START | 5589de87 | 【カープジュニア】延長タイブレークを制しサヨナラ勝利!/グル
+2025-12-28 00:41:09 | INFO | OLLAMA_DONE | 5589de87 | 30.9s
+2025-12-28 00:41:10 | INFO | CACHE_SAVE | 5589de87
+2025-12-28 00:47:13 | INFO | QUEUE_JOIN | 5589de87 | pos=1
+2025-12-28 00:47:13 | INFO | OLLAMA_START | 5589de87 | 【カープジュニア】延長タイブレークを制しサヨナラ勝利!/グル
+2025-12-28 00:47:43 | INFO | OLLAMA_DONE | 5589de87 | 30.4s
+2025-12-28 00:47:44 | INFO | CACHE_SAVE | 5589de87
+2025-12-28 00:48:14 | INFO | CACHE_HIT | 79671b35
+2025-12-28 00:48:24 | INFO | CACHE_HIT | 935ae25b
+2025-12-28 00:48:36 | INFO | QUEUE_JOIN | 7963e398 | pos=1
+2025-12-28 00:48:36 | INFO | OLLAMA_START | 7963e398 | 中国、ベトナムなどと領有争う南シナ海の島にショッピングモール
+2025-12-28 00:48:58 | INFO | OLLAMA_DONE | 7963e398 | 22.2s
+2025-12-28 00:48:58 | INFO | CACHE_SAVE | 7963e398
+2025-12-28 00:49:20 | INFO | CACHE_HIT | 6399125a
+2025-12-28 00:49:30 | INFO | CACHE_HIT | 7963e398
+2025-12-28 00:49:36 | INFO | CACHE_HIT | df232ff6
+2025-12-28 00:53:59 | INFO | QUEUE_JOIN | 52119f05 | pos=1
+2025-12-28 00:53:59 | INFO | OLLAMA_START | 52119f05 | 中国客減少で静岡観光に明暗 団体客頼みの業者はキャンセル直撃
+2025-12-28 00:54:21 | INFO | OLLAMA_DONE | 52119f05 | 22.3s
+2025-12-28 00:54:21 | INFO | CACHE_SAVE | 52119f05
+2025-12-28 00:54:35 | INFO | QUEUE_JOIN | 9d035d5e | pos=1
+2025-12-28 00:54:35 | INFO | OLLAMA_START | 9d035d5e | ペンタゴン警告「2027年末までに中国は台湾を武力統一する力
+2025-12-28 00:54:55 | INFO | OLLAMA_DONE | 9d035d5e | 19.7s
+2025-12-28 00:54:55 | INFO | CACHE_SAVE | 9d035d5e
+2025-12-28 00:55:21 | INFO | QUEUE_JOIN | 75cb93ee | pos=1
+2025-12-28 00:55:22 | INFO | OLLAMA_START | 75cb93ee | 【戦後８０年の残影】（１２）中国帰国者｜下野新聞デジタル
+2025-12-28 00:55:41 | INFO | OLLAMA_DONE | 75cb93ee | 19.5s
+2025-12-28 00:55:41 | INFO | CACHE_SAVE | 75cb93ee
+2025-12-28 01:16:02 | INFO | ENV_CHECK | OLLAMA_HOST: 0.0.0.0
+2025-12-28 01:16:02 | INFO | ENV_CHECK | R2_KEY: *****
+2025-12-28 01:16:02 | INFO | ENV_CHECK | CF_CLIENT_ID: *****
+2025-12-28 01:16:22 | INFO | ENV_CHECK | OLLAMA_HOST: 0.0.0.0
+2025-12-28 01:16:22 | INFO | ENV_CHECK | R2_KEY: *****
+2025-12-28 01:16:22 | INFO | ENV_CHECK | CF_CLIENT_ID: *****
+2025-12-28 01:16:54 | INFO | ENV_CHECK | OLLAMA_HOST: 0.0.0.0
+2025-12-28 01:16:54 | INFO | ENV_CHECK | R2_KEY: *****
+2025-12-28 01:16:54 | INFO | ENV_CHECK | CF_CLIENT_ID: *****
+2025-12-28 01:18:59 | INFO | QUEUE_JOIN | 1beac711 | pos=1
+2025-12-28 01:21:44 | INFO | QUEUE_JOIN | 91d77680 | pos=1
+2025-12-28 01:21:44 | INFO | OLLAMA_START | 91d77680 | 日本の観光地の宿泊費、中国人客激減で暴落、1泊3000円台の
+2025-12-28 01:22:10 | INFO | OLLAMA_DONE | 91d77680 | 25.4s
+2025-12-28 01:22:10 | INFO | CACHE_SAVE | 91d77680
+2025-12-28 01:22:35 | INFO | QUEUE_JOIN | f38c4cd3 | pos=1
+2025-12-28 01:22:37 | INFO | OLLAMA_START | f38c4cd3 | 沖縄の歴史や帰属、記事20倍に 中国系メディア、高市首相答弁
+2025-12-28 01:22:49 | INFO | OLLAMA_DONE | f38c4cd3 | 13.8s
+2025-12-28 01:22:49 | INFO | CACHE_SAVE | f38c4cd3
+2025-12-28 01:24:16 | INFO | QUEUE_JOIN | 692ccc29 | pos=1
+2025-12-28 01:24:17 | INFO | OLLAMA_START | 692ccc29 | 特殊詐欺グループ“指示役”逮捕 中国から遠隔で指示か 埼玉県
+2025-12-28 01:24:41 | INFO | OLLAMA_DONE | 692ccc29 | 25.0s
+2025-12-28 01:24:41 | INFO | CACHE_SAVE | 692ccc29
+2025-12-28 01:25:20 | INFO | QUEUE_JOIN | 09aa8882 | pos=1
+2025-12-28 01:25:20 | INFO | OLLAMA_START | 09aa8882 | 特殊詐欺グループ“指示役”逮捕 中国から遠隔で指示か 埼玉県
+2025-12-28 01:25:40 | INFO | OLLAMA_DONE | 09aa8882 | 20.1s
+2025-12-28 01:25:40 | INFO | CACHE_SAVE | 09aa8882
+2025-12-28 01:25:52 | INFO | QUEUE_JOIN | 716c351d | pos=1
+2025-12-28 01:25:54 | INFO | OLLAMA_START | 716c351d | 中国の出前業界で進む「デフレ」…ハンバーガーセットが約350
+2025-12-28 01:26:14 | INFO | OLLAMA_DONE | 716c351d | 21.9s
+2025-12-28 01:26:14 | INFO | CACHE_SAVE | 716c351d
+2025-12-28 01:26:33 | INFO | QUEUE_JOIN | c3d70a69 | pos=1
+2025-12-28 01:26:33 | INFO | OLLAMA_START | c3d70a69 | 「日本旅行の代わりにここ」…「愛国観光」を強調する中国の思惑
+2025-12-28 01:26:51 | INFO | OLLAMA_DONE | c3d70a69 | 18.5s
+2025-12-28 01:26:52 | INFO | CACHE_SAVE | c3d70a69
+2025-12-28 01:31:55 | INFO | QUEUE_JOIN | 6916fd71 | pos=1
+2025-12-28 01:31:55 | INFO | OLLAMA_START | 6916fd71 | 中国 “日本への旅行客これまでの6割以下に” 旅行会社に指示
+2025-12-28 01:33:55 | INFO | OLLAMA_DONE | 6916fd71 | 120.7s
+2025-12-28 01:33:56 | INFO | CACHE_SAVE | 6916fd71
+2025-12-28 01:36:59 | INFO | QUEUE_JOIN | 56133b06 | pos=1
+2025-12-28 01:37:00 | INFO | OLLAMA_START | 56133b06 | 【発言席】細川護熙元首相 中国と話せる関係構築を 百戦百勝よ
+2025-12-28 01:37:19 | INFO | OLLAMA_DONE | 56133b06 | 19.8s
+2025-12-28 01:37:19 | INFO | CACHE_SAVE | 56133b06
+2025-12-28 01:38:06 | INFO | QUEUE_JOIN | 2e1efc80 | pos=1
+2025-12-28 01:38:07 | INFO | OLLAMA_START | 2e1efc80 | 中国全人代、来年3月5日に開幕 経済目標や民族団結法を審議：
+2025-12-28 01:38:23 | INFO | OLLAMA_DONE | 2e1efc80 | 16.2s
+2025-12-28 01:38:23 | INFO | CACHE_SAVE | 2e1efc80
+2025-12-28 01:38:37 | INFO | QUEUE_JOIN | 513397c6 | pos=1
+2025-12-28 01:38:37 | INFO | OLLAMA_START | 513397c6 | 尖閣周辺に中国船４隻 42日連続航行 - 八重山日報 -Ya
+2025-12-28 01:39:07 | INFO | OLLAMA_DONE | 513397c6 | 29.8s
+2025-12-28 01:39:07 | INFO | CACHE_SAVE | 513397c6
+2025-12-28 01:39:25 | INFO | CACHE_HIT | 67beec9c
+2025-12-28 01:39:31 | INFO | CACHE_HIT | 79671b35
+2025-12-28 01:39:38 | INFO | CACHE_HIT | 6399125a
+2025-12-28 01:52:10 | INFO | QUEUE_JOIN | 465513cc | pos=1
+2025-12-28 01:52:11 | INFO | OLLAMA_START | 465513cc | 中国が当事国外相と会談へ タイとカンボジア停戦合意
+2025-12-28 01:52:34 | INFO | OLLAMA_DONE | 465513cc | 24.7s
+2025-12-28 01:52:35 | INFO | CACHE_SAVE | 465513cc
+2025-12-28 01:53:39 | INFO | QUEUE_JOIN | ba8fa4fc | pos=1
+2025-12-28 01:53:40 | INFO | OLLAMA_START | ba8fa4fc | 尖閣周辺に中国船4隻 43日連続航行（八重山日報） - Ya
+2025-12-28 01:54:03 | INFO | OLLAMA_DONE | ba8fa4fc | 24.1s
+2025-12-28 01:54:04 | INFO | CACHE_SAVE | ba8fa4fc
+2025-12-28 01:54:25 | INFO | CACHE_HIT | c3d70a69
+2025-12-28 01:56:42 | INFO | CACHE_HIT | caab6f7f
+2025-12-28 01:59:02 | INFO | CACHE_HIT | ba8fa4fc
+2025-12-28 01:59:36 | INFO | CACHE_HIT | 67beec9c
+2025-12-28 02:05:09 | INFO | CACHE_HIT | 5589de87
+2025-12-28 02:06:50 | INFO | CACHE_HIT | 513397c6
+2025-12-28 02:07:27 | INFO | CACHE_HIT | b0c02367
+2025-12-28 02:11:02 | INFO | CACHE_HIT | b0c02367
+2025-12-28 02:11:14 | INFO | CACHE_HIT | 79671b35
+2025-12-28 02:11:34 | INFO | CACHE_HIT | 6399125a
+2025-12-28 02:13:23 | INFO | CACHE_HIT | 935ae25b
+2025-12-28 02:18:35 | INFO | QUEUE_JOIN | 4bf65285 | pos=1
+2025-12-28 02:18:36 | INFO | OLLAMA_START | 4bf65285 | 中国外務省が米企業20社に制裁 台湾への武器売却に反発（テレ
+2025-12-28 02:18:57 | INFO | OLLAMA_DONE | 4bf65285 | 21.9s
+2025-12-28 02:18:58 | INFO | CACHE_SAVE | 4bf65285
+2025-12-28 02:20:15 | INFO | CACHE_HIT | ba8fa4fc
+2025-12-28 02:20:35 | INFO | CACHE_HIT | 67beec9c
+2025-12-28 02:22:44 | INFO | CACHE_HIT | e042164b
+2025-12-28 02:24:23 | INFO | CACHE_HIT | b0c02367
+2025-12-28 02:24:52 | INFO | CACHE_HIT | 5589de87
+2025-12-28 02:26:11 | INFO | CACHE_HIT | 67beec9c
+2025-12-28 02:27:27 | INFO | CACHE_HIT | e824095a
+2025-12-28 02:28:30 | INFO | QUEUE_JOIN | b98724f2 | pos=1
+2025-12-28 02:28:33 | INFO | OLLAMA_START | b98724f2 | 曽我 大地選手 福山シティFC（中国サッカーリーグ）へ完全移
+2025-12-28 02:28:51 | INFO | OLLAMA_DONE | b98724f2 | 21.5s
+2025-12-28 02:28:52 | INFO | CACHE_SAVE | b98724f2
+2025-12-28 02:29:15 | INFO | CACHE_HIT | 79671b35
+2025-12-28 02:31:05 | INFO | CACHE_HIT | b0c02367
+2025-12-28 02:31:34 | INFO | CACHE_HIT | 465513cc
+2025-12-28 02:32:56 | INFO | CACHE_HIT | ba8fa4fc
+2025-12-28 02:35:23 | INFO | CACHE_HIT | b0c02367
+2025-12-28 02:35:32 | INFO | CACHE_HIT | 67beec9c
+2025-12-28 02:35:46 | INFO | CACHE_HIT | 690ef0d5
+2025-12-28 02:36:35 | INFO | CACHE_HIT | 6916fd71
+2025-12-28 02:36:57 | INFO | QUEUE_JOIN | 06d97c6d | pos=1
+2025-12-28 02:36:58 | INFO | OLLAMA_START | 06d97c6d | 脱皮図る中国バイオ企業 素早い「追随者」から「イノベーター」
+2025-12-28 02:37:18 | INFO | OLLAMA_DONE | 06d97c6d | 21.0s
+2025-12-28 02:37:19 | INFO | CACHE_SAVE | 06d97c6d
+2025-12-28 03:11:34 | INFO | ENV_CHECK | OLLAMA_HOST: 0.0.0.0
+2025-12-28 03:11:34 | INFO | ENV_CHECK | R2_KEY: *****
+2025-12-28 03:11:34 | INFO | ENV_CHECK | CF_CLIENT_ID: *****
+2025-12-28 03:12:04 | INFO | CACHE_HIT | 513397c6
+2025-12-28 03:12:17 | INFO | CACHE_HIT | 716c351d
+2025-12-28 03:12:22 | INFO | QUEUE_JOIN | 4e5d521e | pos=1
+2025-12-28 03:12:22 | INFO | OLLAMA_START | 4e5d521e | 中国、貿易紛争での対抗措置を明示 26年に改正法施行 - 日
+2025-12-28 03:12:39 | INFO | OLLAMA_DONE | 4e5d521e | 17.4s
+2025-12-28 03:12:39 | INFO | CACHE_SAVE | 4e5d521e
+2025-12-28 03:14:59 | INFO | ENV_CHECK | OLLAMA_HOST: 0.0.0.0
+2025-12-28 03:14:59 | INFO | ENV_CHECK | R2_KEY: *****
+2025-12-28 03:14:59 | INFO | ENV_CHECK | CF_CLIENT_ID: *****
+2025-12-28 03:15:34 | INFO | CACHE_HIT | c3d70a69
+2025-12-28 03:15:40 | INFO | QUEUE_JOIN | 96fc806a | pos=1
+2025-12-28 03:15:40 | INFO | OLLAMA_START | 96fc806a | フィフィ「日本国民は歓喜しております」中国当局“訪日客６割ま
+2025-12-28 03:15:53 | INFO | OLLAMA_DONE | 96fc806a | 12.6s
+2025-12-28 03:15:53 | INFO | CACHE_SAVE | 96fc806a
+2025-12-28 03:17:07 | INFO | CACHE_HIT | e824095a
+2025-12-28 03:17:31 | INFO | CACHE_HIT | 2e1efc80
+2025-12-28 03:17:41 | INFO | QUEUE_JOIN | f3bdf8f9 | pos=1
+2025-12-28 03:17:41 | INFO | OLLAMA_START | f3bdf8f9 | 中国系メディアの沖縄言及の記事20倍に 日本帰属を疑問視 高
+2025-12-28 03:17:55 | INFO | OLLAMA_DONE | f3bdf8f9 | 13.5s
+2025-12-28 03:17:55 | INFO | CACHE_SAVE | f3bdf8f9

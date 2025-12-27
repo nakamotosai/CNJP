@@ -207,7 +207,6 @@ export default function Home() {
         // 合并数据并去重
         setAllNewsData(prev => {
           const combined = [...prev, ...items];
-          // 彻底去重（基于 link）
           const seen = new Set();
           return combined.filter(item => {
             if (!item.link || seen.has(item.link)) return false;
@@ -221,6 +220,72 @@ export default function Home() {
       }
     } catch (e) {
       console.error(`Failed to load archive ${nextDate}`, e);
+    } finally {
+      setIsSearchingAll(false);
+    }
+  };
+
+  // 一键加载全部历史
+  const loadAllHistory = async () => {
+    if (Object.keys(archiveIndex).length === 0 || isHistoryLoaded) return;
+
+    // 如果已经在加载中，就不重复触发，除非是 loadMore 触发的单次加载，这里强制接管
+    if (isSearchingAll) return;
+
+    setIsSearchingAll(true);
+    try {
+      const allDates = Object.keys(archiveIndex).sort().reverse();
+      const unloadedDates = allDates.filter(d => !loadedDates.has(d));
+
+      if (unloadedDates.length === 0) {
+        setIsHistoryLoaded(true);
+        setIsSearchingAll(false);
+        return;
+      }
+
+      console.log(`🚀 开始加载剩余历史归档: ${unloadedDates.length} 个文件`);
+
+      // 并发请求，每次 5 个，避免瞬间爆卡
+      const BATCH_SIZE = 5;
+      let allNewItems: NewsItem[] = [];
+
+      for (let i = 0; i < unloadedDates.length; i += BATCH_SIZE) {
+        const batchDates = unloadedDates.slice(i, i + BATCH_SIZE);
+        const promises = batchDates.map(date =>
+          fetch(R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/archive/${date}.json` : `/archive/${date}.json`)
+            .then(r => r.ok ? r.json() : [])
+            .catch(e => {
+              console.warn(`Failed to load ${date}`, e);
+              return [];
+            })
+        );
+
+        const results = await Promise.all(promises);
+        results.forEach(items => allNewItems.push(...items));
+
+        // 每批次更新一次 LoadedDates，避免中间态
+        setLoadedDates(prev => {
+          const next = new Set(prev);
+          batchDates.forEach(d => next.add(d));
+          return next;
+        });
+      }
+
+      setAllNewsData(prev => {
+        const combined = [...prev, ...allNewItems];
+        const seen = new Set();
+        return combined.filter(item => {
+          if (!item.link || seen.has(item.link)) return false;
+          seen.add(item.link);
+          return true;
+        }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      });
+
+      setIsHistoryLoaded(true);
+      console.log(`✅ 全部历史加载完成，新增 ${allNewItems.length} 条`);
+
+    } catch (e) {
+      console.error("Failed to load all history", e);
     } finally {
       setIsSearchingAll(false);
     }
@@ -272,7 +337,7 @@ export default function Home() {
         console.error("Failed to fetch daily briefing", e);
       }
 
-      // 2. 获取归档索引
+      // 2. 获取归档索引 并 预加载最近 3 天
       try {
         const indexUrl = R2_PUBLIC_URL
           ? `${R2_PUBLIC_URL}/archive/index.json?t=${Date.now()}`
@@ -284,7 +349,7 @@ export default function Home() {
           if (!rIndex.ok) throw new Error("Network response was not ok");
           indexData = await rIndex.json();
         } catch (e) {
-          console.warn("Primary index fetch failed, trying local fallback...", e);
+          // Fallback
           const rIndexFallback = await fetch(`/archive/index.json?t=${Date.now()}`);
           if (rIndexFallback.ok) {
             indexData = await rIndexFallback.json();
@@ -293,11 +358,46 @@ export default function Home() {
 
         if (indexData) {
           setArchiveIndex(indexData);
-          // 初始状态下，allNewsData 先同步 rawNewsData
+
+          // 🚀 核心优化：并行预加载最近 3 个归档
+          const allDates = Object.keys(indexData).sort().reverse();
+          const PREFETCH_DAYS = 3;
+          const prefetchDates = allDates.slice(0, PREFETCH_DAYS);
+
+          console.log(`🚀 正在预加载最近 ${PREFETCH_DAYS} 天归档:`, prefetchDates);
+
+          const prefetchPromises = prefetchDates.map(date =>
+            fetch(R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/archive/${date}.json` : `/archive/${date}.json`)
+              .then(r => r.ok ? r.json() : [])
+              .catch(() => [])
+          );
+
+          const prefetchResults = await Promise.all(prefetchPromises);
+          const prefetchedItems = prefetchResults.flat();
+
+          // 初始状态下，allNewsData = rawNewsData + prefetched
+          setAllNewsData(prev => {
+            // 注意：fetchData 可能被 refresh 触发，所以这里 prev 可能是旧数据，
+            // 但既然是 refresh，我们最好重置为 capturedRawData + prefetched
+            // 不过为了稳妥，我们做一次全量去重合并
+            const combined = [...capturedRawData, ...prefetchedItems];
+            const seen = new Set();
+            return combined.filter(item => {
+              if (!item.link || seen.has(item.link)) return false;
+              seen.add(item.link);
+              return true;
+            }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          });
+
+          setLoadedDates(new Set(prefetchDates));
+          console.log(`✅ 预加载完成，共 ${prefetchedItems.length} 条`);
+        } else {
           setAllNewsData(capturedRawData);
         }
+
       } catch (e) {
         console.error("Failed to fetch archive index", e);
+        setAllNewsData(capturedRawData);
       }
 
     } catch (e) {
@@ -781,8 +881,27 @@ export default function Home() {
                       transition={{ duration: 0.3 }}
                       className="fixed inset-x-0 bottom-24 z-[300] flex justify-center pointer-events-none"
                     >
-                      <div className="px-4 py-2.5 bg-black/85 text-white text-sm rounded-full shadow-floating backdrop-blur-md whitespace-nowrap">
-                        {categoryToast}
+                      <div className="px-4 py-2.5 bg-black/85 text-white text-sm rounded-full shadow-floating backdrop-blur-md whitespace-nowrap flex items-center gap-2 pointer-events-auto">
+                        <span>{categoryToast}</span>
+                        {/* Show Load All button if not fully loaded (for ANY category) */}
+                        {!isHistoryLoaded && !isSearchingAll && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              loadAllHistory();
+                            }}
+                            className="ml-1 px-2 py-0.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-full transition-colors"
+                          >
+                            {settings.lang === 'sc' ? "加载至今全部新闻" : "加載至今全部新聞"}
+                          </button>
+                        )}
+                        {/* Show loading spinner if currently loading all */}
+                        {isSearchingAll && (
+                          <span className="text-orange-400 text-xs flex items-center gap-1">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            {settings.lang === 'sc' ? "加载中..." : "加載中..."}
+                          </span>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -979,17 +1098,44 @@ export default function Home() {
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-4">
+
+                      {/* Load All Button - 当历史数据未完全加载时显示 */}
+                      {!isHistoryLoaded && !isSearchingAll && (
+                        <div className="flex flex-col items-center gap-2">
+                          <button
+                            onClick={loadAllHistory}
+                            className="px-6 py-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-full transition-colors flex items-center gap-2"
+                          >
+                            <span>{settings.lang === "sc" ? "加载全部历史数据" : "加載全部歷史數據"}</span>
+                          </button>
+                          <p className="text-[10px] text-gray-400">
+                            {settings.lang === "sc"
+                              ? "当前默认仅加载最近 3 天的新闻，点击按钮加载更早的内容"
+                              : "當前默認僅加載最近 3 天的新聞，點擊按鈕加載更早的內容"}
+                          </p>
+                        </div>
+                      )}
+
                       <p className="text-xs text-gray-300 dark:text-white/20">
                         {filteredItems.length === 0
-                          ? (settings.lang === "sc" ? "没有找到相关内容" : "沒有找到相關內容")
+                          ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <span>{settings.lang === "sc" ? "没有找到相关内容" : "沒有找到相關內容"}</span>
+                              {!isHistoryLoaded && (
+                                <button onClick={loadAllHistory} className="text-blue-400 hover:underline">
+                                  {settings.lang === "sc" ? "尝试加载全部历史？" : "嘗試加載全部歷史？"}
+                                </button>
+                              )}
+                            </div>
+                          )
                           : (
                             <>
                               {settings.lang === "sc" ? "已加载" : "已加載"} {filteredItems.length} {settings.lang === "sc" ? "条内容" : "條內容"}
                               {isSearchingAll && (
                                 <span className="ml-2 inline-flex items-center gap-1 text-orange-400">
                                   <Loader2 className="w-3 h-3 animate-spin" />
-                                  {settings.lang === "sc" ? "仍在加载更多历史..." : "仍在加載更多歷史..."}
+                                  {settings.lang === "sc" ? "正在下载历史归档..." : "正在下載歷史歸檔..."}
                                 </span>
                               )}
                             </>
