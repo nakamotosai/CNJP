@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
  * 开发环境: http://localhost:8000
  */
 
+export const runtime = 'edge';
+
 const FASTAPI_URL = process.env.FASTAPI_URL || 'https://fastapi.saaaai.com';
 
 export async function POST(request: NextRequest) {
