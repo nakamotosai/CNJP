@@ -485,7 +485,7 @@ def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count,
     
     if highlights_obj:
         vibe_val = highlights_obj.get("editorial_vibe") or highlights_obj.get("vibe")
-        editorial_vibe_sc = sanitize_field(vibe_val, "复杂博弈")
+        editorial_vibe_sc = smart_sanitize(vibe_val, "复杂博弈")
         raw_list = highlights_obj.get("highlights", [])
         
         for item in raw_list:
@@ -500,8 +500,8 @@ def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count,
                     "link": info['link'],
                     "origin": info['origin'],
                     "id": info['id'],
-                    "analysis": sanitize_field(comment_sc, ""),
-                    "analysis_tc": to_tc(comment_sc)
+                    "analysis": smart_sanitize(comment_sc, ""),
+                    "analysis_tc": to_tc(smart_sanitize(comment_sc, ""))
                 })
             else:
                 # 兼容性匹配（由于标题可能被 AI 部分改写）
@@ -515,8 +515,8 @@ def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count,
                                 "link": rinfo['link'],
                                 "origin": rinfo['origin'],
                                 "id": rinfo['id'],
-                                "analysis": sanitize_field(comment_sc, ""),
-                                "analysis_tc": to_tc(comment_sc)
+                                "analysis": smart_sanitize(comment_sc, ""),
+                                "analysis_tc": to_tc(smart_sanitize(comment_sc, ""))
                             })
                             break
 
