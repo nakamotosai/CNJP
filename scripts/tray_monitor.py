@@ -112,6 +112,8 @@ class TrayMonitor:
             pystray.MenuItem(f"R2 存储: {self.r2_status}", lambda: None, enabled=False),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("查看日志", self.show_logs),
+            pystray.MenuItem("一键清理系统内存", self.clean_memory),
+            pystray.Menu.SEPARATOR,
             pystray.MenuItem("仅重启 AI 解读后端", self.restart_only_server),
             pystray.MenuItem("尝试重启所有服务 (含 Ollama)", self.restart_service),
             pystray.Menu.SEPARATOR,
@@ -121,6 +123,49 @@ class TrayMonitor:
     def show_logs(self):
         if os.path.exists(LOG_FILE):
             os.startfile(LOG_FILE)
+
+    def clean_memory(self):
+        """执行系统内存清理 (Trim Working Sets)"""
+        try:
+            # 提高权限并在后台运行 PowerShell 脚本来清理所有进程的内存
+            # 使用 EmptyWorkingSet API 的 PowerShell 实现
+            ps_script = """
+            $code = @'
+            [DllImport("psapi.dll")]
+            public static extern int EmptyWorkingSet(IntPtr hProcess);
+'@
+            $type = Add-Type -MemberDefinition $code -Name "MemUtil" -Namespace "Win32" -PassThru
+            Get-Process | Where-Object { $_.Id -gt 0 } | ForEach-Object {
+                try {
+                    $res = $type::EmptyWorkingSet($_.Handle)
+                } catch {}
+            }
+            """
+            
+            startupinfo = None
+            creationflags = 0
+            if os.name == 'nt':
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                creationflags = subprocess.CREATE_NO_WINDOW
+
+            subprocess.Popen(
+                ["powershell", "-Command", ps_script],
+                startupinfo=startupinfo,
+                creationflags=creationflags
+            )
+            
+            # 使用 Windows 系统通知 (Toast) 告知用户
+            # 这里简单起见通过 PowerShell 发送一个系统级通知
+            notify_script = "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; $n.ShowBalloonTip(3000, '内存清理完成', '已成功尝试整理并释放系统内存。', [System.Windows.Forms.ToolTipIcon]::Info)"
+            subprocess.Popen(
+                ["powershell", "-Command", notify_script],
+                startupinfo=startupinfo,
+                creationflags=creationflags
+            )
+
+        except Exception as e:
+            self.log_error(f"Memory cleanup failed: {e}")
 
     def restart_only_server(self):
         try:
@@ -192,6 +237,7 @@ class TrayMonitor:
         icon.stop()
 
     def check_loop(self, icon):
+        fail_count = 0
         while not self.stop_event.is_set():
             # 1. 获取显存信息
             p, info = get_gpu_vram_usage()
@@ -199,9 +245,14 @@ class TrayMonitor:
             self.vram_info = info
 
             # 2. 获取服务健康状态
+            new_status = self.status
+            new_color = self.icon_color
+            
             try:
-                r = requests.get(HEALTH_URL, timeout=3)
+                # 稍微增加超时时间到 5 秒
+                r = requests.get(HEALTH_URL, timeout=5)
                 if r.status_code == 200:
+                    fail_count = 0
                     data = r.json()
                     self.ollama_status = "✅ 已连接" if data.get("ollama") == "connected" else f"❌ 异常 ({data.get('ollama')})"
                     self.r2_status = "✅ 已连接" if data.get("r2") == "connected" else f"❌ 异常 ({data.get('r2')})"
@@ -213,17 +264,22 @@ class TrayMonitor:
                         new_status = "部分组件异常"
                         new_color = "yellow"
                 else:
-                    new_status = "FastAPI 异常"
-                    new_color = "yellow"
-                    self.ollama_status = "未知"
-                    self.r2_status = "未知"
+                    fail_count += 1
             except Exception:
-                new_status = "服务未启动"
+                fail_count += 1
+
+            # 容错处理：只有连续失败 3 次以上才变红
+            if fail_count >= 3:
+                new_status = "服务响应异常"
                 new_color = "red"
                 self.ollama_status = "后端未就绪"
                 self.r2_status = "无法连接"
-
-            # 3. 更新图标和菜单 (即使百分比变化也要更新图标)
+            elif fail_count > 0:
+                # 如果只是偶尔一次失败，保持之前的颜色，但状态显示繁忙/重试
+                new_status = f"服务繁忙 ({fail_count}/3)"
+                # 保持原有的 new_color (通常是 green)
+            
+            # 3. 更新图标和菜单
             self.status = new_status
             self.icon_color = new_color
             icon.icon = self.create_battery_image(self.vram_percent, new_color)

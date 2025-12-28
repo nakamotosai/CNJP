@@ -132,10 +132,11 @@ def get_cache(hash_id: str) -> dict:
     import json
     return json.loads(response['Body'].read().decode('utf-8'))
 
-def put_cache(hash_id: str, data: dict):
-    client = get_r2_client()
+async def put_cache(hash_id: str, data: dict):
+    client = await asyncio.to_thread(get_r2_client)
     import json
-    client.put_object(
+    await asyncio.to_thread(
+        client.put_object,
         Bucket=R2_BUCKET_NAME,
         Key=f"analysis/{hash_id}.json",
         Body=json.dumps(data, ensure_ascii=False),
@@ -177,17 +178,19 @@ async def health_check():
     ollama_status = "unknown"
     r2_status = "unknown"
     try:
-        import requests
-        response = requests.get(f"{OLLAMA_HOST}/api/tags", headers=OLLAMA_HEADERS, timeout=5)
-        if response.status_code == 200:
-            ollama_status = "connected"
-        else:
-            ollama_status = f"error:{response.status_code}"
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{OLLAMA_HOST}/api/tags", headers=OLLAMA_HEADERS, timeout=5.0)
+            if response.status_code == 200:
+                ollama_status = "connected"
+            else:
+                ollama_status = f"error:{response.status_code}"
     except Exception as e:
         ollama_status = f"error:{str(e)[:50]}"
     try:
-        client = get_r2_client()
-        client.head_bucket(Bucket=R2_BUCKET_NAME)
+        # boto3 head_bucket 是同步阻塞的，在 async 环境建议放进线程
+        client = await asyncio.to_thread(get_r2_client)
+        await asyncio.to_thread(client.head_bucket, Bucket=R2_BUCKET_NAME)
         r2_status = "connected"
     except Exception as e:
         r2_status = f"error:{str(e)[:50]}"
@@ -239,10 +242,15 @@ async def analyze_news(request: AnalyzeRequest):
     start_time = datetime.now()
     
     try:
-        # 抓取网页内容
-        downloaded = trafilatura.fetch_url(real_url)
-        content = trafilatura.extract(downloaded) if downloaded else None
-        title = trafilatura.extract_metadata(downloaded).title if downloaded else "新闻文章"
+        # 抓取网页内容 (非异步函数，放入线程)
+        downloaded = await asyncio.to_thread(trafilatura.fetch_url, real_url)
+        if downloaded:
+            content = await asyncio.to_thread(trafilatura.extract, downloaded)
+            metadata = await asyncio.to_thread(trafilatura.extract_metadata, downloaded)
+            title = metadata.title if metadata and metadata.title else "新闻文章"
+        else:
+            content = None
+            title = "新闻文章"
         
         if not content or len(content) < 50:
             raise HTTPException(status_code=422, detail="未能提取到有效的文章正文内容")
@@ -316,7 +324,8 @@ async def analyze_news(request: AnalyzeRequest):
 在输出前，请确认：我没有编造任何原文未提及的数据吧？
 """
                 
-                response = client.chat(
+                response = await asyncio.to_thread(
+                    client.chat,
                     model='qwen3:8b',
                     messages=[{'role': 'user', 'content': prompt}],
                     options={"num_ctx": 4096, "temperature": 0.6}
@@ -342,7 +351,7 @@ async def analyze_news(request: AnalyzeRequest):
         }
         
         try:
-            put_cache(hash_id, analysis_data)
+            await put_cache(hash_id, analysis_data)
             logger.info(f"CACHE_SAVE | {hash_id[:8]}")
         except Exception as e:
             logger.warning(f"CACHE_SAVE_ERROR | {hash_id[:8]} | {e}")
