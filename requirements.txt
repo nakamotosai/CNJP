@@ -3,3 +3,7 @@ requests
 beautifulsoup4
 google-api-python-client
 boto3>=1.28.0
+python-dotenv
+ollama
+duckduckgo_search
+opencc-python-reimplemented

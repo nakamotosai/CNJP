@@ -367,9 +367,9 @@ if __name__ == "__main__":
     while True:
         try:
             logger.info("Starting Server...")
-            # 不再使用 log_config=None，而是让 uvicorn 使用默认配置
-            # 这里的日志会因为 basicConfig 已经配置了 RotatingFileHandler 而同时被记录到文件
-            uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+            # 使用 log_config=None 以避免 uvicorn 尝试初始化其默认日志配置（在某些环境下会因 stdout 缺失或冲突报错）
+            # 这样 uvicorn 会直接使用我们已经通过 logging.basicConfig 配置好的 root logger
+            uvicorn.run(app, host="0.0.0.0", port=8000, log_config=None)
         except Exception as e:
             logger.error(f"CRITICAL | Server crashed: {e}")
             # 如果是因为端口占用，给更多时间，或者干脆退出让 watchdog 处理
