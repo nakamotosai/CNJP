@@ -230,7 +230,14 @@ export default function Header({
             {/* Title Wrapper - Absolute centered on large screens to avoid button interference */}
             <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-1/2 lg:-translate-y-1/2 lg:z-10">
               <button
-                onClick={onRefresh}
+                onClick={() => {
+                  window.scrollTo(0, 0);
+                  if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
+                    history.scrollRestoration = 'manual';
+                  }
+                  localStorage.removeItem("default_tab");
+                  window.location.reload();
+                }}
                 className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity active:scale-95 duration-200 group"
                 title={settings.lang === "sc" ? "点击刷新" : "點擊刷新"}
               >

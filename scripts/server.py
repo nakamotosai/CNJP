@@ -352,4 +352,19 @@ async def analyze_news(request: AnalyzeRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import time
+    
+    RETRY_DELAY = 5
+    
+    while True:
+        try:
+            logger.info("Starting Server...")
+            # log_config=None 防止 uvicorn 尝试配置日志时因环境问题报错
+            uvicorn.run(app, host="0.0.0.0", port=8000, log_config=None)
+        except Exception as e:
+            logger.error(f"CRITICAL | Server crashed: {e}")
+            logger.info(f"Restarting in {RETRY_DELAY}s...")
+            time.sleep(RETRY_DELAY)
+        except KeyboardInterrupt:
+            logger.info("Server stopped by user.")
+            break

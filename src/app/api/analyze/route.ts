@@ -10,10 +10,10 @@ import { createHash } from 'node:crypto';
  * 2. 如果缓存不存在，转发请求到后端 FastAPI 服务进行生成
  */
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 // 配置
-const FASTAPI_URL = process.env.FASTAPI_URL || 'https://fastapi.saaaai.com';
+const FASTAPI_URL = process.env.FASTAPI_URL || (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8000' : 'https://fastapi.saaaai.com');
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;

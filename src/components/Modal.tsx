@@ -19,11 +19,14 @@ export default function Modal({ isOpen, onClose, title, children, size = "defaul
         setMounted(true);
         if (isOpen) {
             document.body.style.overflow = "hidden";
+            document.documentElement.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "";
+            document.documentElement.style.overflow = "";
         }
         return () => {
             document.body.style.overflow = "";
+            document.documentElement.style.overflow = "";
         };
     }, [isOpen]);
 
@@ -41,7 +44,7 @@ export default function Modal({ isOpen, onClose, title, children, size = "defaul
         >
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-[4px] animate-in fade-in duration-300"
+                className="absolute inset-0 bg-black/60 backdrop-blur-[4px] animate-in fade-in duration-300 transform-gpu"
                 onClick={onClose}
             />
 
@@ -60,7 +63,7 @@ export default function Modal({ isOpen, onClose, title, children, size = "defaul
                 </button>
 
                 {/* Content Card - No Header Bar */}
-                <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/20 modal-content w-full flex-1 min-h-0 rounded-2xl shadow-elevated overflow-hidden flex flex-col text-[var(--text-main)]">
+                <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/20 modal-content w-full flex-1 min-h-0 rounded-2xl shadow-elevated overflow-y-auto overscroll-y-contain custom-scrollbar flex flex-col text-[var(--text-main)]">
                     {children}
                 </div>
             </div>

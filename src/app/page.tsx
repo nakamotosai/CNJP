@@ -22,7 +22,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DailyBriefingData } from "@/components/DailyBriefingCard";
 
 // R2 公开访问 URL - 使用自定义域名以便中国用户访问
-const R2_PUBLIC_URL = "https://r2.cn.saaaai.com";
+// R2 公开访问 URL - 本地开发时走代理绕过 CORS
+const R2_PUBLIC_URL = process.env.NODE_ENV === "development"
+  ? "/r2-proxy"
+  : "https://r2.cn.saaaai.com";
 
 export default function Home() {
   const { settings } = useTheme();
@@ -44,8 +47,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'news' | 'live' | 'disaster'>('news');
-  const [mountNews, setMountNews] = useState(true); // News tab retention state
-  const [isSearchingAll, setIsSearchingAll] = useState(false); // 正在后台加载历史数据
+  const [mountNews, setMountNews] = useState(true);
+  const [mountLive, setMountLive] = useState(false);
+  const [mountDisaster, setMountDisaster] = useState(false);
+  const [isSearchingAll, setIsSearchingAll] = useState(false);
   const [loadedDates, setLoadedDates] = useState<Set<string>>(new Set());
 
   // Tab 偏好
@@ -53,31 +58,71 @@ export default function Home() {
     const defaultTab = localStorage.getItem("default_tab") as 'news' | 'live' | 'disaster' | null;
     if (defaultTab && ['news', 'live', 'disaster'].includes(defaultTab)) {
       setActiveTab(defaultTab);
+      if (defaultTab === 'live') setMountLive(true);
+      if (defaultTab === 'disaster') setMountDisaster(true);
     }
   }, []);
 
-  // Live View Persistence
-  // Live View Persistence
-  const [isLiveActive, setIsLiveActive] = useState(false);
-  const liveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Retention Strategy: Keep tabs in background for 5 minutes
   const newsUnmountRef = useRef<NodeJS.Timeout | null>(null);
+  const liveUnmountRef = useRef<NodeJS.Timeout | null>(null);
+  const disasterUnmountRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Handle Live View Persistence and Timeout
   useEffect(() => {
-    if (activeTab === 'live') {
-      setIsLiveActive(true);
-      if (liveTimeoutRef.current) {
-        clearTimeout(liveTimeoutRef.current);
-        liveTimeoutRef.current = null;
+    const RETENTION_TIME = 5 * 60 * 1000; // 5 minutes
+
+    // News
+    if (activeTab === 'news') {
+      setMountNews(true);
+      if (newsUnmountRef.current) {
+        clearTimeout(newsUnmountRef.current);
+        newsUnmountRef.current = null;
       }
     } else {
-      if (isLiveActive && !liveTimeoutRef.current) {
-        liveTimeoutRef.current = setTimeout(() => {
-          setIsLiveActive(false);
-        }, 10 * 60 * 1000); // 10 minutes
+      if (!newsUnmountRef.current) {
+        newsUnmountRef.current = setTimeout(() => {
+          setMountNews(false);
+          newsUnmountRef.current = null;
+        }, RETENTION_TIME);
       }
     }
-  }, [activeTab, isLiveActive]);
+
+    // Live
+    if (activeTab === 'live') {
+      setMountLive(true);
+      if (liveUnmountRef.current) {
+        clearTimeout(liveUnmountRef.current);
+        liveUnmountRef.current = null;
+      }
+    } else {
+      if (!liveUnmountRef.current) {
+        liveUnmountRef.current = setTimeout(() => {
+          setMountLive(false);
+          liveUnmountRef.current = null;
+        }, RETENTION_TIME);
+      }
+    }
+
+    // Disaster
+    if (activeTab === 'disaster') {
+      setMountDisaster(true);
+      if (disasterUnmountRef.current) {
+        clearTimeout(disasterUnmountRef.current);
+        disasterUnmountRef.current = null;
+      }
+    } else {
+      if (!disasterUnmountRef.current) {
+        disasterUnmountRef.current = setTimeout(() => {
+          setMountDisaster(false);
+          disasterUnmountRef.current = null;
+        }, RETENTION_TIME);
+      }
+    }
+
+    return () => {
+      // We don't necessarily want to clear on every activeTab change if we want the timers to persist
+    };
+  }, [activeTab]);
 
   // Filter & Search
   const [currentFilter, setCurrentFilter] = useState("all");
@@ -149,26 +194,9 @@ export default function Home() {
 
   const handleTabChange = (tab: 'news' | 'live' | 'disaster') => {
     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-    if (liveTimeoutRef.current) clearTimeout(liveTimeoutRef.current);
-
-    const prevTab = activeTab;
+    window.scrollTo(0, 0);
     setActiveTab(tab);
     localStorage.setItem("default_tab", tab);
-
-    // News Retention Logic
-    if (tab === 'news') {
-      setMountNews(true);
-      if (newsUnmountRef.current) {
-        clearTimeout(newsUnmountRef.current);
-        newsUnmountRef.current = null;
-      }
-    } else if (prevTab === 'news') {
-      // Start 5-minute countdown to unmount News
-      if (newsUnmountRef.current) clearTimeout(newsUnmountRef.current);
-      newsUnmountRef.current = setTimeout(() => {
-        setMountNews(false);
-      }, 5 * 60 * 1000);
-    }
   };
 
   // --- Initial Mount ---
@@ -1077,7 +1105,6 @@ export default function Home() {
 
                 {/* News List */}
                 <NewsList
-                  key={activeTab}
                   news={displayItems}
                   isLoading={isLoading}
                   onToggleFav={handleToggleFav}
@@ -1150,28 +1177,32 @@ export default function Home() {
             </div>
           )}
 
-          {/* Disaster Tab - HARD REMOUNT */}
-          {activeTab === 'disaster' && (
-            <motion.div
-              key="disaster-tab"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
-              className="w-full"
-            >
-              <DisasterSection />
-            </motion.div>
+          {/* Disaster Tab - 5-Min Retention */}
+          {mountDisaster && (
+            <div className={activeTab === 'disaster' ? "block" : "hidden"}>
+              <motion.div
+                key="disaster-tab"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2 }}
+                className="w-full"
+              >
+                <DisasterSection />
+              </motion.div>
+            </div>
           )}
 
-          {/* Persistent Live View - HARD REMOUNT */}
-          {activeTab === 'live' && isLiveActive && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <LiveView />
-            </motion.div>
+          {/* Persistent Live View - 5-Min Retention */}
+          {mountLive && (
+            <div className={activeTab === 'live' ? "block" : "hidden"}>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <LiveView />
+              </motion.div>
+            </div>
           )}
         </div>
       </main >

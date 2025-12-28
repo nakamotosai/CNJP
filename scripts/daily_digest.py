@@ -27,6 +27,9 @@ except ImportError:
 # --- 1. 基础配置 ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(SCRIPT_DIR, '.env'))
+# Load .env.local from project root
+project_root = os.path.dirname(SCRIPT_DIR)
+load_dotenv(os.path.join(project_root, '.env.local'))
 
 # R2 配置
 # R2 配置

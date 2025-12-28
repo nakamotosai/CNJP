@@ -35,7 +35,7 @@ export default function BackToTop() {
         hover:bg-gray-50 dark:hover:bg-gray-700 hover:scale-110 active:scale-95
         ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}
         
-        right-6 md:right-[calc(50%-300px+24px)]
+        right-6 md:right-[calc(50%-300px+24px)] lg:right-6 xl:right-[calc(50%-600px+24px)]
       `}
             style={{
                 // Fallback for better positioning

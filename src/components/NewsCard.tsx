@@ -391,7 +391,7 @@ function NewsCardComponent({
             </div>
 
             <Modal isOpen={isModalOpen} onClose={handleModalClose} title="" size={showAnalysis && aiAnalysis ? "wide" : "default"}>
-                <div className="flex flex-col h-full px-5 pt-5 pb-5">
+                <div className="flex flex-col px-5 pt-5 pb-5">
                     {/* ===== 顶部按钮栏 ===== */}
                     <div className="flex items-stretch gap-2 pb-3 border-b border-gray-100 dark:border-border">
                         <button
@@ -423,7 +423,7 @@ function NewsCardComponent({
                     </div>
 
                     {/* ===== 中间内容区 ===== */}
-                    <div className="flex-1 py-4 space-y-3 overflow-y-auto">
+                    <div className="py-4 pb-12 space-y-3">
                         <h2 className="text-lg font-bold leading-snug text-[var(--text-main)]">
                             {displayTitle}
                         </h2>
@@ -440,124 +440,104 @@ function NewsCardComponent({
                             <span>{timeDisplay}</span>
                         </div>
 
-                        {/* 加载状态 */}
+                        {/* 分割线 - 仅在有活动时显示 */}
+                        {(isAnalyzing || (showAnalysis && aiAnalysis) || analyzeError) && (
+                            <div className="h-px bg-gray-100 dark:bg-white/10 my-4" />
+                        )}
+
+                        {/* 加载状态 - 极简模式 */}
                         {isAnalyzing && (
-                            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 space-y-3 border border-indigo-100 dark:border-indigo-800/30">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        {queuePosition > 1 ? (
-                                            <Users className="w-4 h-4 text-orange-500" />
-                                        ) : (
-                                            <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-                                        )}
-                                        <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                                            {loadingHint}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-xs text-indigo-500">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>{elapsedTime}s</span>
-                                    </div>
+                            <div className="py-4 flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        {loadingHint}
+                                    </p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                                        {settings.lang === "sc" ? "通常需 15-30 秒" : "通常需 15-30 秒"}
+                                    </p>
                                 </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {settings.lang === "sc"
-                                        ? "站长电脑开机时，通常15-30秒出结果"
-                                        : "站長電腦開機時，通常15-30秒出結果"}
-                                </div>
-                                <div className="h-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-full overflow-hidden">
+                                {/* 简单的进度条 */}
+                                <div className="w-48 h-1 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden mt-2">
                                     <div
-                                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000"
+                                        className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
                                         style={{ width: `${Math.min((elapsedTime / 25) * 100, 95)}%` }}
                                     />
                                 </div>
                             </div>
                         )}
 
-                        {/* AI 解读区域 */}
+                        {/* AI 解读内容 - 纯文本流 */}
                         {showAnalysis && aiAnalysis && (
-                            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 space-y-3 border border-indigo-100 dark:border-indigo-800/30">
-                                <div className="flex items-center justify-between flex-wrap gap-2">
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                                        <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                                            AI {settings.lang === "sc" ? "解读" : "解讀"}
+                            <div className="animate-in fade-in slide-in-from-bottom-2 pb-8">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/20 rounded-lg">
+                                            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                        </div>
+                                        <span className="font-bold text-gray-900 dark:text-gray-100 text-base">
+                                            AI {settings.lang === "sc" ? "深度解读" : "深度解讀"}
                                         </span>
+                                    </div>
+
+                                    {/* 耗时/来源标记 */}
+                                    <div className="flex items-center gap-3">
                                         {analyzeSource === "cache" ? (
-                                            <span className="flex items-center gap-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
-                                                <Zap className="w-3 h-3" />
-                                                {settings.lang === "sc" ? "秒出" : "秒出"}
+                                            <span className="text-[10px] font-medium px-2 py-0.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-full">
+                                                秒出
                                             </span>
-                                        ) : (
-                                            <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-full">
-                                                <Sparkles className="w-3 h-3" />
-                                                {settings.lang === "sc" ? "新生成" : "新生成"}
+                                        ) : totalTime !== null && (
+                                            <span className="text-[10px] text-gray-400">
+                                                {totalTime}s
                                             </span>
                                         )}
                                     </div>
-                                    {totalTime !== null && (
-                                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                                            <Clock className="w-3 h-3" />
-                                            <span>{settings.lang === "sc" ? `耗时 ${totalTime} 秒` : `耗時 ${totalTime} 秒`}</span>
-                                        </div>
-                                    )}
                                 </div>
-                                <div className="max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
-                                    <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+
+                                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
+                                    <div className="text-[15px] leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">
                                         {analysisContent}
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* 错误提示 */}
+                        {/* 错误提示 - 极简模式 */}
                         {analyzeError && (
-                            <div className="flex items-start gap-2 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-100 dark:border-red-800/30">
-                                {isOffline ? <WifiOff className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />}
-                                <div>
-                                    <div className="font-medium text-red-600 dark:text-red-400">{analyzeError}</div>
-                                    {isOffline && (
-                                        <div className="text-xs text-red-500/80 mt-1">
-                                            {settings.lang === "sc" ? "请稍后重试，或联系站长" : "請稍後重試，或聯繫站長"}
-                                        </div>
-                                    )}
+                            <div className="py-4 text-center">
+                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg text-sm">
+                                    <AlertCircle className="w-4 h-4" />
+                                    <span>{analyzeError}</span>
                                 </div>
                             </div>
                         )}
                     </div>
 
                     {/* ===== 底部 AI 解读大按钮 ===== */}
-                    <div className="pt-3 border-t border-gray-100 dark:border-border">
-                        <button
-                            onClick={handleAiAnalyze}
-                            disabled={isAnalyzing}
-                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${aiAnalysis
-                                ? showAnalysis
-                                    ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
+                    {(!aiAnalysis || !showAnalysis) && (
+                        <div className="pt-3 border-t border-gray-100 dark:border-border">
+                            <button
+                                onClick={handleAiAnalyze}
+                                disabled={isAnalyzing}
+                                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${isAnalyzing
+                                    ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 cursor-not-allowed"
                                     : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/25"
-                                : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/25"
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {isAnalyzing ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    <span>{settings.lang === "sc" ? `AI 解读中... ${elapsedTime}s` : `AI 解讀中... ${elapsedTime}s`}</span>
-                                </>
-                            ) : aiAnalysis ? (
-                                <>
-                                    <Sparkles className="w-5 h-5" />
-                                    <span>{showAnalysis
-                                        ? (settings.lang === "sc" ? "收起 AI 解读" : "收起 AI 解讀")
-                                        : (settings.lang === "sc" ? "展开 AI 解读" : "展開 AI 解讀")
-                                    }</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-5 h-5" />
-                                    <span>{settings.lang === "sc" ? "AI 智能解读" : "AI 智能解讀"}</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
+                                    }`}
+                            >
+                                {isAnalyzing ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <span>{settings.lang === "sc" ? `AI 解读中... ${elapsedTime}s` : `AI 解讀中... ${elapsedTime}s`}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-5 h-5" />
+                                        <span>{settings.lang === "sc" ? "AI 智能解读" : "AI 智能解讀"}</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </Modal>
         </>

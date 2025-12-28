@@ -10,14 +10,31 @@ from urllib.parse import urlparse
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
+from dotenv import load_dotenv
+from ollama import Client
+
+# Load environment variables
+load_dotenv()
+try:
+    # 尝试加载 scripts/.env (Ollama 配置)
+    script_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", ".env")
+    if os.path.exists(script_env):
+        load_dotenv(script_env)
+    
+    # 尝试加载根目录 .env.local (R2 配置)
+    local_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env.local")
+    if os.path.exists(local_env):
+        load_dotenv(local_env)
+except:
+    pass
 
 # 日本时间 (UTC+9)
 JST = datetime.timezone(datetime.timedelta(hours=9))
 
 # === R2 配置 ===
-R2_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
-R2_ACCESS_KEY = os.environ.get("CLOUDFLARE_R2_ACCESS_KEY_ID", "")
-R2_SECRET_KEY = os.environ.get("CLOUDFLARE_R2_SECRET_ACCESS_KEY", "")
+R2_ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID") or os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
+R2_ACCESS_KEY = os.environ.get("R2_ACCESS_KEY_ID") or os.environ.get("CLOUDFLARE_R2_ACCESS_KEY_ID", "")
+R2_SECRET_KEY = os.environ.get("R2_SECRET_ACCESS_KEY") or os.environ.get("CLOUDFLARE_R2_SECRET_ACCESS_KEY", "")
 R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME", "cnjp-data")
 
 def get_r2_client():
@@ -310,14 +327,43 @@ def google_translate_batch(texts, target_lang='zh-CN', source_lang='ja'):
             for i, line in enumerate(translated_lines):
                 results[text_map[i]] = line.strip()
         else:
-            print(f"⚠️ Warning: Translated line count ({len(translated_lines)}) mismatch with input ({len(valid_texts)})")
-            # 尝试部分匹配
-            for i, line in enumerate(translated_lines[:len(valid_texts)]):
-                results[text_map[i]] = line.strip()
+            # 数量不匹配视为失败，触发 Ollama 回退
+            raise Exception(f"Batch mismatch: {len(translated_lines)} vs {len(valid_texts)}")
                 
     except Exception as e:
-        print(f"❌ Error in batch translation: {e}")
-        
+        print(f"❌ Google Translate failed: {e}. Switching to Ollama fallback...")
+        try:
+            # Fallback to Ollama
+            host = os.environ.get('OLLAMA_HOST', 'https://ollama.saaaai.com')
+            headers = {
+                'CF-Access-Client-Id': os.environ.get('CF_ACCESS_CLIENT_ID', ''),
+                'CF-Access-Client-Secret': os.environ.get('CF_ACCESS_CLIENT_SECRET', '')
+            }
+            client = Client(host=host, headers=headers)
+            
+            # Simple prompt for batch translation
+            # Note: For strict alignment, item-by-item is safer but slower. 
+            # Given title length, item-by-item is acceptable for < 50 items.
+            print(f"  Using Ollama to translate {len(valid_texts)} titles...")
+            
+            for i, text in enumerate(valid_texts):
+                try:
+                    prompt = f"Translate the following news title from Japanese to {target_lang}. Output ONLY the translated text, no explanation:\n\n{text}"
+                    r = client.chat(
+                        model='qwen3:8b', 
+                        messages=[{'role': 'user', 'content': prompt}],
+                        options={"temperature": 0.3}
+                    )
+                    translated = r['message']['content'].strip()
+                    # Remove any quotes if model adds them
+                    translated = translated.strip('"').strip("'")
+                    results[text_map[i]] = translated
+                except Exception as oe:
+                    print(f"  Ollama failed for item {i}: {oe}")
+                    
+        except Exception as fallback_err:
+            print(f"❌ Ollama fallback also failed: {fallback_err}")
+
     return results
 
 def update_news():
