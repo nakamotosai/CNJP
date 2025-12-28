@@ -7,7 +7,7 @@ import CategoryNav from "@/components/CategoryNav";
 import NewsList from "@/components/NewsList";
 import { NewsItem } from "@/components/NewsCard";
 import SettingsModal from "@/components/modals/SettingsModal";
-import AboutModal from "@/components/modals/AboutModal";
+
 import FavModal from "@/components/modals/FavModal";
 import ArchiveModal from "@/components/modals/ArchiveModal";
 import ArchiveDrawer from "@/components/ArchiveDrawer";
@@ -150,7 +150,7 @@ export default function Home() {
 
   // Modals
   const [showSettings, setShowSettings] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
+
   const [showFav, setShowFav] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [archiveDate, setArchiveDate] = useState("");
@@ -847,7 +847,6 @@ export default function Home() {
 
       <Header
         onOpenFav={() => setShowFav(true)}
-        onOpenAbout={() => setShowAbout(true)}
         onOpenSettings={() => setShowSettings(true)}
         onRefresh={handleRefresh}
         favCount={favorites.length}
@@ -1215,11 +1214,7 @@ export default function Home() {
         onClearFavorites={handleClearFav}
       />
 
-      {/* About Modal */}
-      < AboutModal
-        isOpen={showAbout}
-        onClose={() => setShowAbout(false)}
-      />
+
 
       {/* Favorites Modal */}
       <FavModal

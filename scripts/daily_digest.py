@@ -311,6 +311,7 @@ def search_web_for_context(keywords, target_date_str):
     return "\n".join(context_results)
 
 # 【核心更新】优化 Prompt：强制长文本定调
+# 【核心更新】优化 Prompt：强制长文本定调
 def generate_structured_summary(titles, web_context, prev_context_str, keywords, target_date_str):
     print(f"[-] [AI] 正在撰写结构化内参 (JSON Structure Mode)...")
     titles_text = "\n".join([f"- {t}" for t in titles])
@@ -327,7 +328,7 @@ def generate_structured_summary(titles, web_context, prev_context_str, keywords,
         "2. **拒绝列表式预测**：在`forecast`字段，**严禁**罗列新闻标题。必须写一段连贯的**推演性文字**。\n"
         "3. **态势定调要详细**：在`stance`字段，**严禁**只写“摩擦升级”这种短语！必须写一段 **50-100字** 的完整描述，说明为什么摩擦升级。\n\n"
         "【输出格式】\n"
-        "返回合法 JSON，包含：\n"
+        "返回合法 JSON，**强制**包含以下三个 Key（不要改名）：\n"
         "1. `stance`: **态势定调**。（注意：必须是完整的描述性段落，不能少于50字）\n"
         "2. `events`: **关键事件解析**。（深度阐述1-2件大事，不要出现媒体名）\n"
         "3. `forecast`: **风向预测**。（一段连贯的未来局势推演，不要写成清单）"
@@ -337,7 +338,7 @@ def generate_structured_summary(titles, web_context, prev_context_str, keywords,
         f"【昨日基准】\n{prev_context_str}\n\n"
         f"【今日数据源】（核心词：{keywords_str}）\n{titles_text}\n\n"
         f"【情报细节】\n{web_context}\n\n"
-        "请输出 JSON（确保 key 为 stance, events, forecast，内容为简体中文）："
+        "请务必输出 JSON，包含 stance, events, forecast 三个字段："
     )
 
     res_json_str = call_ollama_safe(prompt, system, format_json=True)
@@ -359,11 +360,21 @@ def generate_structured_summary(titles, web_context, prev_context_str, keywords,
             return None
 
         # 态势定调
-        normalized['stance'] = get_fuzzy(['stance', 'situation', '态势定调', 'trend', 'overview'])
-        # 关键事件
-        normalized['events'] = get_fuzzy(['events', 'event', 'key_events', '关键事件', 'highlights', 'impact', 'news', 'main_events'])
+        normalized['stance'] = get_fuzzy([
+            'stance', 'situation', '态势定调', 'trend', 'overview', 'summary', 
+            'stance_sc', 'section_stance'
+        ])
+        # 关键事件 (扩充 fuzzy list 以修复暂无事件解析问题)
+        normalized['events'] = get_fuzzy([
+            'events', 'event', 'key_events', '关键事件', 'highlights', 'impact', 
+            'news', 'main_events', 'major_events', 'critical_events', 'event_analysis',
+            'events_sc', 'section_events', 'analysis'
+        ])
         # 风向预测
-        normalized['forecast'] = get_fuzzy(['forecast', 'prediction', '风向预测', 'outlook', 'future'])
+        normalized['forecast'] = get_fuzzy([
+            'forecast', 'prediction', '风向预测', 'outlook', 'future', 
+            'forecast_sc', 'section_forecast', 'prospect'
+        ])
         
         # Debug Log: 如果还是没提取到，打印原始 keys 以便调试
         if not normalized['events']:
@@ -403,10 +414,28 @@ def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count,
     print(f"[-] [Data] 正在组装数据...")
     date_obj = datetime.strptime(target_date_str, '%Y-%m-%d')
     
-    def sanitize_field(value, default_val):
-        if value is None: return default_val
-        if isinstance(value, str): return value
-        if isinstance(value, list): return "\n".join(str(v) for v in value)
+    # 增强版字段清洗工具
+    def smart_sanitize(value, default_val):
+        if not value: return default_val
+        
+        # 1. 如果是字符串，直接返回
+        if isinstance(value, str):
+            return value
+            
+        # 2. 如果是列表，尝试智能合并
+        if isinstance(value, list):
+            # 检查是否是 list of dicts (Qwen 常见错误格式)
+            if len(value) > 0 and isinstance(value[0], dict):
+                lines = []
+                for item in value:
+                    # 尝试提取 value 里的常见内容字段
+                    content = item.get('description') or item.get('event') or item.get('content') or item.get('summary') or str(item)
+                    lines.append(content)
+                return "\n".join(lines)
+            else:
+                # 普通列表 (list of strings)
+                return "\n".join(str(v) for v in value)
+                
         return str(value)
 
     # 1. 处理结构化摘要
@@ -415,9 +444,9 @@ def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count,
     forecast_sc = "暂无预测"
 
     if summary_obj and isinstance(summary_obj, dict):
-        stance_sc = sanitize_field(summary_obj.get('stance'), stance_sc)
-        events_sc = sanitize_field(summary_obj.get('events'), events_sc)
-        forecast_sc = sanitize_field(summary_obj.get('forecast'), forecast_sc)
+        stance_sc = smart_sanitize(summary_obj.get('stance'), stance_sc)
+        events_sc = smart_sanitize(summary_obj.get('events'), events_sc)
+        forecast_sc = smart_sanitize(summary_obj.get('forecast'), forecast_sc)
     
     # 清洗 + 去除残留媒体名
     stance_sc = clean_unwanted_dividers(stance_sc)

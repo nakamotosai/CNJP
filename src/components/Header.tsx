@@ -1,16 +1,17 @@
 "use client";
 
 import { useTheme } from "./ThemeContext";
-import { Settings, Info, Heart, Tv, Sparkles, Newspaper, X, CloudRain, AlertTriangle } from "lucide-react";
+import { Settings, Heart, Tv, Sparkles, Newspaper, X, CloudRain, AlertTriangle, ArrowRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import NotificationBanner from "./NotificationBanner";
+import { ABOUT_PAGE_CONTENT } from "@/lib/about-content";
 
 
 interface HeaderProps {
   onOpenFav: () => void;
-  onOpenAbout: () => void;
   onOpenSettings: () => void;
   onRefresh?: () => void;
   favCount: number;
@@ -21,7 +22,6 @@ interface HeaderProps {
 
 export default function Header({
   onOpenFav,
-  onOpenAbout,
   onOpenSettings,
   onRefresh,
   favCount,
@@ -109,19 +109,20 @@ export default function Header({
     }
   };
 
+  // About page badge logic - shows when version changes or first visit
+  // Reads version from about-content.ts changelog, so updating changelog auto-triggers badge
+  const latestVersion = ABOUT_PAGE_CONTENT.sc.sections.changelog.entries[0]?.version || "1.0.0";
+
   useEffect(() => {
-    const today = new Date().toDateString();
-    const lastClicked = localStorage.getItem("about_badge_date");
-    if (lastClicked !== today) {
+    const seenVersion = localStorage.getItem("about_seen_version");
+    if (seenVersion !== latestVersion) {
       setShowBadge(true);
     }
-  }, []);
+  }, [latestVersion]);
 
   const handleAboutClick = () => {
-    const today = new Date().toDateString();
-    localStorage.setItem("about_badge_date", today);
+    localStorage.setItem("about_seen_version", latestVersion);
     setShowBadge(false);
-    onOpenAbout();
   };
 
   const englishText = "https://cn.saaaai.com";
@@ -241,7 +242,11 @@ export default function Header({
                 className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity active:scale-95 duration-200 group"
                 title={settings.lang === "sc" ? "点击刷新" : "點擊刷新"}
               >
-                <div className="relative w-[24px] h-[24px] lg:w-[36px] lg:h-[36px] shrink-0 category-tag-active">
+                <motion.div
+                  animate={{ rotate: [0, 3, -3, 0] }}
+                  transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+                  className="relative w-[24px] h-[24px] lg:w-[36px] lg:h-[36px] shrink-0 category-tag-active"
+                >
                   <Image
                     src="/logo.png"
                     alt="Logo"
@@ -249,7 +254,7 @@ export default function Header({
                     className="object-contain p-[2px] lg:p-[3px]"
                     priority
                   />
-                </div>
+                </motion.div>
                 <div className="flex flex-col justify-center w-fit lg:items-center">
                   <h1
                     style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
@@ -296,25 +301,28 @@ export default function Header({
                 </span>
               </button>
 
-              <button
-                onClick={handleAboutClick}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative"
-              >
-                <Info className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
-                {showBadge && (
-                  <span className="absolute top-2 right-2 flex h-2.5 w-2.5 pointer-events-none">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 text-[8px] text-white justify-center items-center font-bold">!</span>
-                  </span>
-                )}
-              </button>
-
+              {/* Settings Button */}
               <button
                 onClick={onOpenSettings}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200"
               >
                 <Settings className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
               </button>
+
+              {/* About Button - Now rightmost with arrow icon */}
+              <Link
+                href="/about"
+                onClick={handleAboutClick}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative"
+              >
+                <ArrowRight className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
+                {showBadge && (
+                  <span className="absolute top-2 right-2 flex h-2.5 w-2.5 pointer-events-none">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 text-[8px] text-white justify-center items-center font-bold">!</span>
+                  </span>
+                )}
+              </Link>
             </div>
           </div>
 

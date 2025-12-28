@@ -549,3 +549,21 @@ body[data-font-style="sans"][data-lang="tc"] {
 .will-change-transform {
   will-change: transform;
 }
+
+/* Blue Purple Gradient Animation for specific text */
+.blue-purple-gradient-text {
+  background: linear-gradient(
+    to right, 
+    #3b82f6 0%, 
+    #8b5cf6 25%, 
+    #d946ef 50%, 
+    #8b5cf6 75%, 
+    #3b82f6 100%
+  );
+  background-size: 200% auto;
+  color: transparent !important;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: text-shine 4s linear infinite;
+  display: inline-block;
+}

@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CNJP：洞察邻国视角 —— 智能涉华新闻聚合平台
 
-## Getting Started
+这是一个基于 Next.js 14 与 AI 驱动的日本媒体涉华新闻聚合平台。它通过自动化技术打破语言、时差与信息茧房，为用户提供实时、客观且深入的日本对华舆论动态。
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚩 核心价值
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **零门槛跨越语言障碍**：自动采集并翻译日媒头条，支持简繁切换。
+- **全自动智能化扫描**：每 5 分钟轮询一次全网主流日媒，动态过滤非相关噪音。
+- **深度 AI 解读**：不只是展示新闻，更通过私有大模型提供结构化的事实拆解、背景补充及多维评价（正面/负面）。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 💎 核心功能
 
-## Learn More
+### 1. 🤖 AI 智能编辑部
+- **每日简报 (Daily Briefing)**：首页顶端展示 AI 自动生成的当日态势定调、关键事件及风向预测。
+- **AI 解读 (AI Analysis)**：每一篇文章均支持一键生成深度分析报告。
 
-To learn more about Next.js, take a look at the following resources:
+### 2. 📺 实时现场 (Live News)
+- 内置多路日本实时新闻直播信号（如 TBS、FNN 等），即刻感知现场气氛。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. 🗺️ 灾害脉动 (Disaster Map)
+- 集成 Leaflet 驱动的交互式实时地震地图，结合新闻联动，迅速判断突发事件影响。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. 📂 万卷归档 (Archive Search)
+- 支持数月历史数据的一键加载与全文索引，方便进行长周期的舆论复盘。
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠️ 底层架构与黑科技
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **前端框架**：Next.js 14 (App Router) + Tailwind CSS + Framer Motion。
+- **存储方案**：**无传统数据库设计**。所有数据通过 Python 脚本抓取后存入 **Cloudflare R2**（S3 兼容存储），前端通过 JSON 索引实现极致的零延时访问。
+- **后端脚本**：Python + GitHub Actions 驱动自动化采集流水线。
+- **AI 引擎**：FastAPI 后端 + Ollama (Qwen 架构)，实现私有化、高质量的文本分析。
+
+---
+
+## 🚀 针对用户的优化
+
+1.  **移动端优先 (PWA)**：支持全屏安装到主屏幕，无地址栏干扰，如同原生 App。
+2.  **国内访问优化**：针对大陆网络环境优化了 CDN 路由，数据加载快如闪电。
+3.  **精细化排版**：内置 Noto Sans SC 字库，确保持久舒适的中文阅读体验。
+
+---
+
+
+## ⚠️ 免责声明
+本站所有 AI 生成的简报、解读和翻译内容仅供参考，不代表媒体立场，亦不作为投资或法律建议。建议重大事件查阅日文原文。
+
+*探索日本媒体眼中的中国世界，从这里开始。*
