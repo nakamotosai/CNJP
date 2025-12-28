@@ -2,6 +2,7 @@ import os
 import hashlib
 import asyncio
 import logging
+import sys
 from datetime import datetime
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Body
@@ -22,14 +23,21 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
-# 日志配置
-logger = logging.getLogger("news_analysis")
-logger.setLevel(logging.INFO)
+# 日志文件路径
 log_file = os.path.join(LOG_DIR, "analysis.log")
-handler = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=5, encoding="utf-8")
-formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+
+# 配置根日志器，以便捕获 uvicorn 和其他库的日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=5, encoding="utf-8"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger("news_analysis")
 
 from dotenv import load_dotenv
 
@@ -359,12 +367,18 @@ if __name__ == "__main__":
     while True:
         try:
             logger.info("Starting Server...")
-            # log_config=None 防止 uvicorn 尝试配置日志时因环境问题报错
-            uvicorn.run(app, host="0.0.0.0", port=8000, log_config=None)
+            # 不再使用 log_config=None，而是让 uvicorn 使用默认配置
+            # 这里的日志会因为 basicConfig 已经配置了 RotatingFileHandler 而同时被记录到文件
+            uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
         except Exception as e:
             logger.error(f"CRITICAL | Server crashed: {e}")
-            logger.info(f"Restarting in {RETRY_DELAY}s...")
-            time.sleep(RETRY_DELAY)
+            # 如果是因为端口占用，给更多时间，或者干脆退出让 watchdog 处理
+            if "Address already in use" in str(e):
+                logger.info("Port 8000 in use, waiting longer...")
+                time.sleep(10)
+            else:
+                logger.info(f"Restarting in {RETRY_DELAY}s...")
+                time.sleep(RETRY_DELAY)
         except KeyboardInterrupt:
             logger.info("Server stopped by user.")
             break

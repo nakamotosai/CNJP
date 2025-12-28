@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .env
+.env.local
 venv/
 .vscode/
 node_modules/
@@ -10,3 +11,7 @@ out/
 build/
 dist/
 *.json
+
+# Logs
+scripts/logs/*.log
+*.log
