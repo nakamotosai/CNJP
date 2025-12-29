@@ -35,7 +35,8 @@
   --accent: #818cf8;
   --background: #0b0d12;
   --card: #1e1e1e;
-  --text-main: #e4e4e7;
+  --text-main: #d1d5db;
+  /* Softer white (Gray 300) */
   --text-sub: #9ca3af;
   --text-aux: #71717a;
   --border: rgba(255, 255, 255, 0.05);

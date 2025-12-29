@@ -40,14 +40,27 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
     const okinawaMapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<any>(null);
     const okinawaMapInstanceRef = useRef<any>(null);
+    const markerLayerRef = useRef<any>(null);
+    const okinawaMarkerLayerRef = useRef<any>(null);
     const [leafletLoaded, setLeafletLoaded] = useState(false);
     const isMountedRef = useRef(true);
     const isInitializingRef = useRef(false);
-    const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const LRef = useRef<any>(null);
 
     useEffect(() => {
         isMountedRef.current = true;
-        return () => { isMountedRef.current = false; };
+        return () => {
+            isMountedRef.current = false;
+            // Cleanup instances on unmount
+            if (mapInstanceRef.current) {
+                try { mapInstanceRef.current.remove(); } catch (e) { }
+                mapInstanceRef.current = null;
+            }
+            if (okinawaMapInstanceRef.current) {
+                try { okinawaMapInstanceRef.current.remove(); } catch (e) { }
+                okinawaMapInstanceRef.current = null;
+            }
+        };
     }, []);
 
     const invalidateMaps = useCallback(() => {
@@ -55,8 +68,27 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
         if (okinawaMapInstanceRef.current) okinawaMapInstanceRef.current.invalidateSize();
     }, []);
 
+    const getIcon = useCallback((scale: number, L: any) => {
+        let color = "#3b82f6", size = 20, pulseSize = "w-2 h-2";
+        if (scale >= 30) { size = 24; }
+        if (scale >= 40) { color = "#fbbf24"; size = 30; pulseSize = "w-3 h-3"; }
+        if (scale >= 45) { color = "#f59e0b"; size = 38; pulseSize = "w-4 h-4"; }
+        if (scale >= 55) { color = "#ef4444"; size = 46; pulseSize = "w-5 h-5"; }
+        if (scale >= 70) { color = "#7c3aed"; size = 56; pulseSize = "w-6 h-6"; }
+
+        return L.divIcon({
+            className: "custom-div-icon",
+            html: `<div class="rounded-full flex items-center justify-center border-2 border-white/60" 
+                        style="background-color: ${color}; width: ${size}px; height: ${size}px;">
+                    <div class="${pulseSize} rounded-full bg-white animate-ping"></div>
+                  </div>`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+        });
+    }, []);
+
     const tryInitMap = useCallback(async () => {
-        if (!mapRef.current || !isMountedRef.current || isInitializingRef.current) return;
+        if (!mapRef.current || !isMountedRef.current || isInitializingRef.current || mapInstanceRef.current) return;
 
         // Final check on dimensions - ensures Leaflet has a valid target
         const rect = mapRef.current.getBoundingClientRect();
@@ -66,6 +98,7 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
 
         try {
             const L = await loadLeaflet();
+            LRef.current = L;
 
             // Core CSS injection with deduplication
             if (!document.getElementById("leaflet-css")) {
@@ -77,17 +110,7 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
                 await new Promise(r => setTimeout(r, 600)); // Grace period for CSS parsing
             }
 
-            if (!isMountedRef.current || !mapRef.current) return;
-
-            // Cleanup previous instances to prevent "Map container is already initialized"
-            if (mapInstanceRef.current) {
-                try { mapInstanceRef.current.remove(); } catch (e) { }
-                mapInstanceRef.current = null;
-            }
-            if (okinawaMapInstanceRef.current) {
-                try { okinawaMapInstanceRef.current.remove(); } catch (e) { }
-                okinawaMapInstanceRef.current = null;
-            }
+            if (!isMountedRef.current || !mapRef.current || mapInstanceRef.current) return;
 
             const isMobile = window.innerWidth < 768;
 
@@ -101,6 +124,7 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
             });
 
             L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png").addTo(map);
+            markerLayerRef.current = L.layerGroup().addTo(map);
 
             // 2. Initialize Inset Map
             if (okinawaMapRef.current) {
@@ -112,63 +136,64 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
                     attributionControl: false
                 });
                 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png").addTo(okMap);
+                okinawaMarkerLayerRef.current = L.layerGroup().addTo(okMap);
                 okinawaMapInstanceRef.current = okMap;
             }
 
-            // Define icons based on scale
-            const getIcon = (scale: number) => {
-                let color = "#3b82f6", size = 20, pulseSize = "w-2 h-2";
-                if (scale >= 30) { size = 24; }
-                if (scale >= 40) { color = "#fbbf24"; size = 30; pulseSize = "w-3 h-3"; }
-                if (scale >= 45) { color = "#f59e0b"; size = 38; pulseSize = "w-4 h-4"; }
-                if (scale >= 55) { color = "#ef4444"; size = 46; pulseSize = "w-5 h-5"; }
-                if (scale >= 70) { color = "#7c3aed"; size = 56; pulseSize = "w-6 h-6"; }
-
-                return L.divIcon({
-                    className: "custom-div-icon",
-                    html: `<div class="rounded-full flex items-center justify-center border-2 border-white/60" 
-                                style="background-color: ${color}; width: ${size}px; height: ${size}px;">
-                            <div class="${pulseSize} rounded-full bg-white animate-ping"></div>
-                          </div>`,
-                    iconSize: [size, size],
-                    iconAnchor: [size / 2, size / 2]
-                });
-            };
-
-            // Populate markers with detailed popups
-            quakes.forEach(q => {
-                const { latitude: lat, longitude: lon } = q.earthquake.hypocenter;
-                if (lat && lon) {
-                    const icon = getIcon(q.earthquake.maxScale);
-                    const marker = L.marker([lat, lon], { icon }).addTo(map);
-
-                    marker.bindPopup(`
-                        <div class="p-2 text-slate-800">
-                            <strong class="text-sm font-bold">${q.earthquake.hypocenter.name}</strong><br/>
-                            <div class="text-[11px] mt-1 space-y-0.5">
-                                <p>震级: M${q.earthquake.hypocenter.magnitude}</p>
-                                <p>深度: ${q.earthquake.hypocenter.depth}km</p>
-                                <p class="text-red-600 font-black">最大震度: ${q.earthquake.maxScale / 10}</p>
-                            </div>
-                        </div>
-                    `);
-
-                    if (lat < 30 && okinawaMapInstanceRef.current) {
-                        L.marker([lat, lon], { icon }).addTo(okinawaMapInstanceRef.current);
-                    }
-                }
-            });
-
             mapInstanceRef.current = map;
             setLeafletLoaded(true);
-            setTimeout(invalidateMaps, 200);
+
+            // Trigger size check after state update
+            setTimeout(invalidateMaps, 300);
 
         } catch (e) {
             console.error("Leaflet initialization failed:", e);
         } finally {
             isInitializingRef.current = false;
         }
-    }, [quakes, invalidateMaps]);
+    }, [invalidateMaps]);
+
+    // Separate effect for marker management to avoid race conditions
+    useEffect(() => {
+        if (!leafletLoaded || !LRef.current || !markerLayerRef.current) return;
+
+        const L = LRef.current;
+        const mainLayer = markerLayerRef.current;
+        const okinawaLayer = okinawaMarkerLayerRef.current;
+
+        // Clear existing markers
+        mainLayer.clearLayers();
+        if (okinawaLayer) okinawaLayer.clearLayers();
+
+        // Populate markers
+        quakes.forEach(q => {
+            const { latitude: lat, longitude: lon } = q.earthquake.hypocenter;
+            if (lat && lon) {
+                const icon = getIcon(q.earthquake.maxScale, L);
+                const marker = L.marker([lat, lon], { icon });
+
+                marker.bindPopup(`
+                    <div class="p-2 text-slate-800">
+                        <strong class="text-sm font-bold">${q.earthquake.hypocenter.name}</strong><br/>
+                        <div class="text-[11px] mt-1 space-y-0.5">
+                            <p>震级: M${q.earthquake.hypocenter.magnitude}</p>
+                            <p>深度: ${q.earthquake.hypocenter.depth}km</p>
+                            <p class="text-red-600 font-black">最大震度: ${q.earthquake.maxScale / 10}</p>
+                        </div>
+                    </div>
+                `);
+
+                marker.addTo(mainLayer);
+
+                if (lat < 30 && okinawaLayer) {
+                    L.marker([lat, lon], { icon }).addTo(okinawaLayer);
+                }
+            }
+        });
+
+        // Ensure maps are correctly rendered after marker update
+        invalidateMaps();
+    }, [quakes, leafletLoaded, getIcon, invalidateMaps]);
 
     // Track initialization requirements
     useEffect(() => { tryInitMap(); }, [tryInitMap]);
@@ -179,33 +204,21 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
             if (!mapInstanceRef.current) {
                 tryInitMap();
             } else {
-                if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current);
-                resizeTimeoutRef.current = setTimeout(invalidateMaps, 150);
+                invalidateMaps();
             }
         });
         ro.observe(mapRef.current);
         return () => ro.disconnect();
     }, [tryInitMap, invalidateMaps]);
 
-    // Retry mechanism - stops after 30 seconds (15 attempts * 2s)
+    // Retry mechanism - strictly for first-time map initialization
     useEffect(() => {
-        let attempts = 0;
-        const maxAttempts = 15;
+        if (leafletLoaded) return;
 
         const timer = setInterval(() => {
-            if (leafletLoaded || isInitializingRef.current) {
-                if (leafletLoaded) clearInterval(timer);
-                return;
+            if (!leafletLoaded && !isInitializingRef.current) {
+                tryInitMap();
             }
-
-            attempts++;
-            if (attempts >= maxAttempts) {
-                console.warn("Map loading timed out after 30 seconds.");
-                clearInterval(timer);
-                return;
-            }
-
-            tryInitMap();
         }, 2000);
 
         return () => clearInterval(timer);
@@ -213,7 +226,7 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
 
     return (
         <div className="relative w-full h-full min-h-[400px] md:min-h-[600px] bg-slate-900 rounded-[32px] overflow-hidden border border-white/5 shadow-lg group">
-            <div ref={mapRef} className="absolute inset-0 z-0" style={{ height: '100%' }} />
+            <div ref={mapRef} className="absolute inset-0 z-0" style={{ height: '100%', width: '100%' }} />
 
             {/* Okinawa Inset - Bottom Right */}
             <div className="absolute bottom-4 right-4 w-32 h-40 md:w-40 md:h-52 bg-slate-950/90 backdrop-blur-md rounded-2xl border border-white/10 z-10 overflow-hidden shadow-2xl">
@@ -267,7 +280,6 @@ export default function EarthquakeView() {
         const fetchQuakes = async () => {
             try {
                 // Fetch more to ensure we have enough after filtering
-                // Fetch 100 to ensure 10 after filtering
                 const res = await fetch("https://api.p2pquake.net/v2/history?codes=551&limit=100");
                 const data = await res.json();
                 if (Array.isArray(data)) {
@@ -298,9 +310,7 @@ export default function EarthquakeView() {
         const d = date.getDate();
         const h = date.getHours().toString().padStart(2, '0');
         const min = date.getMinutes().toString().padStart(2, '0');
-        const scStr = `${m}月${d}日 ${h}:${min}`;
-        const tcStr = `${m}月${d}日 ${h}:${min}`;
-        return settings.lang === "sc" ? scStr : tcStr;
+        return `${m}月${d}日 ${h}:${min}`;
     };
 
     return (

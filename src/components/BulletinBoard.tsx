@@ -280,7 +280,7 @@ export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
                                 className="mx-4 text-[13px] whitespace-nowrap flex items-center gap-1.5"
                             >
                                 <span className={`w-1.5 h-1.5 rounded-full ${item.color} shrink-0`} />
-                                <span className="text-gray-600 dark:text-gray-300 font-medium">
+                                <span className="text-gray-600 dark:text-gray-400 font-medium">
                                     {item.content}
                                 </span>
                                 {item.count > 1 && (
@@ -308,7 +308,7 @@ export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
                         cooldownRemaining > 0
                             ? "bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-white/5"
                             : settings.theme === 'dark'
-                                ? "bg-white/5 border border-white/10 hover:bg-white/10 text-white"
+                                ? "bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-100"
                                 : "bg-[var(--primary)] text-white hover:brightness-110 shadow-[var(--primary)]/20"
                     )}
                 >
@@ -335,7 +335,7 @@ export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/10 shrink-0">
-                            <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                            <h3 className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                                 <BarChart3 className="w-4 h-4 text-[var(--primary)] dark:text-blue-400" />
                                 {settings.lang === 'tc' ? '熱議統計' : '热议统计'}
                             </h3>
@@ -356,12 +356,12 @@ export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
                                     >
                                         <div className="flex items-center gap-2 flex-1 min-w-0">
                                             <span className={`w-2 h-2 rounded-full ${item.color} shrink-0`} />
-                                            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                                            <span className="text-sm text-gray-700 dark:text-gray-400 truncate">
                                                 {item.content}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0 ml-2">
-                                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                            <span className="text-sm font-bold text-gray-900 dark:text-zinc-200">
                                                 x{item.count}
                                             </span>
                                             <span className="text-xs text-gray-400 w-10 text-right">
@@ -394,7 +394,7 @@ export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/10 shrink-0">
-                            <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                            <h3 className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
                                 {settings.lang === 'tc' ? '選擇你的態度' : '选择你的态度'}
                             </h3>
@@ -414,7 +414,7 @@ export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
                                         <button
                                             key={i}
                                             onClick={() => handleSend(text)}
-                                            className="text-center px-2 py-3 text-xs sm:text-sm rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-[var(--primary)] dark:hover:bg-blue-500/30 hover:text-white dark:text-gray-300 transition-all border border-transparent hover:border-[var(--primary)] dark:hover:border-blue-500/50 active:scale-95 break-words leading-snug flex items-center justify-center gap-2 group"
+                                            className="text-center px-2 py-3 text-xs sm:text-sm rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-[var(--primary)] dark:hover:bg-blue-500/30 hover:text-white dark:text-gray-400 transition-all border border-transparent hover:border-[var(--primary)] dark:hover:border-blue-500/50 active:scale-95 break-words leading-snug flex items-center justify-center gap-2 group"
                                         >
                                             <span>{text}</span>
                                         </button>

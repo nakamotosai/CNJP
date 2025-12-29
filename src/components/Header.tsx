@@ -296,7 +296,7 @@ export default function Header({
                 onClick={onOpenFav}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative group"
               >
-                <Heart className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
+                <Heart className="w-5 h-5 text-[var(--text-main)] dark:text-gray-300" />
                 {favCount > 0 && (
                   <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#0b0d12]" />
                 )}
@@ -308,7 +308,7 @@ export default function Header({
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200"
                 title={settings.lang === 'sc' ? '切换到繁体' : '切換到簡體'}
               >
-                <span className="text-[15px] font-bold text-[var(--text-main)] dark:text-gray-200 leading-none">
+                <span className="text-[15px] font-bold text-[var(--text-main)] dark:text-gray-300 leading-none">
                   {settings.lang === 'sc' ? '繁' : '简'}
                 </span>
               </button>
@@ -318,7 +318,7 @@ export default function Header({
                 onClick={onOpenSettings}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200"
               >
-                <Settings className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
+                <Settings className="w-5 h-5 text-[var(--text-main)] dark:text-gray-300" />
               </button>
 
               {/* About Button - Now rightmost with arrow icon */}
@@ -327,7 +327,7 @@ export default function Header({
                 onClick={handleAboutClick}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-90 duration-200 relative"
               >
-                <ArrowRight className="w-5 h-5 text-[var(--text-main)] dark:text-gray-200" />
+                <ArrowRight className="w-5 h-5 text-[var(--text-main)] dark:text-gray-300" />
                 {showBadge && (
                   <span className="absolute top-2 right-2 flex h-2.5 w-2.5 pointer-events-none">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -351,14 +351,14 @@ export default function Header({
                     relative h-[32px] dark:h-[34px] flex items-center justify-center text-[13px] font-medium 
                     transition-all duration-300 ease-in-out rounded-xl backdrop-blur-sm overflow-hidden
                     ${isActive
-                      ? 'flex-[2] tab-active text-[var(--text-main)] dark:text-white'
+                      ? 'flex-[2] tab-active text-[var(--text-main)] dark:text-zinc-100'
                       : 'flex-1 tab-inactive text-gray-500 dark:text-gray-400 hover:bg-white/60'
                     }
                   `}
                 >
                   <span className="flex items-center gap-2 whitespace-nowrap">
                     <tab.icon
-                      className={`w-4 h-4 transition-colors duration-300 ${isActive ? tab.activeColor + ' dark:text-white' : 'text-gray-400'}`}
+                      className={`w-4 h-4 transition-colors duration-300 ${isActive ? tab.activeColor + ' dark:text-zinc-100' : 'text-gray-400'}`}
                     />
                     <span className={`${isActive ? 'font-bold' : ''}`}>
                       <span className={isActive ? "hidden" : "block md:hidden"}>

@@ -281,7 +281,7 @@ function NewsCardComponent({
                             <Heart className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
                         </button>
 
-                        <span className="text-gray-300 dark:text-gray-700">|</span>
+                        <span className="text-gray-300 dark:text-gray-800">|</span>
 
                         {/* 分类 */}
                         <button
@@ -289,12 +289,12 @@ function NewsCardComponent({
                             className="flex items-center gap-1.5 group/cat"
                         >
                             <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                            <span className="text-gray-500 dark:text-sub group-hover/cat:text-[var(--text-main)] dark:group-hover/cat:text-gray-200 transition-colors font-medium">
+                            <span className="text-gray-500 dark:text-sub group-hover/cat:text-[var(--text-main)] dark:group-hover/cat:text-gray-300 transition-colors font-medium">
                                 {displayCategory}
                             </span>
                         </button>
 
-                        <span className="text-gray-300 dark:text-gray-700">|</span>
+                        <span className="text-gray-300 dark:text-gray-800">|</span>
 
                         {/* 来源 */}
                         <div className="flex items-center gap-1.5">
@@ -393,7 +393,7 @@ function NewsCardComponent({
                             <div className="py-4 flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in slide-in-from-bottom-2">
                                 <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-[var(--text-main)] dark:text-gray-100">
+                                    <p className="text-sm font-medium text-[var(--text-main)] dark:text-gray-200">
                                         {loadingHint}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -418,7 +418,7 @@ function NewsCardComponent({
                                         <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/20 rounded-lg">
                                             <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                                         </div>
-                                        <span className="font-bold text-[var(--text-main)] dark:text-gray-100 text-base">
+                                        <span className="font-bold text-[var(--text-main)] dark:text-zinc-100 text-base">
                                             AI {settings.lang === "sc" ? "深度解读" : "深度解讀"}
                                         </span>
                                     </div>
@@ -438,7 +438,7 @@ function NewsCardComponent({
                                 </div>
 
                                 <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
-                                    <div className="text-[15px] leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">
+                                    <div className="text-[15px] leading-relaxed text-gray-700 dark:text-gray-400 whitespace-pre-wrap font-sans">
                                         {analysisContent}
                                     </div>
                                 </div>

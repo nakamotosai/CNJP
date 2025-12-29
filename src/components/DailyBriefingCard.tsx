@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useTheme } from "./ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Calendar, TrendingUp, Info, ChevronDown, ChevronUp, ExternalLink, Archive, X, Loader2, Target, AlertCircle, Compass } from "lucide-react";
+import { Sparkles, Calendar, TrendingUp, Info, ChevronDown, ChevronUp, ExternalLink, Archive, X, Loader2, Target, AlertCircle, Compass, ChevronRight } from "lucide-react";
 import Modal from "./Modal";
 import { format, eachDayOfInterval, startOfDay, isAfter, subDays } from "date-fns";
 
@@ -55,6 +55,28 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
     archiveDate?: string  // 新增：存档日期用于显示
 }) {
     const { settings } = useTheme();
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [scrollProgress, setScrollProgress] = useState(0);
+
+    // 处理横向滚动进度
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            const { scrollLeft, scrollWidth, clientWidth } = container;
+            if (scrollWidth > clientWidth) {
+                const progress = (scrollLeft / (scrollWidth - clientWidth)) * 100;
+                setScrollProgress(progress);
+            }
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        // 初始计算
+        handleScroll();
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [briefing.key_highlights]);
+
     // 获取态势定调内容
     const stanceContent = useMemo(() => {
         return (lang === "tc" && briefing.section_stance_tc) ? briefing.section_stance_tc : briefing.section_stance;
@@ -120,15 +142,15 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
     const dateForHighlight = archiveDate || "";
 
     return (
-        <div className={`p-6 md:p-10 ${isExpanded ? "space-y-8" : "space-y-0"} ${isArchive ? "max-h-[75vh] overflow-y-auto custom-scrollbar" : ""}`}>
+        <div className={`p-4 md:p-7 ${isExpanded ? "space-y-6" : "space-y-0"} ${isArchive ? "max-h-[75vh] overflow-y-auto custom-scrollbar" : ""}`}>
 
             {/* 存档日期大标题 - 仅在存档模式下显示 */}
             {isArchive && formattedArchiveDate && (
-                <div className="text-center pb-6 border-b border-gray-100 dark:border-white/10">
+                <div className="text-center pb-5 border-b border-gray-100 dark:border-white/10">
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-sub mb-2">
                         {lang === "tc" ? "歷史存檔" : "历史存档"}
                     </p>
-                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-zinc-100 tracking-tight">
                         {formattedArchiveDate}
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-sub mt-2">
@@ -139,19 +161,19 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
 
             {/* 态势定调 - 横置全宽 */}
             {stance && (
-                <div className="briefing-sub-card p-6 md:p-8 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
-                    <div className="flex items-center gap-3 mb-5 pointer-events-none">
+                <div className="briefing-sub-card p-4 md:p-6 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
+                    <div className="flex items-center gap-3 mb-4 pointer-events-none">
                         <Target className="w-4 h-4 text-red-600 dark:text-indigo-500" />
                         <h3
                             style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
-                            className="text-[17px] font-black text-[var(--text-main)] dark:text-white tracking-wide"
+                            className="text-[17px] font-black text-[var(--text-main)] dark:text-zinc-100 tracking-wide"
                         >
                             {lang === "tc" ? "中日關係AI綜合研判" : "中日关系AI综合研判"}
                         </h3>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {stance.split('\n').filter(l => l.trim()).map((line, li) => (
-                            <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                            <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
                         ))}
                     </div>
                 </div>
@@ -160,22 +182,22 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
             {/* 关键事件（左）+ 风向预测（右）- 只在展开时显示 */}
             {/* 手机端/平板端：垂直排列，大屏幕（LG）：左右排列 */}
             {isExpanded && (events || forecast) && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in duration-500">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 animate-in fade-in duration-500">
                     {/* 关键事件 - 左侧 */}
                     {events && (
-                        <div className="briefing-sub-card p-6 md:p-8 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
-                            <div className="flex items-center gap-3 mb-5 pointer-events-none">
+                        <div className="briefing-sub-card p-4 md:p-6 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
+                            <div className="flex items-center gap-3 mb-4 pointer-events-none">
                                 <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                                 <h3
                                     style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
-                                    className="text-[17px] font-black text-[var(--text-main)] dark:text-white tracking-wide"
+                                    className="text-[17px] font-black text-[var(--text-main)] dark:text-zinc-100 tracking-wide"
                                 >
                                     {lang === "tc" ? "關鍵事件" : "关键事件"}
                                 </h3>
                             </div>
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {events.split('\n').filter(l => l.trim()).map((line, li) => (
-                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
                                 ))}
                             </div>
                         </div>
@@ -183,19 +205,19 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
 
                     {/* 风向预测 - 右侧 */}
                     {forecast && (
-                        <div className="briefing-sub-card p-6 md:p-8 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
-                            <div className="flex items-center gap-3 mb-5 pointer-events-none">
+                        <div className="briefing-sub-card p-4 md:p-6 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
+                            <div className="flex items-center gap-3 mb-4 pointer-events-none">
                                 <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                 <h3
                                     style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
-                                    className="text-[17px] font-black text-[var(--text-main)] dark:text-white tracking-wide"
+                                    className="text-[17px] font-black text-[var(--text-main)] dark:text-zinc-100 tracking-wide"
                                 >
                                     {lang === "tc" ? "風向預測" : "风向预测"}
                                 </h3>
                             </div>
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {forecast.split('\n').filter(l => l.trim()).map((line, li) => (
-                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
                                 ))}
                             </div>
                         </div>
@@ -203,25 +225,50 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                 </div>
             )}
 
-            {/* 当日热点 - 重新设计的紧凑型 Top 5 布局 */}
+            {/* 当日热点 - 重新设计的紧凑型横向滑动布局 */}
             {(isExpanded || isArchive) && briefing.key_highlights && briefing.key_highlights.length > 0 && (
-                <div className="animate-in fade-in duration-500 pt-4 border-t border-gray-100 dark:border-white/5 mt-4">
-                    <div className="flex items-center gap-2 mb-5 px-1">
-                        <TrendingUp className="w-3.5 h-3.5 text-red-600 dark:text-indigo-400" />
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-sub">
-                            {lang === "tc" ? "TOP 5 HIGHLIGHTS 當日熱點" : "TOP 5 HIGHLIGHTS 当日热点"}
-                        </h3>
+                <div className="animate-in fade-in duration-500 pt-3 border-t border-gray-100 dark:border-white/5 mt-3">
+                    <div className="flex items-center justify-between mb-4 px-1">
+                        <div className="flex items-center gap-2">
+                            <TrendingUp className="w-3.5 h-3.5 text-red-600 dark:text-indigo-400" />
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-sub">
+                                {lang === "tc" ? "TOP 5 HIGHLIGHTS 當日熱點" : "TOP 5 HIGHLIGHTS 当日热点"}
+                            </h3>
+                        </div>
+                        {/* 移动端滚动进度条提示 */}
+                        <div className="md:hidden flex items-center gap-2 opacity-60">
+                            <div className="flex items-center gap-1">
+                                <span className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    {lang === "tc" ? "向右滑動" : "向右滑动"}
+                                </span>
+                                <motion.div
+                                    animate={{ x: [0, 4, 0] }}
+                                    transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
+                                >
+                                    <ChevronRight className="w-3 h-3 text-[var(--primary)] dark:text-indigo-400" />
+                                </motion.div>
+                            </div>
+                            <div className="w-12 h-1 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-[var(--primary)] dark:bg-indigo-500 transition-all duration-150 ease-out"
+                                    style={{ width: `${Math.max(15, scrollProgress)}%` }}
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* 
-                        动态网格布局：
-                        1. 移动端：紧凑型垂直列表
-                        2. 桌面端：1个大卡片置顶 + 4个小卡片分两行对齐（解决5个项目空缺问题）
+                        动态滑动网格：
+                        1. 移动端：横向滑动，高度仅为一个卡片，极大节省空间
+                        2. 桌面端：标准两列网格
                     */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div
+                        ref={scrollContainerRef}
+                        className="flex md:grid md:grid-cols-2 gap-3 overflow-x-auto md:overflow-x-visible pb-3 md:pb-0 snap-x snap-mandatory mask-fade-edges custom-scrollbar"
+                    >
                         {briefing.key_highlights.slice(0, 5).map((item, idx) => {
                             const displayTitle = (lang === "tc" && item.title_tc) ? item.title_tc : item.title;
-                            const isFeatured = idx === 0; // 第一个是特色大卡片
+                            const isFeatured = idx === 0;
 
                             return (
                                 <button
@@ -231,21 +278,24 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                                         onHighlightSelect(item, dateForHighlight);
                                     }}
                                     className={`
-                                        highlight-card group/link relative overflow-hidden
+                                        highlight-card group/link relative overflow-hidden shrink-0 snap-center
                                         flex flex-col justify-between text-left transition-all duration-300
                                         rounded-xl bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 
                                         hover:bg-gray-50 dark:hover:bg-indigo-500/[0.04] 
                                         hover:border-red-500/20 dark:hover:border-indigo-400/20 
-                                        ${isFeatured ? "md:col-span-2 p-4 md:p-6" : "p-4"}
+                                        ${isFeatured
+                                            ? "md:col-span-2 p-4 md:p-4 w-[82vw] md:w-auto"
+                                            : "p-4 w-[75vw] md:w-auto"
+                                        }
                                     `}
                                 >
-                                    {/* 背景数字水印 - 增强可见度 */}
+                                    {/* 背景数字水印 */}
                                     <span className={`absolute right-4 top-2 text-4xl font-black italic opacity-[0.12] dark:opacity-[0.15] pointer-events-none group-hover/link:opacity-30 transition-opacity`}>
                                         0{idx + 1}
                                     </span>
 
                                     <div className="relative z-10 flex flex-col h-full">
-                                        <div className="flex items-center gap-2 mb-2">
+                                        <div className="flex items-center gap-2 mb-1">
                                             <span className="text-[8px] font-black px-1.5 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-sub rounded uppercase tracking-wider">
                                                 {item.origin}
                                             </span>
@@ -254,15 +304,15 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                                         <h4
                                             style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
                                             className={`
-                                            font-black text-[var(--text-main)] dark:text-gray-200 leading-tight group-hover/link:text-red-600 dark:group-hover/link:text-indigo-400 transition-colors
-                                            ${isFeatured ? "text-base md:text-lg mb-4" : "text-[13px] line-clamp-2"}
+                                            font-semibold text-[var(--text-main)] dark:text-gray-300 leading-snug group-hover/link:text-red-600 dark:group-hover/link:text-indigo-400 transition-colors
+                                            ${isFeatured ? "text-base md:text-lg mb-1.5" : "text-[13px] line-clamp-2"}
                                         `}>
                                             {displayTitle}
                                         </h4>
 
-                                        {/* 只在特色卡片显示简短解析预览 */}
+                                        {/* 特色卡片显示预览 - 进一步压缩行数 */}
                                         {isFeatured && (
-                                            <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2 md:line-clamp-3 leading-relaxed opacity-80 mt-1">
+                                            <p className="text-[13px] text-gray-500 dark:text-gray-500 line-clamp-2 md:line-clamp-2 leading-relaxed opacity-80 mt-1">
                                                 {(lang === "tc" && item.analysis_tc) ? item.analysis_tc : item.analysis}
                                             </p>
                                         )}
@@ -270,6 +320,8 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                                 </button>
                             );
                         })}
+                        {/* 移动端右侧留白 */}
+                        <div className="w-4 shrink-0 md:hidden" />
                     </div>
                 </div>
             )}
@@ -365,7 +417,7 @@ export default function DailyBriefingCard({ data, className = "" }: DailyBriefin
 
     const loadArchiveBriefing = async (dateStr: string) => {
         setIsHistoryLoading(true);
-        setSelectedArchiveDate(dateStr); // 记录选中的日期
+        setSelectedArchiveDate(dateStr); //记录选中的日期
         try {
             const url = `https://r2.cn.saaaai.com/ollama/${dateStr}_summary.json`;
             const res = await fetch(url);
@@ -419,12 +471,12 @@ export default function DailyBriefingCard({ data, className = "" }: DailyBriefin
                         }}
                     />
                     {/* 顶部 Header */}
-                    <div className="p-5 md:p-8 border-b border-gray-50 dark:border-white/[0.03]">
+                    <div className="p-4 md:p-6 border-b border-gray-50 dark:border-white/[0.03]">
                         <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
                                 <h2
                                     style={{ textShadow: settings.theme === 'light' ? '0 2px 4px rgba(0,0,0,0.08)' : 'none' }}
-                                    className="text-lg md:text-2xl font-black text-[var(--text-main)] dark:text-white tracking-tight leading-tight mb-2"
+                                    className="text-lg md:text-2xl font-black text-[var(--text-main)] dark:text-zinc-100 tracking-tight leading-tight mb-2"
                                 >
                                     {displayTitle}
                                 </h2>
@@ -449,7 +501,7 @@ export default function DailyBriefingCard({ data, className = "" }: DailyBriefin
                                     relative flex items-center gap-2 transition-all duration-300 whitespace-nowrap flex-shrink-0 
                                     h-[34px] px-4 text-[13px] font-black active:scale-95 cursor-pointer rounded-xl
                                     ${settings.theme === 'dark'
-                                            ? 'bg-white/5 border border-white/10 hover:bg-white/10 text-white shadow-lg'
+                                            ? 'bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-100 shadow-lg'
                                             : 'bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20 hover:brightness-110'
                                         }
                                 `}
@@ -529,9 +581,9 @@ export default function DailyBriefingCard({ data, className = "" }: DailyBriefin
                         />
                     </div>
 
-                    {/* 底部引导部分 */}
+                    {/*底部引导部分 */}
                     <div
-                        className="px-8 py-4 bg-gray-50/50 dark:bg-white/[0.01] border-t border-gray-100 dark:border-white/[0.03] relative cursor-pointer select-none rounded-b-2xl"
+                        className="px-8 py-3 bg-gray-50/50 dark:bg-white/[0.01] border-t border-gray-100 dark:border-white/[0.03] relative cursor-pointer select-none rounded-b-2xl"
                         onClick={(e) => toggleExpand(e)}
                     >
                         {/* 英文声明 */}
