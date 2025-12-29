@@ -54,6 +54,7 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
     onHighlightSelect: (highlight: DailyBriefingData["key_highlights"][0], dateStr: string) => void,
     archiveDate?: string  // 新增：存档日期用于显示
 }) {
+    const { settings } = useTheme();
     // 获取态势定调内容
     const stanceContent = useMemo(() => {
         return (lang === "tc" && briefing.section_stance_tc) ? briefing.section_stance_tc : briefing.section_stance;
@@ -141,34 +142,40 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                 <div className="briefing-sub-card p-6 md:p-8 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
                     <div className="flex items-center gap-3 mb-5 pointer-events-none">
                         <Target className="w-4 h-4 text-red-600 dark:text-indigo-500" />
-                        <h3 className="text-[17px] font-black text-gray-900 dark:text-white tracking-wide">
+                        <h3
+                            style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
+                            className="text-[17px] font-black text-[var(--text-main)] dark:text-white tracking-wide"
+                        >
                             {lang === "tc" ? "中日關係AI綜合研判" : "中日关系AI综合研判"}
                         </h3>
                     </div>
                     <div className="space-y-4">
                         {stance.split('\n').filter(l => l.trim()).map((line, li) => (
-                            <p key={li} className="text-[14px] leading-[1.8] text-gray-700 dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                            <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
                         ))}
                     </div>
                 </div>
             )}
 
             {/* 关键事件（左）+ 风向预测（右）- 只在展开时显示 */}
-            {/* 手机端：垂直排列，电脑端：左右排列 */}
+            {/* 手机端/平板端：垂直排列，大屏幕（LG）：左右排列 */}
             {isExpanded && (events || forecast) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in duration-500">
                     {/* 关键事件 - 左侧 */}
                     {events && (
                         <div className="briefing-sub-card p-6 md:p-8 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
                             <div className="flex items-center gap-3 mb-5 pointer-events-none">
                                 <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                                <h3 className="text-[17px] font-black text-gray-900 dark:text-white tracking-wide">
+                                <h3
+                                    style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
+                                    className="text-[17px] font-black text-[var(--text-main)] dark:text-white tracking-wide"
+                                >
                                     {lang === "tc" ? "關鍵事件" : "关键事件"}
                                 </h3>
                             </div>
                             <div className="space-y-4">
                                 {events.split('\n').filter(l => l.trim()).map((line, li) => (
-                                    <p key={li} className="text-[14px] leading-[1.8] text-gray-700 dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
                                 ))}
                             </div>
                         </div>
@@ -179,13 +186,16 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                         <div className="briefing-sub-card p-6 md:p-8 rounded-2xl bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 shadow-sm hover:border-red-500/20 dark:hover:border-indigo-500/20 cursor-text">
                             <div className="flex items-center gap-3 mb-5 pointer-events-none">
                                 <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                <h3 className="text-[17px] font-black text-gray-900 dark:text-white tracking-wide">
+                                <h3
+                                    style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
+                                    className="text-[17px] font-black text-[var(--text-main)] dark:text-white tracking-wide"
+                                >
                                     {lang === "tc" ? "風向預測" : "风向预测"}
                                 </h3>
                             </div>
                             <div className="space-y-4">
                                 {forecast.split('\n').filter(l => l.trim()).map((line, li) => (
-                                    <p key={li} className="text-[14px] leading-[1.8] text-gray-700 dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-300 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
                                 ))}
                             </div>
                         </div>
@@ -193,22 +203,26 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                 </div>
             )}
 
-            {/* 当日热点 - 底部小卡片 */}
+            {/* 当日热点 - 重新设计的紧凑型 Top 5 布局 */}
             {(isExpanded || isArchive) && briefing.key_highlights && briefing.key_highlights.length > 0 && (
-                <div className="animate-in fade-in duration-500 pt-4">
-                    <div className="flex items-center gap-2 mb-6 px-2">
-                        <TrendingUp className="w-4 h-4 text-red-600 dark:text-indigo-400" />
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-sub">
-                            {lang === "tc" ? "Highlights 當日熱點" : "Highlights 当日热点"}
+                <div className="animate-in fade-in duration-500 pt-4 border-t border-gray-100 dark:border-white/5 mt-4">
+                    <div className="flex items-center gap-2 mb-5 px-1">
+                        <TrendingUp className="w-3.5 h-3.5 text-red-600 dark:text-indigo-400" />
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-sub">
+                            {lang === "tc" ? "TOP 5 HIGHLIGHTS 當日熱點" : "TOP 5 HIGHLIGHTS 当日热点"}
                         </h3>
                     </div>
-                    {/* 手机端：水平横滑，提升阅读空间效率 | 电脑端：标准网格 */}
-                    <div className="
-                        flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-3 pb-6 -mx-2 px-2
-                        sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible sm:snap-none sm:gap-4 sm:mx-0 sm:px-0
-                    ">
-                        {briefing.key_highlights.map((item, idx) => {
+
+                    {/* 
+                        动态网格布局：
+                        1. 移动端：紧凑型垂直列表
+                        2. 桌面端：1个大卡片置顶 + 4个小卡片分两行对齐（解决5个项目空缺问题）
+                    */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {briefing.key_highlights.slice(0, 5).map((item, idx) => {
                             const displayTitle = (lang === "tc" && item.title_tc) ? item.title_tc : item.title;
+                            const isFeatured = idx === 0; // 第一个是特色大卡片
+
                             return (
                                 <button
                                     key={idx}
@@ -216,29 +230,42 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                                         e.stopPropagation();
                                         onHighlightSelect(item, dateForHighlight);
                                     }}
-                                    className="
-                                        highlight-card group/link snap-center shrink-0
-                                        w-[85vw] sm:w-auto
-                                        p-4 md:p-5 rounded-2xl 
-                                        bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 
-                                        hover:bg-gray-50 dark:hover:bg-indigo-500/[0.03] 
-                                        hover:border-red-500/30 dark:hover:border-indigo-400/30 
-                                        transition-all flex flex-col justify-between text-left
-                                    "
+                                    className={`
+                                        highlight-card group/link relative overflow-hidden
+                                        flex flex-col justify-between text-left transition-all duration-300
+                                        rounded-xl bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 
+                                        hover:bg-gray-50 dark:hover:bg-indigo-500/[0.04] 
+                                        hover:border-red-500/20 dark:hover:border-indigo-400/20 
+                                        ${isFeatured ? "md:col-span-2 p-4 md:p-6" : "p-4"}
+                                    `}
                                 >
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-2 md:mb-3">
-                                            <span className="text-[8px] md:text-[9px] font-black px-1.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-sub rounded-md uppercase tracking-wider">
+                                    {/* 背景数字水印 - 增强可见度 */}
+                                    <span className={`absolute right-4 top-2 text-4xl font-black italic opacity-[0.12] dark:opacity-[0.15] pointer-events-none group-hover/link:opacity-30 transition-opacity`}>
+                                        0{idx + 1}
+                                    </span>
+
+                                    <div className="relative z-10 flex flex-col h-full">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-[8px] font-black px-1.5 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-sub rounded uppercase tracking-wider">
                                                 {item.origin}
                                             </span>
                                         </div>
-                                        <h4 className="text-[13px] md:text-[14px] font-black text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight group-hover/link:text-red-600 dark:group-hover/link:text-indigo-400 transition-colors">
+
+                                        <h4
+                                            style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
+                                            className={`
+                                            font-black text-[var(--text-main)] dark:text-gray-200 leading-tight group-hover/link:text-red-600 dark:group-hover/link:text-indigo-400 transition-colors
+                                            ${isFeatured ? "text-base md:text-lg mb-4" : "text-[13px] line-clamp-2"}
+                                        `}>
                                             {displayTitle}
                                         </h4>
-                                    </div>
-                                    <div className="mt-3 md:mt-4 flex items-center justify-between opacity-40 group-hover/link:opacity-100 transition-opacity">
-                                        <span className="text-[10px] md:text-[11px] italic text-gray-500 dark:text-sub">{lang === "tc" ? "解析詳情" : "解析详情"}</span>
-                                        <ExternalLink className="w-3 h-3" />
+
+                                        {/* 只在特色卡片显示简短解析预览 */}
+                                        {isFeatured && (
+                                            <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2 md:line-clamp-3 leading-relaxed opacity-80 mt-1">
+                                                {(lang === "tc" && item.analysis_tc) ? item.analysis_tc : item.analysis}
+                                            </p>
+                                        )}
                                     </div>
                                 </button>
                             );
@@ -259,6 +286,26 @@ export default function DailyBriefingCard({ data, className = "" }: DailyBriefin
     const [selectedArchiveDate, setSelectedArchiveDate] = useState<string>(""); // 新增：记录选中的日期
     const [isHistoryLoading, setIsHistoryLoading] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
+    const archiveDrawerRef = useRef<HTMLDivElement>(null);
+
+    // Close archive drawer when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (archiveDrawerRef.current && !archiveDrawerRef.current.contains(event.target as Node)) {
+                setShowArchiveDrawer(false);
+            }
+        };
+
+        if (showArchiveDrawer) {
+            document.addEventListener("mousedown", handleClickOutside);
+        } else {
+            document.removeEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showArchiveDrawer]);
 
     if (!data) return null;
 
@@ -351,152 +398,187 @@ export default function DailyBriefingCard({ data, className = "" }: DailyBriefin
 
     return (
         <>
+            {/* Outer Container for 3D Shadow - No Overflow Hidden here */}
             <div
                 ref={cardRef}
                 id="daily-briefing-card"
-                className={`w-full relative overflow-hidden rounded-2xl bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/5 shadow-2xl dark:shadow-none lg:col-span-2 ${className}`}
+                className={`w-full relative rounded-2xl shadow-[0_0_12px_rgba(0,0,0,0.08)] dark:shadow-none lg:col-span-2 transition-all duration-300 ${className}`}
+                style={{ isolation: 'isolate' }}
             >
-                {/* 顶部 Header */}
-                <div className="p-5 md:p-8 border-b border-gray-50 dark:border-white/[0.03]">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                            <h2 className="text-lg md:text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-tight mb-2">
-                                {displayTitle}
-                            </h2>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] md:text-[11px] font-bold text-gray-400 dark:text-sub uppercase tracking-wider">
-                                <span className="text-red-500 dark:text-indigo-400 font-extrabold">
-                                    {settings.lang === "tc" ? "昨日中日關係：" : "昨日中日关系："}
-                                    {activeVibe}
-                                </span>
-                                <span className="opacity-20 hidden xs:block">|</span>
-                                <div className="flex items-center gap-1">
-                                    <span className="text-gray-400">{settings.lang === "tc" ? "當日抓取報導" : "当日抓取报道"}</span>
-                                    <span className="text-red-500 dark:text-indigo-400 font-black">{data.news_count}</span>
-                                    <span className="text-gray-400">{settings.lang === "tc" ? "篇" : "篇"}</span>
+                {/* Inner Container for Content Clipping - With Overflow Hidden */}
+                <div className="w-full relative overflow-hidden rounded-2xl bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/5">
+                    {/* BRANDING WATERMARK LAYER */}
+                    <div
+                        className="absolute inset-0 opacity-[0.08] dark:opacity-[0.08] pointer-events-none z-0 select-none animate-in fade-in duration-1000 rounded-2xl"
+                        style={{
+                            backgroundImage: "url('/back.png')",
+                            backgroundSize: '550px auto',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'repeat',
+                            filter: 'grayscale(100%) brightness(0.9) contrast(1.1)',
+                        }}
+                    />
+                    {/* 顶部 Header */}
+                    <div className="p-5 md:p-8 border-b border-gray-50 dark:border-white/[0.03]">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                                <h2
+                                    style={{ textShadow: settings.theme === 'light' ? '0 2px 4px rgba(0,0,0,0.08)' : 'none' }}
+                                    className="text-lg md:text-2xl font-black text-[var(--text-main)] dark:text-white tracking-tight leading-tight mb-2"
+                                >
+                                    {displayTitle}
+                                </h2>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] md:text-[11px] font-bold text-gray-400 dark:text-sub uppercase tracking-wider">
+                                    <span className="text-[var(--primary)] dark:text-indigo-400 font-extrabold">
+                                        {settings.lang === "tc" ? "昨日中日關係：" : "昨日中日关系："}
+                                        {activeVibe}
+                                    </span>
+                                    <span className="opacity-20 hidden xs:block">|</span>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-gray-400">{settings.lang === "tc" ? "當日抓取報導" : "当日抓取报道"}</span>
+                                        <span className="text-[var(--primary)] dark:text-indigo-400 font-black">{data.news_count}</span>
+                                        <span className="text-gray-400">{settings.lang === "tc" ? "篇" : "篇"}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="relative shrink-0 pt-0.5">
-                            <button
-                                onClick={handleOpenArchive}
-                                className={`
-                                    relative flex items-center gap-1.5 transition-all duration-200 whitespace-nowrap flex-shrink-0 
-                                    h-[30px] dark:h-[32px] px-3.5 dark:px-4 text-[13px] font-bold active:scale-95 cursor-pointer
+                            <div className="relative shrink-0 pt-0.5">
+                                <button
+                                    onClick={handleOpenArchive}
+                                    className={`
+                                    relative flex items-center gap-2 transition-all duration-300 whitespace-nowrap flex-shrink-0 
+                                    h-[34px] px-4 text-[13px] font-black active:scale-95 cursor-pointer rounded-xl
                                     ${settings.theme === 'dark'
-                                        ? 'category-tag-active text-white backdrop-blur-sm'
-                                        : 'bg-red-600 text-white rounded-[0.75rem] shadow-lg shadow-red-600/20 hover:bg-red-700'
-                                    }
+                                            ? 'bg-white/5 border border-white/10 hover:bg-white/10 text-white shadow-lg'
+                                            : 'bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20 hover:brightness-110'
+                                        }
                                 `}
-                            >
-                                {settings.theme === 'dark' ? (
-                                    <span className="w-2.5 h-2.5 rounded-full rainbow-dot shrink-0" />
-                                ) : (
-                                    <Archive className="w-3.5 h-3.5" />
-                                )}
-                                <span>{settings.lang === "tc" ? "日報存檔" : "日报存档"}</span>
-                            </button>
+                                >
+                                    {settings.theme === 'dark' ? (
+                                        <div className="w-2.5 h-2.5 rounded-full ai-animated-badge shrink-0 shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+                                    ) : (
+                                        <Archive className="w-3.5 h-3.5" />
+                                    )}
+                                    <span>{settings.lang === "tc" ? "日報存檔" : "日报存档"}</span>
+                                </button>
 
-                            <AnimatePresence>
-                                {showArchiveDrawer && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="archive-drawer absolute top-full right-0 mt-3 w-44 md:w-48 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-white/10 rounded-2xl shadow-2xl z-[100] overflow-hidden"
-                                    >
-                                        <div className="p-2 border-b border-gray-50 dark:border-white/5 flex items-center justify-between">
-                                            <span className="text-[10px] font-black uppercase text-gray-400 pl-2">Select Date</span>
-                                            <button onClick={() => setShowArchiveDrawer(false)} className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"><X className="w-3 h-3" /></button>
-                                        </div>
-                                        <div className="max-h-60 overflow-y-auto custom-scrollbar p-1">
-                                            {archiveDates.map(date => (
-                                                <button
-                                                    key={date}
-                                                    onClick={() => loadArchiveBriefing(date)}
-                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 rounded-lg transition-colors flex justify-between items-center group cursor-pointer"
-                                                >
-                                                    {date}
-                                                    <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 -rotate-90" />
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                <AnimatePresence>
+                                    {showArchiveDrawer && (
+                                        <>
+                                            {/* Global transparent overlay to capture clicks */}
+                                            <div
+                                                className="fixed inset-0 z-[90] cursor-default"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowArchiveDrawer(false);
+                                                }}
+                                            />
+                                            <motion.div
+                                                ref={archiveDrawerRef}
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="archive-drawer absolute top-full right-0 mt-3 w-44 md:w-52 bg-white/95 dark:bg-[#1a1a1a]/90 backdrop-blur-2xl border border-gray-100 dark:border-white/10 rounded-2xl shadow-elevated z-[100] overflow-hidden"
+                                            >
+                                                <div className="p-3 border-b border-gray-50 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-white/[0.02]">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.1em] text-gray-400 pl-1">Select History</span>
+                                                    <button onClick={() => setShowArchiveDrawer(false)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors cursor-pointer">
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                                <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                                                    {archiveDates.map(date => (
+                                                        <button
+                                                            key={date}
+                                                            onClick={() => loadArchiveBriefing(date)}
+                                                            className="w-full text-left px-4 py-3 text-xs font-black text-gray-600 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex justify-between items-center group cursor-pointer border-b border-gray-50 dark:border-white/[0.03] last:border-0"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <Calendar className="w-3 h-3 opacity-30 group-hover:opacity-100 transition-opacity" />
+                                                                {date}
+                                                            </div>
+                                                            <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 -rotate-90 transition-all transform group-hover:translate-x-1" />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* 内容区域 - 使用 CSS max-height 替代 Framer Motion 以提升性能 */}
-                <div
-                    className={`
+                    {/* 内容区域 - 使用 CSS max-height 替代 Framer Motion 以提升性能 */}
+                    <div
+                        className={`
                         relative overflow-hidden cursor-pointer
                         transition-[max-height] duration-500 ease-out
                         ${isExpanded ? "max-h-[3000px]" : "max-h-[750px]"}
                     `}
-                    style={{ willChange: 'max-height' }}
-                    onClick={(e) => toggleExpand(e)}
-                >
-                    <BriefingContent
-                        briefing={data}
-                        isExpanded={isExpanded}
-                        lang={settings.lang}
-                        onHighlightSelect={handleHighlightSelect}
-                        archiveDate={todayDateStr}
-                    />
-                </div>
-
-                {/* 底部引导部分 */}
-                <div
-                    className="px-8 py-4 bg-gray-50/50 dark:bg-white/[0.01] border-t border-gray-100 dark:border-white/[0.03] relative cursor-pointer select-none"
-                    onClick={(e) => toggleExpand(e)}
-                >
-                    {/* 英文声明 */}
-                    <div className="flex items-center justify-between opacity-30 grayscale hover:grayscale-0 transition-all relative z-10 w-full pointer-events-none">
-                        <div className="flex items-center gap-3 shrink-0">
-                            <Info className="w-3.5 h-3.5 text-gray-400" />
-                            <p className="text-[9px] text-gray-500 dark:text-sub font-bold tracking-wider uppercase">
-                                AI AGENT CONTENT ENGINE
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                            <p className="text-[9px] text-gray-500 dark:text-sub font-bold tracking-wider uppercase">
-                                DATA AS OF {data.generated_at?.substring(0, 10) || data.timestamp}
-                            </p>
-                        </div>
+                        style={{ willChange: 'max-height' }}
+                        onClick={(e) => toggleExpand(e)}
+                    >
+                        <BriefingContent
+                            briefing={data}
+                            isExpanded={isExpanded}
+                            lang={settings.lang}
+                            onHighlightSelect={handleHighlightSelect}
+                            archiveDate={todayDateStr}
+                        />
                     </div>
 
-                    {/* 居中交互引导 - 保持原来的动画风格 */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <motion.div
-                            className="pointer-events-auto cursor-pointer flex items-center gap-1 py-1"
-                            animate={!isExpanded ? {
-                                y: [0, -12, 0],
-                                scaleY: [1, 0.9, 1.05, 1],
-                            } : {}}
-                            transition={!isExpanded ? {
-                                duration: 0.8,
-                                repeat: Infinity,
-                                repeatDelay: 1.2,
-                                ease: "easeInOut"
-                            } : {}}
-                        >
-                            {isExpanded ? (
-                                <>
-                                    <span className="text-[12px] font-bold text-gray-400 dark:text-sub">{settings.lang === "tc" ? "收起簡報" : "收起简报"}</span>
-                                    <ChevronUp className="w-4 h-4 text-gray-400 dark:text-sub" />
-                                </>
-                            ) : (
-                                <>
-                                    <span className="text-[13px] font-bold tracking-widest text-gradient-animated leading-none" style={{ fontFamily: (settings.lang === "tc" ? "'Noto Serif TC', serif" : "'Noto Serif SC', 'Songti SC', serif") }}>
-                                        {settings.lang === "tc" ? "點擊展開全文" : "点击展开全文"}
-                                    </span>
-                                    <ChevronDown className="w-3.5 h-3.5 text-red-500 dark:text-indigo-400" />
-                                </>
-                            )}
-                        </motion.div>
+                    {/* 底部引导部分 */}
+                    <div
+                        className="px-8 py-4 bg-gray-50/50 dark:bg-white/[0.01] border-t border-gray-100 dark:border-white/[0.03] relative cursor-pointer select-none rounded-b-2xl"
+                        onClick={(e) => toggleExpand(e)}
+                    >
+                        {/* 英文声明 */}
+                        <div className="flex items-center justify-between opacity-30 grayscale hover:grayscale-0 transition-all relative z-10 w-full pointer-events-none">
+                            <div className="flex items-center gap-3 shrink-0">
+                                <Info className="w-3.5 h-3.5 text-gray-400" />
+                                <p className="text-[9px] text-gray-500 dark:text-sub font-bold tracking-wider uppercase">
+                                    AI AGENT CONTENT ENGINE
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                                <p className="text-[9px] text-gray-500 dark:text-sub font-bold tracking-wider uppercase">
+                                    DATA AS OF {data.generated_at?.substring(0, 10) || data.timestamp}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* 居中交互引导 - 保持原来的动画风格 */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <motion.div
+                                className="pointer-events-auto cursor-pointer flex items-center gap-1 py-1"
+                                animate={!isExpanded ? {
+                                    y: [0, -12, 0],
+                                    scaleY: [1, 0.9, 1.05, 1],
+                                } : {}}
+                                transition={!isExpanded ? {
+                                    duration: 0.8,
+                                    repeat: Infinity,
+                                    repeatDelay: 1.2,
+                                    ease: "easeInOut"
+                                } : {}}
+                            >
+                                {isExpanded ? (
+                                    <>
+                                        <span className="text-[12px] font-bold text-gray-400 dark:text-sub">{settings.lang === "tc" ? "收起簡報" : "收起简报"}</span>
+                                        <ChevronUp className="w-4 h-4 text-gray-400 dark:text-sub" />
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="text-[13px] font-bold tracking-widest text-gradient-animated leading-none" style={{ fontFamily: (settings.lang === "tc" ? "'Noto Serif TC', serif" : "'Noto Serif SC', 'Songti SC', serif") }}>
+                                            {settings.lang === "tc" ? "點擊展開全文" : "点击展开全文"}
+                                        </span>
+                                        <ChevronDown className="w-3.5 h-3.5 text-red-500 dark:text-indigo-400" />
+                                    </>
+                                )}
+                            </motion.div>
+                        </div>
                     </div>
                 </div>
             </div>

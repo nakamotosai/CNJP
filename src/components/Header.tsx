@@ -223,9 +223,21 @@ export default function Header({
         initial={{ y: 0 }}
         animate={{ y: isVisible ? 0 : -150 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className={`${disableSticky ? '' : 'sticky top-0'} w-full bg-white/95 dark:bg-transparent backdrop-blur-md z-50 shadow-sm dark:shadow-none transition-all duration-300 border-b border-gray-200/50 dark:border-white/5`}
+        className={`${disableSticky ? '' : 'sticky top-0'} w-full bg-white/95 dark:bg-transparent backdrop-blur-md z-50 shadow-sm dark:shadow-none transition-all duration-300 border-b border-gray-200/50 dark:border-white/5 overflow-hidden`}
       >
-        <div className="relative max-w-[600px] lg:max-w-[1200px] mx-auto px-4 pt-4 pb-3">
+        {/* BRANDING WATERMARK LAYER - Pattern for Header */}
+        <div
+          className="absolute inset-0 opacity-[0.06] dark:opacity-[0.06] pointer-events-none z-0 select-none"
+          style={{
+            backgroundImage: "url('/back.png')",
+            backgroundSize: '400px auto',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'repeat',
+            filter: 'grayscale(100%) brightness(0.9) contrast(1.1)',
+          }}
+        />
+
+        <div className="relative max-w-[600px] lg:max-w-[1200px] mx-auto px-4 pt-4 pb-3 z-10">
 
           <div className="flex items-center justify-between mb-4 lg:mb-8 relative">
             {/* Title Wrapper - Absolute centered on large screens to avoid button interference */}

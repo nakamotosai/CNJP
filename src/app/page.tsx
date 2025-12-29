@@ -183,7 +183,7 @@ export default function Home() {
     }, 1500);
   }, []);
   // SECTION 1: Manual Trending Keywords
-  const trendingNow = ["高市", "滨崎步", "台湾", "逮捕", "香港"];
+  const trendingNow = ["高市", "台湾", "逮捕"];
   const TC_MAP: Record<string, string> = {
     "高市": "高市",
     "滨崎步": "濱崎步",
@@ -209,6 +209,25 @@ export default function Home() {
       console.error("Failed to load favorites", e);
     }
   }, []);
+
+  // Close archive drawer when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowArchiveDrawer(false);
+      }
+    };
+
+    if (showArchiveDrawer) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showArchiveDrawer]);
 
   // 加载下一页归档数据 (Lazy Load)
   const loadMoreHistory = async () => {
@@ -1112,6 +1131,8 @@ export default function Home() {
                   onFilterCategory={handleFilterChange}
                   archiveData={archiveData}
                   dailyBriefing={dailyBriefing}
+                  currentFilter={currentFilter}
+                  searchQuery={searchQuery}
                 />
 
                 {/* Footer / Status */}

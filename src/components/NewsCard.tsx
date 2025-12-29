@@ -109,46 +109,6 @@ function NewsCardComponent({
     const [hasCachedAnalysis, setHasCachedAnalysis] = useState<boolean | null>(null);
     const [isCheckingCache, setIsCheckingCache] = useState(false);
 
-    // 暂时禁用自动缓存检查，避免请求过多
-    // 缓存状态会在用户点击时通过正常分析流程获取
-    /*
-    useEffect(() => {
-        const checkCache = async () => {
-            if (hasCachedAnalysis !== null) return; // 已检查过
-            setIsCheckingCache(true);
-            try {
-                // 使用 HEAD 请求检查缓存（更快）
-                const response = await fetch(`${AI_ANALYZE_API}/analyze`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: item.link, check_only: true })
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    // 如果 source 是 cache，说明已解读
-                    if (data.cached === true || data.source === "cache") {
-                        setHasCachedAnalysis(true);
-                        setAiAnalysis(data.data);
-                        setAnalyzeSource("cache");
-                    } else {
-                        setHasCachedAnalysis(false);
-                    }
-                } else {
-                    setHasCachedAnalysis(false);
-                }
-            } catch {
-                setHasCachedAnalysis(false);
-            } finally {
-                setIsCheckingCache(false);
-            }
-        };
-
-        // 延迟检查，避免页面加载时大量请求
-        const timer = setTimeout(checkCache, Math.random() * 2000 + 500);
-        return () => clearTimeout(timer);
-    }, [item.link, hasCachedAnalysis]);
-    */
-
     useEffect(() => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
@@ -229,8 +189,6 @@ function NewsCardComponent({
                 try {
                     errorData = JSON.parse(errorText);
                 } catch {
-                    // 如果无法解析 JSON，可能返回的是 HTML 错误页（如 502/504）
-                    // 截取前 100 个字符作为错误概要
                     errorData = { detail: `服务器错误 (${response.status}): ${errorText.slice(0, 100)}` };
                 }
 
@@ -301,17 +259,6 @@ function NewsCardComponent({
         }
     }, [elapsedTime, queuePosition, settings.lang]);
 
-    // AI 状态文本和样式
-    const aiStatusText = useMemo(() => {
-        if (isBackgroundLoading || isAnalyzing) {
-            return settings.lang === "sc" ? "解读中..." : "解讀中...";
-        }
-        if (isLocallyAnalyzed || aiAnalysis) {
-            return settings.lang === "sc" ? "AI已解读" : "AI已解讀";
-        }
-        return settings.lang === "sc" ? "待AI解读" : "待AI解讀";
-    }, [isLocallyAnalyzed, aiAnalysis, isBackgroundLoading, isAnalyzing, settings.lang]);
-
     const isAnalyzed = isLocallyAnalyzed || aiAnalysis !== null;
 
     return (
@@ -342,7 +289,7 @@ function NewsCardComponent({
                             className="flex items-center gap-1.5 group/cat"
                         >
                             <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                            <span className="text-gray-500 dark:text-sub group-hover/cat:text-gray-900 dark:group-hover/cat:text-gray-200 transition-colors font-medium">
+                            <span className="text-gray-500 dark:text-sub group-hover/cat:text-[var(--text-main)] dark:group-hover/cat:text-gray-200 transition-colors font-medium">
                                 {displayCategory}
                             </span>
                         </button>
@@ -365,21 +312,17 @@ function NewsCardComponent({
                         <span className="text-[var(--text-aux)] tracking-wide opacity-80">{timeDisplay}</span>
                     </div>
 
-                    {/* AI 状态标签 - 右侧 */}
-                    <div
-                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all ${isBackgroundLoading || isAnalyzing
-                            ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-                            : isAnalyzed
-                                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-sm"
-                                : "bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400"
-                            }`}
-                    >
-                        {isBackgroundLoading || isAnalyzing ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                            <Sparkles className={`w-3 h-3 ${isAnalyzed ? "" : "opacity-50"}`} />
-                        )}
-                        <span>{aiStatusText}</span>
+                    {/* AI 状态标签 - 右侧极简设计 */}
+                    <div className="flex items-center">
+                        {(isBackgroundLoading || isAnalyzing) ? (
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 text-[10px] font-bold">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                            </div>
+                        ) : isAnalyzed ? (
+                            <div className="ai-animated-badge flex items-center justify-center w-[22px] h-[22px] rounded-md shadow-sm">
+                                <span className="text-[10px] font-black text-white tracking-tighter">AI</span>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 
@@ -450,7 +393,7 @@ function NewsCardComponent({
                             <div className="py-4 flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in slide-in-from-bottom-2">
                                 <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    <p className="text-sm font-medium text-[var(--text-main)] dark:text-gray-100">
                                         {loadingHint}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -475,7 +418,7 @@ function NewsCardComponent({
                                         <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/20 rounded-lg">
                                             <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                                         </div>
-                                        <span className="font-bold text-gray-900 dark:text-gray-100 text-base">
+                                        <span className="font-bold text-[var(--text-main)] dark:text-gray-100 text-base">
                                             AI {settings.lang === "sc" ? "深度解读" : "深度解讀"}
                                         </span>
                                     </div>
@@ -521,8 +464,9 @@ function NewsCardComponent({
                                 disabled={isAnalyzing}
                                 className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${isAnalyzing
                                     ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 cursor-not-allowed"
-                                    : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/25"
-                                    }`}
+                                    : "bg-[var(--primary)] text-white hover:brightness-110 shadow-lg shadow-[var(--primary)]/20"
+                                    }
+`}
                             >
                                 {isAnalyzing ? (
                                     <>

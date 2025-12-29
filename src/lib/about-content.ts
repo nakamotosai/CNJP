@@ -9,18 +9,23 @@ export interface ChangelogEntry {
     changes: string[];
 }
 
+export interface FeatureItem {
+    title: string;
+    description: string;
+    icon: string;
+}
+
 export interface AboutSection {
     title: string;
     icon: string; // lucide-react icon name
     content?: string | string[];
-    items?: string[];
+    items?: string[] | FeatureItem[];
 }
 
 export interface AboutPageConfig {
     meta: {
         pageTitle: string;
         backButton: string;
-        floatingBackButton: string;
     };
     hero: {
         title: string;
@@ -35,7 +40,7 @@ export interface AboutPageConfig {
         disclaimer: AboutSection;
         changelog: AboutSection & { entries: ChangelogEntry[] };
         contact: AboutSection;
-        donation: AboutSection;
+        donation: AboutSection & { qrLabel: string };
     };
     footer: string;
     webmasterLink: string;
@@ -45,8 +50,7 @@ export const ABOUT_PAGE_CONTENT: Record<"sc" | "tc", AboutPageConfig> = {
     sc: {
         meta: {
             pageTitle: "关于本站",
-            backButton: "返回首页",
-            floatingBackButton: "回到首页"
+            backButton: "返回首页"
         },
         hero: {
             title: "cn.saaaai.com",
@@ -59,12 +63,36 @@ export const ABOUT_PAGE_CONTENT: Record<"sc" | "tc", AboutPageConfig> = {
                 title: "核心功能",
                 icon: "Zap",
                 items: [
-                    "🔄 全网扫描：每小时轮询抓取一次全网主流日媒，新闻记录永久保存在云端",
-                    "🤖 AI日报：首页顶端展示AI自动生成的当日态势定调、关键事件及风向预测",
-                    "📰 AI解读：每篇文章均支持一键生成深度分析报告，提供事实、背景、评价及一句话总结",
-                    "📺 实时现场：内置以东京为主的实时各大景点直播信号，方便直观感受人气程度",
-                    "🗺️ 灾害脉动：集成交互式实时地震地图，当在浏览时出现M6以上地震会全局提醒。",
-                    "📂 PWA架构：渐进式架构，支持手机端添加到主屏幕，以及PC端作为PWA应用安装。"
+                    {
+                        title: "全网扫描",
+                        description: "每小时轮询抓取一次全网主流日媒，新闻记录永久保存在云端",
+                        icon: "RefreshCw"
+                    },
+                    {
+                        title: "AI日报",
+                        description: "首页顶端展示AI自动生成的当日态势定调、关键事件及风向预测",
+                        icon: "Bot"
+                    },
+                    {
+                        title: "AI解读",
+                        description: "每篇文章均支持一键生成深度分析报告，提供事实、背景、评价及一句话总结",
+                        icon: "Sparkles"
+                    },
+                    {
+                        title: "实时现场",
+                        description: "内置以东京为主的实时各大景点直播信号，方便直观感受人气程度",
+                        icon: "Tv"
+                    },
+                    {
+                        title: "灾害脉动",
+                        description: "集成交互式实时地震地图，当在浏览时出现M6以上地震会全局提醒",
+                        icon: "Activity"
+                    },
+                    {
+                        title: "PWA架构",
+                        description: "渐进式架构，支持手机端添加到主屏幕，以及PC端作为PWA应用安装",
+                        icon: "Smartphone"
+                    }
                 ]
             },
             usage: {
@@ -153,6 +181,7 @@ export const ABOUT_PAGE_CONTENT: Record<"sc" | "tc", AboutPageConfig> = {
             donation: {
                 title: "微信打赏",
                 icon: "Coffee",
+                qrLabel: "微信红包打赏",
                 content: [
                     "本站目前极低成本运营，AI功能由本人显卡内网穿透实现，纯用爱发电。",
                     "如果对您有帮助或者希望日后增加更多功能，可以微信打赏助力站长，凑满经费继续升级。",
@@ -166,8 +195,7 @@ export const ABOUT_PAGE_CONTENT: Record<"sc" | "tc", AboutPageConfig> = {
     tc: {
         meta: {
             pageTitle: "關於本站",
-            backButton: "返回首頁",
-            floatingBackButton: "回到首頁"
+            backButton: "返回首頁"
         },
         hero: {
             title: "cn.saaaai.com",
@@ -180,12 +208,36 @@ export const ABOUT_PAGE_CONTENT: Record<"sc" | "tc", AboutPageConfig> = {
                 title: "核心功能",
                 icon: "Zap",
                 items: [
-                    "🔄 全網掃描：每小時輪詢抓取一次全網主流日媒，新聞記錄永久保存在雲端",
-                    "🤖 AI日報：首頁頂端展示AI自動生成的當日態勢定調、關鍵事件及風向預測",
-                    "📰 AI解讀：每篇文章均支持一鍵生成深度分析報告，提供事實、背景、評價及一句話總結",
-                    "📺 實時現場：內置以東京為主的實時各大景點直播信號，方便直觀感受人氣程度",
-                    "🗺️ 災害脈動：集成交互式實時地震地圖，當在瀏覽時出現M6以上地震會全局提醒。",
-                    "📂 PWA架構：漸進式架構，支持手機端添加到主屏幕，以及PC端作為PWA應用安裝。"
+                    {
+                        title: "全網掃描",
+                        description: "每小時輪詢抓取一次全網主流日媒，新聞記錄永久保存在雲端",
+                        icon: "RefreshCw"
+                    },
+                    {
+                        title: "AI日報",
+                        description: "首頁頂端展示AI自動生成的當日態勢定調、關鍵事件及風向預測",
+                        icon: "Bot"
+                    },
+                    {
+                        title: "AI解讀",
+                        description: "每篇文章均支持一鍵生成深度分析報告，提供事實、背景、評價及一句話總結",
+                        icon: "Sparkles"
+                    },
+                    {
+                        title: "實時現場",
+                        description: "內置以東京為主的實時各大景點直播信號，方便直觀感受人氣程度",
+                        icon: "Tv"
+                    },
+                    {
+                        title: "災害脈動",
+                        description: "集成交互式實時地震地圖，當在瀏覽時出現M6以上地震會全局提醒",
+                        icon: "Activity"
+                    },
+                    {
+                        title: "PWA架構",
+                        description: "漸進式架構，支持手機端添加到主屏幕，以及PC端作為PWA應用安裝",
+                        icon: "Smartphone"
+                    }
                 ]
             },
             usage: {
@@ -274,6 +326,7 @@ export const ABOUT_PAGE_CONTENT: Record<"sc" | "tc", AboutPageConfig> = {
             donation: {
                 title: "微信打賞",
                 icon: "Coffee",
+                qrLabel: "微信紅包打賞",
                 content: [
                     "本站目前極低成本運營，AI功能由本人顯卡內網穿透實現，純用愛發電。",
                     "如果對您有幫助或者希望日後增加更多功能，可以微信打賞助力站長，湊滿經費繼續升級。",

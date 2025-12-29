@@ -10,20 +10,23 @@
 :root {
   /* Enforce scrollbar to prevent layout shift */
   overflow-y: scroll;
-  /* Light Mode */
-  --primary: #c62828;
-  --accent: #d32f2f;
-  --background: #f5f7fa;
+  /* Light Mode - Refined Newspaper Aesthetic */
+  --primary: #f75e5e;
+  /* Watermelon Red */
+  --accent: #ff7676;
+  /* Lighter watermelon red */
+  --background: #fafafa;
+  /* Cleaner, colder off-white background */
   --card: #ffffff;
-  --text-main: #1f2937;
-  --text-sub: #6b7280;
-  --text-aux: #9ca3af;
-  --border: #e5e7eb;
+  --text-main: #454545;
+  /* Deep grey for main content */
+  --text-sub: #666666;
+  --text-aux: #999999;
+  --border: #f0f0f0;
+  /* Cleaner border */
   --radius-standard: 1rem;
-  --shadow-standard: 0 2px 12px rgba(0, 0, 0, 0.06);
-  --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.18);
-  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.12);
+  --shadow-standard: 0 2px 12px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .dark {
@@ -164,10 +167,16 @@ body[data-font-style="sans"][data-lang="tc"] {
   }
 }
 
+/* Watermelon Red-themed dot for Light Mode */
 .rainbow-dot {
-  background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #5f27cd);
+  background: linear-gradient(135deg, #f75e5e, #ff7676, #fafafa, #ff7676, #f75e5e);
   background-size: 300% 300%;
   animation: rainbow-shift 3s ease infinite;
+}
+
+.dark .rainbow-dot {
+  background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #5f27cd);
+  background-size: 300% 300%;
 }
 
 /* ============================================= */
@@ -275,8 +284,8 @@ body[data-font-style="sans"][data-lang="tc"] {
 /* Inactive Tab - Light mode: light bg, Dark mode: transparent */
 .tab-inactive {
   /* Light mode default */
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid #f3f4f6;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid #e2e8f0;
 }
 
 .dark .tab-inactive {
@@ -484,22 +493,74 @@ body[data-font-style="sans"][data-lang="tc"] {
   }
 }
 
-
-
-.dark .text-gradient-animated {
-  background: linear-gradient(to right,
-      #ffffff 0%,
-      #3b82f6 30%,
-      #8b5cf6 50%,
-      #3b82f6 70%,
-      #ffffff 100%);
+/* Watermelon Red-White Gradient for Text Flow */
+.text-gradient-animated,
+.blue-purple-gradient-text {
+  background-image: linear-gradient(to right,
+      #f75e5e 0%,
+      #ff7676 25%,
+      #fafafa 50%,
+      #ff7676 75%,
+      #f75e5e 100%);
   background-size: 200% auto;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation: text-shine 10s linear infinite;
+  color: transparent !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  animation: text-shine 6s linear infinite;
+  display: inline-block;
   text-shadow: none !important;
-  /* Remove shadow to ensure clean gradient text */
+}
+
+.dark .text-gradient-animated,
+.dark .blue-purple-gradient-text {
+  background-image: linear-gradient(to right,
+      #818cf8 0%,
+      #a78bfa 25%,
+      #ffffff 50%,
+      #a78bfa 75%,
+      #818cf8 100%);
+  background-size: 200% auto;
+  /* Ensure clipping is not reset by background redefined in some browsers */
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+
+/* AI Animated Mesh Badge */
+@keyframes mesh-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.ai-animated-badge {
+  /* Watermelon Red flow for Light Mode */
+  background: linear-gradient(-45deg,
+      #f75e5e 0%,
+      #ff7676 35%,
+      #fafafa 65%,
+      #f75e5e 100%);
+  background-size: 300% 300%;
+  animation: mesh-gradient 8s ease-in-out infinite;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(247, 94, 94, 0.1);
+}
+
+.dark .ai-animated-badge {
+  /* Three-color flow: White, Blue, Purple for Dark Mode */
+  background: linear-gradient(-45deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(99, 102, 241, 0.6),
+      rgba(168, 85, 247, 0.6),
+      rgba(255, 255, 255, 0.9));
+  background-size: 300% 300%;
 }
 
 /* Shimmer animation for skeleton loading states */
@@ -548,22 +609,4 @@ body[data-font-style="sans"][data-lang="tc"] {
 /* Optimize transform performance for marquee elements */
 .will-change-transform {
   will-change: transform;
-}
-
-/* Blue Purple Gradient Animation for specific text */
-.blue-purple-gradient-text {
-  background: linear-gradient(
-    to right, 
-    #3b82f6 0%, 
-    #8b5cf6 25%, 
-    #d946ef 50%, 
-    #8b5cf6 75%, 
-    #3b82f6 100%
-  );
-  background-size: 200% auto;
-  color: transparent !important;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation: text-shine 4s linear infinite;
-  display: inline-block;
 }

@@ -6,6 +6,8 @@ import DailyBriefingCard, { DailyBriefingData } from "./DailyBriefingCard";
 import { useTheme } from "./ThemeContext";
 import { Loader2 } from "lucide-react";
 
+import { motion, AnimatePresence } from "framer-motion";
+
 interface NewsListProps {
   news: NewsItem[];
   isLoading: boolean;
@@ -15,6 +17,8 @@ interface NewsListProps {
   onFilterCategory: (category: string) => void;
   archiveData: Record<string, NewsItem[]>;
   dailyBriefing: DailyBriefingData | null;
+  currentFilter: string;
+  searchQuery: string;
 }
 
 export default function NewsList({
@@ -24,6 +28,8 @@ export default function NewsList({
   favorites,
   onFilterCategory,
   dailyBriefing,
+  currentFilter,
+  searchQuery,
 }: NewsListProps) {
   const { settings } = useTheme();
 
@@ -55,12 +61,42 @@ export default function NewsList({
   // Pure CSS Grid rendering - No JS height/width calculations
   return (
     <div className="px-4 lg:pb-6">
-      {/* Daily Briefing Card */}
-      {dailyBriefing && (
-        <div className="mb-4 lg:mb-6">
-          <DailyBriefingCard data={dailyBriefing} className="w-full" />
-        </div>
-      )}
+      {/* Daily Briefing Card - Only show when "All" is selected and NO search is active */}
+      <AnimatePresence>
+        {dailyBriefing && currentFilter === "all" && !searchQuery && (
+          <motion.div
+            key="daily-briefing"
+            initial={{ opacity: 0, height: 0, marginBottom: 0, overflow: 'hidden' }}
+            animate={{
+              opacity: 1,
+              height: 'auto',
+              marginBottom: 24,
+              transition: {
+                height: { duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] },
+                opacity: { duration: 0.3, delay: 0.1 }
+              }
+            }}
+            onAnimationComplete={() => {
+              // Ensure shadow isn't clipped after entrance animation
+              const el = document.getElementById('daily-briefing-wrapper');
+              if (el) el.style.overflow = 'visible';
+            }}
+            id="daily-briefing-wrapper"
+            exit={{
+              opacity: 0,
+              height: 0,
+              marginBottom: 0,
+              transition: {
+                height: { duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] },
+                opacity: { duration: 0.2 }
+              }
+            }}
+            className="w-full"
+          >
+            <DailyBriefingCard data={dailyBriefing} className="w-full" />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* News Grid - Purely CSS driven */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">

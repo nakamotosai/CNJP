@@ -201,6 +201,20 @@ export default function CategoryNav({
       onTouchEnd={handleTouchEnd}
     >
       <nav className="category-nav-container w-full max-w-[600px] lg:max-w-[1200px] h-[38px] mx-auto flex items-center px-1 dark:px-0 mt-3 dark:py-1">
+        {/* Left Toggle Button - Fixed width for perfect alignment */}
+        <div className="flex items-center justify-center w-[52px] border-r border-gray-100 dark:border-white/10 shrink-0 h-4">
+          <button
+            onClick={handleToggleStop}
+            className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full 
+                       bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 
+                       hover:bg-gray-200 dark:hover:bg-white/10 hover:scale-110
+                       active:scale-95 transition-all"
+            title={isStopped ? "Resume Scrolling" : "Stop Scrolling"}
+          >
+            {isStopped ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3 fill-current" />}
+          </button>
+        </div>
+
         <div className="relative flex-1 overflow-hidden mask-fade-edges">
           <div
             ref={contentRef}
@@ -215,7 +229,6 @@ export default function CategoryNav({
               const isActiveFilter = currentFilter === cat.key;
               const isAllButton = cat.key === 'all';
               const dotColor = CATEGORY_DOT_COLORS[cat.key] || "bg-gray-400";
-              const tagColorClass = TAG_COLOR_CLASSES[cat.key] || "";
 
               return (
                 <button
@@ -223,17 +236,19 @@ export default function CategoryNav({
                   onClick={() => handleCategoryClick(cat.key, cat.label)}
                   className={`
                     relative flex items-center gap-1.5 text-[13px] transition-all duration-200 
-                    whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[30px] dark:h-[32px] backdrop-blur-sm
-                    ${isActiveFilter
-                      ? `category-tag-active text-gray-900 dark:text-white font-bold`
-                      : `category-tag-inactive ${tagColorClass} text-gray-700 dark:text-gray-300 font-medium`
+                    whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[30px] dark:h-[32px] rounded-xl
+                    ${isAllButton && isActiveFilter
+                      ? `category-tag-active text-[var(--text-main)] dark:text-white font-bold` // Rich look for All button
+                      : isActiveFilter
+                        ? `bg-gray-100/80 dark:bg-white/10 text-[var(--text-main)] dark:text-white font-bold` // Simple active for others
+                        : `text-gray-500 hover:text-[var(--text-main)] dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 font-medium` // Clean inactive for all
                     }
                   `}
                 >
                   {isAllButton ? (
                     <span className="w-2.5 h-2.5 rounded-full rainbow-dot shrink-0" />
                   ) : (
-                    <span className={`w-1.5 h-1.5 rounded-full ${dotColor} shrink-0`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${dotColor} shrink-0 opacity-60 group-hover:opacity-100 transition-opacity`} />
                   )}
                   <span className={isAllButton ? "font-bold" : ""}>{getCategoryLabel(cat.key, cat.label)}</span>
                 </button>
@@ -241,17 +256,6 @@ export default function CategoryNav({
             })}
           </div>
         </div>
-
-        <button
-          onClick={handleToggleStop}
-          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full 
-                     bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 
-                     hover:bg-gray-200 dark:hover:bg-white/20 hover:scale-110
-                     active:scale-95 transition-all ml-2.5"
-          title={isStopped ? "Resume Scrolling" : "Stop Scrolling"}
-        >
-          {isStopped ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3 fill-current" />}
-        </button>
       </nav>
     </div>
   );

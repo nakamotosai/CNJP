@@ -250,9 +250,8 @@ export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
         <div className="w-full mb-3 mt-3">
             <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] h-[38px] mx-auto flex items-center px-1 dark:px-0">
 
-                {/* Left Label */}
-                <div className="flex items-center gap-1.5 pl-1 pr-3 border-r border-gray-100 dark:border-white/10 shrink-0 h-4">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                {/* Left Label - Fixed width for perfect alignment */}
+                <div className="flex items-center justify-center w-[52px] border-r border-gray-100 dark:border-white/10 shrink-0 h-4">
                     <span className="text-[13px] font-medium text-gray-600 dark:text-gray-400 leading-none">
                         {settings.lang === 'tc' ? '熱議' : '热议'}
                     </span>
@@ -305,14 +304,26 @@ export default function BulletinBoard({ isActive = true }: BulletinBoardProps) {
                     }}
                     disabled={cooldownRemaining > 0}
                     className={cn(
-                        "relative flex items-center gap-1.5 text-[13px] transition-all duration-200 whitespace-nowrap flex-shrink-0 px-3.5 dark:px-4 h-[30px] dark:h-[32px] backdrop-blur-sm ml-2",
+                        "relative flex items-center gap-2 transition-all duration-300 whitespace-nowrap flex-shrink-0 h-[34px] px-4 text-[13px] font-black active:scale-95 cursor-pointer rounded-xl ml-2 shadow-lg",
                         cooldownRemaining > 0
-                            ? "category-tag-inactive text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                            : "category-tag-active text-gray-900 dark:text-white font-bold hover:brightness-105 active:scale-95"
+                            ? "bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-white/5"
+                            : settings.theme === 'dark'
+                                ? "bg-white/5 border border-white/10 hover:bg-white/10 text-white"
+                                : "bg-[var(--primary)] text-white hover:brightness-110 shadow-[var(--primary)]/20"
                     )}
                 >
-                    <span className="w-2.5 h-2.5 rounded-full rainbow-dot shrink-0" />
-                    <span className="">{cooldownRemaining > 0 ? `${cooldownRemaining}s` : (settings.lang === 'tc' ? '發聲' : '发声')}</span>
+                    {cooldownRemaining > 0 ? (
+                        <span className="w-3.5 h-3.5 flex items-center justify-center text-[10px] font-bold border border-current rounded-full">
+                            {cooldownRemaining}
+                        </span>
+                    ) : (
+                        settings.theme === 'dark' ? (
+                            <div className="w-2.5 h-2.5 rounded-full ai-animated-badge shrink-0 shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+                        ) : (
+                            <Send className="w-3.5 h-3.5" />
+                        )
+                    )}
+                    <span>{cooldownRemaining > 0 ? `冷却中` : (settings.lang === 'tc' ? '發聲' : '发声')}</span>
                 </button>
             </div>
 

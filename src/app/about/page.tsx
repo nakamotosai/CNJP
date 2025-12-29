@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "@/components/ThemeContext";
-import { ABOUT_PAGE_CONTENT, ChangelogEntry } from "@/lib/about-content";
+import { ABOUT_PAGE_CONTENT, ChangelogEntry, FeatureItem } from "@/lib/about-content";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ArrowLeft,
@@ -15,7 +15,13 @@ import {
     Coffee,
     ChevronDown,
     Settings,
-    ExternalLink
+    ExternalLink,
+    RefreshCw,
+    Bot,
+    Sparkles,
+    Tv,
+    Activity,
+    Smartphone
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -31,7 +37,13 @@ const ICON_MAP: Record<string, React.ElementType> = {
     History,
     Mail,
     Coffee,
-    Info
+    Info,
+    RefreshCw,
+    Bot,
+    Sparkles,
+    Tv,
+    Activity,
+    Smartphone
 };
 
 // Color mapping for each section
@@ -43,6 +55,16 @@ const SECTION_COLORS: Record<string, { bg: string; text: string; border: string 
     changelog: { bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", border: "border-purple-500/30" },
     contact: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30" },
     donation: { bg: "bg-pink-500/10", text: "text-pink-600 dark:text-pink-400", border: "border-pink-500/30" }
+};
+
+// Feature specific colors
+const FEATURE_COLORS: Record<string, { icon: string; bg: string }> = {
+    RefreshCw: { icon: "text-blue-500", bg: "bg-blue-500/10" },
+    Bot: { icon: "text-purple-500", bg: "bg-purple-500/10" },
+    Sparkles: { icon: "text-amber-500", bg: "bg-amber-500/10" },
+    Tv: { icon: "text-red-500", bg: "bg-red-500/10" },
+    Activity: { icon: "text-orange-500", bg: "bg-orange-500/10" },
+    Smartphone: { icon: "text-emerald-500", bg: "bg-emerald-500/10" }
 };
 
 interface AccordionSectionProps {
@@ -66,6 +88,7 @@ function AccordionSection({
 }: AccordionSectionProps) {
     const IconComponent = ICON_MAP[iconName] || Info;
     const colors = SECTION_COLORS[sectionKey] || SECTION_COLORS.features;
+    const { settings } = useTheme();
 
     return (
         <div className={`
@@ -82,7 +105,7 @@ function AccordionSection({
                     <div className={`p-2.5 rounded-xl ${colors.bg}`}>
                         <IconComponent className={`w-5 h-5 ${colors.text}`} />
                     </div>
-                    <h3 style={fontStyle} className="text-lg font-bold text-[var(--text-main)]">
+                    <h3 style={{ ...fontStyle, textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none' }} className="text-lg font-bold text-[var(--text-main)]">
                         {title}
                     </h3>
                 </div>
@@ -190,10 +213,10 @@ export default function AboutPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#0b0d12] transition-colors duration-500 pb-24 overflow-x-hidden">
+        <div className="min-h-screen bg-[var(--background)] dark:bg-[#0b0d12] transition-colors duration-500 pb-24 overflow-x-hidden">
 
             {/* Top Navigation Bar - Seamless with background */}
-            <nav className="sticky top-0 z-50 w-full bg-slate-50/90 dark:bg-transparent backdrop-blur-md">
+            <nav className="sticky top-0 z-50 w-full bg-[var(--background)]/90 dark:bg-transparent backdrop-blur-md">
                 <div className="max-w-[800px] mx-auto px-4 h-14 flex items-center justify-between">
                     <Link
                         href="/"
@@ -202,7 +225,7 @@ export default function AboutPage() {
                         <ArrowLeft className="w-5 h-5" />
                         <span className="text-sm font-medium whitespace-nowrap">{content.meta.backButton}</span>
                     </Link>
-                    <h1 style={fontStyle} className="text-base sm:text-lg font-bold text-[var(--text-main)] truncate text-center flex-1">
+                    <h1 style={{ ...fontStyle, textShadow: settings.theme === 'light' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none' }} className="text-base sm:text-lg font-bold text-[var(--text-main)] truncate text-center flex-1">
                         {renderTitleWithGradient(content.hero.title)}
                     </h1>
                     {/* Right Buttons: Language Toggle + Settings */}
@@ -234,62 +257,62 @@ export default function AboutPage() {
                 <motion.section
                     initial={false}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 mb-8"
+                    className="flex flex-col sm:flex-row items-center sm:justify-between gap-6 mb-12"
                 >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6">
                         <motion.div
                             animate={{ rotate: [0, 3, -3, 0] }}
                             transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                            className="w-14 h-14 shrink-0 p-2 bg-white dark:bg-white/5 rounded-2xl shadow-lg border border-black/5 dark:border-white/10"
+                            className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 p-3 sm:p-4 bg-white dark:bg-white/5 rounded-[24px] sm:rounded-[32px] shadow-xl border border-black/5 dark:border-white/10"
                         >
-                            <Image src="/logo.png" alt="Logo" width={56} height={56} priority className="object-contain" />
+                            <Image src="/logo.png" alt="Logo" width={96} height={96} priority className="object-contain w-full h-full" />
                         </motion.div>
                         <div className="flex flex-col">
-                            <h2 style={fontStyle} className="text-lg sm:text-xl font-extrabold text-[var(--text-main)] mb-0.5">
+                            <h2 style={{ ...fontStyle, textShadow: settings.theme === 'light' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none' }} className="text-2xl sm:text-4xl font-extrabold text-[var(--text-main)] mb-1">
                                 {renderTitleWithGradient(content.hero.subtitle, true)}
                             </h2>
-                            <p className="text-[var(--text-sub)] opacity-70 tracking-widest text-[10px] uppercase">
+                            <p className="text-[var(--text-sub)] opacity-70 tracking-[0.2em] text-xs sm:text-sm uppercase font-medium">
                                 {content.hero.description}
                             </p>
                         </div>
                     </div>
                     {/* Webmaster Quote - Desktop */}
-                    <div className="hidden sm:block max-w-[45%]">
+                    <div className="hidden sm:block max-w-[35%]">
                         <div className="flex items-start">
-                            <span className="text-3xl text-[var(--primary)] dark:text-purple-400 opacity-50 font-serif leading-none shrink-0 mr-2 self-end">“</span>
+                            <span className="text-4xl text-[var(--primary)] dark:text-purple-400 opacity-30 font-serif leading-none shrink-0 mr-2 self-end">“</span>
                             <div className="flex flex-col items-end pr-2">
-                                <p className="text-xs sm:text-sm text-[var(--text-sub)] italic leading-relaxed">
+                                <p className="text-sm text-[var(--text-sub)] italic opacity-80 leading-relaxed">
                                     {content.hero.webmasterQuote}
                                 </p>
-                                <p className="text-xs sm:text-sm text-[var(--text-sub)] italic leading-relaxed mt-0.5">
+                                <p className="text-sm text-[var(--primary)] dark:text-purple-400 font-medium mt-1">
                                     —— {settings.lang === 'sc' ? '来自站长' : '來自站長'}
                                 </p>
                             </div>
-                            <span className="text-3xl text-[var(--primary)] dark:text-purple-400 opacity-50 font-serif leading-none shrink-0 self-end">”</span>
+                            <span className="text-4xl text-[var(--primary)] dark:text-purple-400 opacity-30 font-serif leading-none shrink-0 self-end">”</span>
                         </div>
                     </div>
                 </motion.section>
 
                 {/* Mobile Webmaster Quote */}
-                <div className="sm:hidden flex justify-center mb-6 px-4">
+                <div className="sm:hidden flex justify-center mb-10 px-4">
                     <div className="flex items-start">
-                        <span className="text-2xl text-[var(--primary)] dark:text-purple-400 opacity-50 font-serif leading-none shrink-0 mr-1 self-end">“</span>
+                        <span className="text-2xl text-[var(--primary)] dark:text-purple-400 opacity-30 font-serif leading-none shrink-0 mr-1 self-end">“</span>
                         <div className="flex flex-col items-end pr-1">
-                            <p className="text-xs text-[var(--text-sub)] italic leading-relaxed">
+                            <p className="text-xs text-[var(--text-sub)] italic opacity-80 leading-relaxed">
                                 {content.hero.webmasterQuote}
                             </p>
-                            <p className="text-xs text-[var(--text-sub)] italic leading-relaxed mt-0.5">
+                            <p className="text-xs text-[var(--primary)] dark:text-purple-400 font-medium mt-1">
                                 —— {settings.lang === 'sc' ? '来自站长' : '來自站長'}
                             </p>
                         </div>
-                        <span className="text-2xl text-[var(--primary)] dark:text-purple-400 opacity-50 font-serif leading-none shrink-0 self-end">”</span>
+                        <span className="text-2xl text-[var(--primary)] dark:text-purple-400 opacity-30 font-serif leading-none shrink-0 self-end">”</span>
                     </div>
                 </div>
 
                 {/* Accordion Sections */}
                 <div className="space-y-3">
 
-                    {/* Usage */}
+                    {/* Usage Guide */}
                     <AccordionSection
                         sectionKey="usage"
                         title={content.sections.usage.title}
@@ -299,18 +322,16 @@ export default function AboutPage() {
                         fontStyle={fontStyle}
                     >
                         <div className="space-y-2">
-                            {content.sections.usage.items?.map((item, i) => (
-                                <div key={i} className="flex gap-3 items-start group">
-                                    <span className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-600 dark:text-teal-400 text-xs flex items-center justify-center shrink-0 font-bold group-hover:bg-teal-500 group-hover:text-white transition-colors duration-300">
-                                        {i + 1}
-                                    </span>
-                                    <p className="text-sm text-[var(--text-main)] opacity-80 leading-relaxed pt-0.5">{item}</p>
+                            {(content.sections.usage.items as string[])?.map((item, i) => (
+                                <div key={i} className="flex gap-4 items-start group">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-teal-500/60 dark:bg-teal-400/60 mt-2 shrink-0 group-hover:bg-teal-500 group-hover:scale-125 transition-all duration-300" />
+                                    <p className="text-sm text-[var(--text-main)] opacity-80 leading-relaxed">{item}</p>
                                 </div>
                             ))}
                         </div>
                     </AccordionSection>
 
-                    {/* Features */}
+                    {/* Core Features */}
                     <AccordionSection
                         sectionKey="features"
                         title={content.sections.features.title}
@@ -319,12 +340,26 @@ export default function AboutPage() {
                         onToggle={() => toggleSection("features")}
                         fontStyle={fontStyle}
                     >
-                        <div className="grid sm:grid-cols-2 gap-3">
-                            {content.sections.features.items?.map((item, i) => (
-                                <div key={i} className="p-3 rounded-xl border border-black/10 dark:border-white/10 flex items-start gap-2">
-                                    <span className="text-sm text-[var(--text-main)] opacity-90 leading-relaxed">{item}</span>
-                                </div>
-                            ))}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 py-2">
+                            {(content.sections.features.items as FeatureItem[])?.map((item, i) => {
+                                const IconComponent = ICON_MAP[item.icon] || Zap;
+                                const featureColors = FEATURE_COLORS[item.icon] || FEATURE_COLORS.RefreshCw;
+                                return (
+                                    <div key={i} className="flex gap-4 items-start group">
+                                        <div className={`p-2 rounded-xl ${featureColors.bg} shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                                            <IconComponent className={`w-5 h-5 ${featureColors.icon}`} />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <h4 style={fontStyle} className="text-sm font-bold text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors">
+                                                {item.title}
+                                            </h4>
+                                            <p className="text-xs text-[var(--text-sub)] opacity-70 leading-relaxed line-clamp-2 sm:line-clamp-none">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </AccordionSection>
 
@@ -337,21 +372,21 @@ export default function AboutPage() {
                         onToggle={() => toggleSection("chinaUsers")}
                         fontStyle={fontStyle}
                     >
-                        <div className="space-y-3 text-sm text-[var(--text-main)] opacity-90 leading-relaxed">
+                        <div className="space-y-2">
                             {Array.isArray(content.sections.chinaUsers.content) ? (
                                 content.sections.chinaUsers.content.map((p, i) => (
-                                    <p key={i} className="flex items-start gap-2">
-                                        <span className="text-red-500 dark:text-red-400 shrink-0">•</span>
-                                        {p}
-                                    </p>
+                                    <div key={i} className="flex gap-4 items-start group">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500/60 dark:bg-red-400/60 mt-2 shrink-0 group-hover:bg-red-500 group-hover:scale-125 transition-all duration-300" />
+                                        <p className="text-sm text-[var(--text-main)] opacity-80 leading-relaxed">{p}</p>
+                                    </div>
                                 ))
                             ) : (
-                                <p>{content.sections.chinaUsers.content}</p>
+                                <p className="text-sm text-[var(--text-main)] opacity-80 leading-relaxed">{content.sections.chinaUsers.content}</p>
                             )}
                         </div>
                     </AccordionSection>
 
-                    {/* Donation - Moved BEFORE Disclaimer */}
+                    {/* Donation */}
                     <AccordionSection
                         sectionKey="donation"
                         title={content.sections.donation.title}
@@ -374,7 +409,7 @@ export default function AboutPage() {
                                 <div className="bg-white dark:bg-white/10 p-3 rounded-2xl shadow-lg">
                                     <Image src="/qrcode.jpg" alt="Donation QR" width={120} height={120} className="rounded-lg" />
                                     <p className="text-[10px] text-black/40 dark:text-white/40 text-center mt-2 font-bold uppercase tracking-widest">
-                                        WeChat Pay
+                                        {content.sections.donation.qrLabel}
                                     </p>
                                 </div>
                             </div>
@@ -417,7 +452,7 @@ export default function AboutPage() {
                         </div>
                     </AccordionSection>
 
-                    {/* Disclaimer - Moved to LAST position */}
+                    {/* Disclaimer */}
                     <AccordionSection
                         sectionKey="disclaimer"
                         title={content.sections.disclaimer.title}
@@ -469,21 +504,6 @@ export default function AboutPage() {
                 </motion.footer>
 
             </main>
-
-            {/* Floating Back Button (Mobile) */}
-            <motion.div
-                initial={{ y: 100 }}
-                animate={{ y: 0 }}
-                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 sm:hidden"
-            >
-                <Link
-                    href="/"
-                    className="flex items-center gap-2 px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-full shadow-2xl active:scale-95 transition-transform"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span className="text-sm font-bold">{content.meta.floatingBackButton}</span>
-                </Link>
-            </motion.div>
 
             {/* Settings Modal */}
             <SettingsModal
