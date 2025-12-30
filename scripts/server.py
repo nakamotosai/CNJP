@@ -3,6 +3,7 @@ import hashlib
 import asyncio
 import logging
 import sys
+import socket
 from datetime import datetime
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Body
@@ -142,6 +143,47 @@ async def put_cache(hash_id: str, data: dict):
         Body=json.dumps(data, ensure_ascii=False),
         ContentType='application/json'
     )
+
+def is_port_in_use(port: int) -> bool:
+    """检查端口是否被占用"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(('0.0.0.0', port))
+            return False
+        except OSError:
+            return True
+
+def kill_process_on_port(port: int):
+    """杀死占用指定端口的进程（Windows版本）"""
+    import subprocess
+    try:
+        # 查找占用端口的进程
+        result = subprocess.run(
+            ['netstat', '-ano'],
+            capture_output=True,
+            text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        )
+        
+        for line in result.stdout.split('\n'):
+            if f':{port}' in line and 'LISTENING' in line:
+                parts = line.split()
+                if parts:
+                    pid = parts[-1]
+                    try:
+                        pid_int = int(pid)
+                        # 不要杀死自己
+                        if pid_int != os.getpid():
+                            logger.info(f"PORT_CLEANUP | Killing process {pid} on port {port}")
+                            subprocess.run(
+                                ['taskkill', '/F', '/PID', pid],
+                                capture_output=True,
+                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                            )
+                    except (ValueError, subprocess.SubprocessError) as e:
+                        logger.warning(f"PORT_CLEANUP | Failed to kill PID {pid}: {e}")
+    except Exception as e:
+        logger.error(f"PORT_CLEANUP | Error: {e}")
 
 # ================= Pydantic 模型 =================
 class AnalyzeRequest(BaseModel):
@@ -371,23 +413,40 @@ if __name__ == "__main__":
     import uvicorn
     import time
     
-    RETRY_DELAY = 5
+    PORT = 8000
+    MAX_RETRIES = 5
+    RETRY_DELAY = 3
     
-    while True:
+    for attempt in range(MAX_RETRIES):
+        # 检查端口是否被占用
+        if is_port_in_use(PORT):
+            logger.warning(f"PORT_CHECK | Port {PORT} is in use. Attempting to free it... (attempt {attempt + 1}/{MAX_RETRIES})")
+            kill_process_on_port(PORT)
+            time.sleep(2)  # 等待进程完全终止
+            
+            # 再次检查
+            if is_port_in_use(PORT):
+                logger.warning(f"PORT_CHECK | Port {PORT} still in use after cleanup. Waiting...")
+                time.sleep(RETRY_DELAY)
+                continue
+        
         try:
             logger.info("Starting Server...")
-            # 使用 log_config=None 以避免 uvicorn 尝试初始化其默认日志配置（在某些环境下会因 stdout 缺失或冲突报错）
-            # 这样 uvicorn 会直接使用我们已经通过 logging.basicConfig 配置好的 root logger
-            uvicorn.run(app, host="0.0.0.0", port=8000, log_config=None)
+            # 使用 log_config=None 以避免 uvicorn 尝试初始化其默认日志配置
+            uvicorn.run(app, host="0.0.0.0", port=PORT, log_config=None)
+            break  # 正常退出时跳出循环
         except Exception as e:
-            logger.error(f"CRITICAL | Server crashed: {e}")
-            # 如果是因为端口占用，给更多时间，或者干脆退出让 watchdog 处理
-            if "Address already in use" in str(e):
-                logger.info("Port 8000 in use, waiting longer...")
-                time.sleep(10)
+            logger.error(f"CRITICAL | Server error: {e}")
+            if "Address already in use" in str(e) or "10048" in str(e):
+                logger.info(f"Port conflict detected. Retrying in {RETRY_DELAY}s...")
+                time.sleep(RETRY_DELAY)
             else:
+                # 其他错误也等待一下再重试
                 logger.info(f"Restarting in {RETRY_DELAY}s...")
                 time.sleep(RETRY_DELAY)
         except KeyboardInterrupt:
             logger.info("Server stopped by user.")
             break
+    else:
+        logger.error(f"FATAL | Failed to start server after {MAX_RETRIES} attempts. Giving up.")
+        sys.exit(1)

@@ -14,6 +14,7 @@ SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = os.path.join(SERVER_DIR, "logs", "analysis.log")
 START_BAT = os.path.join(SERVER_DIR, "start_server.bat")
 LOCK_FILE = os.path.join(SERVER_DIR, ".monitor.lock")
+SERVER_PID_FILE = os.path.join(SERVER_DIR, ".server.pid")
 
 def is_already_running():
     try:
@@ -52,6 +53,74 @@ def get_gpu_vram_usage():
         return percent, f"{used}/{total} MB ({percent}%)"
     except Exception:
         return None, "无法获取 GPU 信息"
+
+def get_server_pid():
+    """获取 server.py 进程的 PID"""
+    try:
+        startupinfo = None
+        creationflags = 0
+        if os.name == 'nt':
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            creationflags = subprocess.CREATE_NO_WINDOW
+        
+        # 使用 PowerShell 查找运行 server.py 的进程
+        result = subprocess.run(
+            ["powershell", "-Command", 
+             "Get-Process python*, pythonw* -ErrorAction SilentlyContinue | ForEach-Object { $p = $_; try { if ($p.CommandLine -like '*server.py*') { $p.Id } } catch {} }"],
+            capture_output=True,
+            text=True,
+            startupinfo=startupinfo,
+            creationflags=creationflags
+        )
+        
+        pids = [int(pid.strip()) for pid in result.stdout.strip().split('\n') if pid.strip().isdigit()]
+        return pids
+    except Exception:
+        return []
+
+def kill_server_process():
+    """只杀死 server.py 进程，不影响其他 Python 进程"""
+    try:
+        startupinfo = None
+        creationflags = 0
+        if os.name == 'nt':
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            creationflags = subprocess.CREATE_NO_WINDOW
+        
+        # 方法1：通过端口找到进程并杀死
+        result = subprocess.run(
+            ['netstat', '-ano'],
+            capture_output=True,
+            text=True,
+            startupinfo=startupinfo,
+            creationflags=creationflags
+        )
+        
+        killed = False
+        for line in result.stdout.split('\n'):
+            if ':8000' in line and 'LISTENING' in line:
+                parts = line.split()
+                if parts:
+                    pid = parts[-1]
+                    try:
+                        pid_int = int(pid)
+                        # 不要杀死 tray_monitor 自己
+                        if pid_int != os.getpid():
+                            subprocess.run(
+                                ['taskkill', '/F', '/PID', pid],
+                                capture_output=True,
+                                startupinfo=startupinfo,
+                                creationflags=creationflags
+                            )
+                            killed = True
+                    except (ValueError, subprocess.SubprocessError):
+                        pass
+        
+        return killed
+    except Exception:
+        return False
 
 class TrayMonitor:
     def __init__(self):
@@ -168,8 +237,8 @@ class TrayMonitor:
             self.log_error(f"Memory cleanup failed: {e}")
 
     def restart_only_server(self):
+        """只重启 server.py，不影响其他 Python 进程（包括 tray_monitor 自己）"""
         try:
-            # 在 Windows 上隐藏子进程窗口
             startupinfo = None
             creationflags = 0
             if os.name == 'nt':
@@ -177,25 +246,33 @@ class TrayMonitor:
                 startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
                 creationflags = subprocess.CREATE_NO_WINDOW
 
-            # 仅杀掉 python.exe (通常是 server.py)
-            subprocess.run(
-                ["taskkill", "/F", "/IM", "python.exe"], 
-                capture_output=True,
-                startupinfo=startupinfo,
-                creationflags=creationflags
-            )
-            # 重启后端
+            # 只杀死端口 8000 上的进程（即 server.py）
+            kill_server_process()
+            
+            # 等待进程完全终止
+            time.sleep(2)
+            
+            # 重启 server.py
             subprocess.Popen(
                 [sys.executable.replace("python.exe", "pythonw.exe"), "server.py"], 
                 cwd=SERVER_DIR,
                 creationflags=creationflags
             )
+            
+            # 显示通知
+            notify_script = "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; $n.ShowBalloonTip(3000, 'AI 解读后端', '正在重启中，请稍候...', [System.Windows.Forms.ToolTipIcon]::Info)"
+            subprocess.Popen(
+                ["powershell", "-Command", notify_script],
+                startupinfo=startupinfo,
+                creationflags=creationflags
+            )
+            
         except Exception as e:
             self.log_error(f"Restart server only failed: {e}")
 
     def restart_service(self):
+        """重启所有服务（包括 Ollama）"""
         try:
-            # 在 Windows 上隐藏子进程窗口
             startupinfo = None
             creationflags = 0
             if os.name == 'nt':
@@ -204,14 +281,14 @@ class TrayMonitor:
                 creationflags = subprocess.CREATE_NO_WINDOW
 
             current_pid = os.getpid()
-            kill_cmd = f"Get-Process | Where-Object {{ ($_.Name -eq 'python' -or $_.Name -eq 'pythonw') -and $_.Id -ne {current_pid} }} | Stop-Process -Force"
-            subprocess.run(
-                ["powershell", "-Command", kill_cmd], 
-                capture_output=True,
-                startupinfo=startupinfo,
-                creationflags=creationflags
-            )
             
+            # 只杀死 server.py 进程（通过端口检测）
+            kill_server_process()
+            
+            # 等待进程终止
+            time.sleep(2)
+            
+            # 重启 Ollama
             ollama_path = os.path.expandvars(r"%LOCALAPPDATA%\Programs\Ollama\ollama.exe")
             if os.path.exists(ollama_path):
                 subprocess.Popen(
@@ -219,12 +296,22 @@ class TrayMonitor:
                     creationflags=creationflags
                 )
             
+            # 重启 server.py
             subprocess.Popen(
                 [START_BAT], 
                 shell=True, 
                 cwd=SERVER_DIR,
                 creationflags=creationflags
             )
+            
+            # 显示通知
+            notify_script = "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; $n.ShowBalloonTip(3000, 'AI 服务', '正在重启所有服务，请稍候...', [System.Windows.Forms.ToolTipIcon]::Info)"
+            subprocess.Popen(
+                ["powershell", "-Command", notify_script],
+                startupinfo=startupinfo,
+                creationflags=creationflags
+            )
+            
         except Exception as e:
             self.log_error(f"Restart all services failed: {e}")
 
