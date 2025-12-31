@@ -5,9 +5,8 @@ import os
 import datetime
 import time
 import requests
-import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
@@ -112,7 +111,7 @@ MEDIA_DOMAIN_MAP = {
     "ANN": "news.tv-asahi.co.jp",
     "毎日新聞": "mainichi.jp",
     "朝日新聞": "www.asahi.com",
-    "読卖新闻": "www.yomiuri.co.jp",
+    "読売新聞": "www.yomiuri.co.jp",
     "产经": "www.sankei.com",
     "Sankei": "www.sankei.com",
     "共同": "www.kyodo.co.jp",
@@ -149,11 +148,7 @@ IGNORE_KEYWORDS = [
     "中国运输局", "中国整備局", "中国经产局",
     "中国新人", "中国大会", "中国リーグ",
     "中国バス", "中国ジェイアール",
-    "鸟取", "岛根", "冈山", "广岛", "山口",
-    # TV Show / Drama / Entertainment filters
-    "TVer", "电视剧", "动画", "剧集", "完结", "综艺",
-    # Paywall / Subscription indicators
-    "有料記事", "会員限定", "デジタル", "購読"
+    "鸟取", "岛根", "冈山", "广岛", "山口"
 ]
 # 白名单 (有这些词的就算有干扰词也不删)
 WHITELIST_KEYWORDS = [
@@ -163,28 +158,14 @@ WHITELIST_KEYWORDS = [
 ]
 
 def is_false_positive(title, source_name):
-    # 明确过滤 TVer 来源及其内容
-    if "TVer" in source_name or "TVer" in title:
-        return True
-    
-    # 针对电视剧/动画的集数匹配 (如: 第33集, 第12回, 第5话)
-    # 避免误杀 "第1位", "第2大" 等情况，这里限定后面跟 集/回/话
-    if re.search(r'第\d+[集回話话]', title):
-        return True
-
     # 针对"中国新闻(Chugoku Shimbun)"媒体
     if "中国新聞" in source_name:
         if not any(wk in title for wk in WHITELIST_KEYWORDS):
             return True
-            
-    # 检查标题和来源名称
+    # 检查标题
     for kw in IGNORE_KEYWORDS:
-        if kw in title or kw in source_name:
-            # 如果在白名单中，则保留（除非是明确的 TV/剧集过滤）
+        if kw in title:
             if any(wk in title for wk in WHITELIST_KEYWORDS):
-                # 如果是特定的付费/剧集关键词，白名单也不放行
-                if kw in ["有料記事", "会員限定", "TVer", "电视剧"]:
-                    return True
                 return False 
             return True
     return False
@@ -275,11 +256,8 @@ def get_source_logo(entry):
 
 def fetch_all_china_news():
     print("正在抓取全部最新日本媒体中国新闻...")
-    # 新的RSS URL，包含排除参数。增加排除 TVer 和 电视剧关键词，以及特定的集数模式
-    # Google News search query 语法支持一些排除，但正则类匹配有限，主要靠后续 Python 过滤
-    query = "中国 -中国地方 -中国電力 -中国銀行 -中国道 -中国新人 -中国大会 -TVer -电视剧 -第*集 -有料記事 -会員限定"
-    encoded_query = quote(query)
-    url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ja&gl=JP&ceid=JP:ja&scoring=n"
+    # 新的RSS URL，包含排除参数
+    url = "https://news.google.com/rss/search?q=中国+-中国地方+-中国電力+-中国銀行+-中国道+-中国新人+-中国大会&hl=ja&gl=JP&ceid=JP:ja"
     feed = feedparser.parse(url)
     entries = []
     for entry in feed.entries:
@@ -408,7 +386,7 @@ def update_news():
         source_title = entry.source.title if hasattr(entry, 'source') else ""
 
         if is_false_positive(title_ja, source_title):
-            # print(f"  [过滤] 疑似非新闻/地区新闻: {title_ja}")
+            # print(f"  [过滤] 疑似地区新闻: {title_ja}")
             filtered_count += 1
             continue
             
