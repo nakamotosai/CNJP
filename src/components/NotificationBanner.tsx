@@ -50,7 +50,7 @@ export default function NotificationBanner() {
         <div className="w-full bg-gradient-to-r from-red-600 to-rose-700 text-white text-sm font-medium">
             <div className="relative max-w-[600px] mx-auto px-4 py-1.5 flex items-center justify-center gap-2 text-center">
                 {isHolidayMode ? (
-                    "添加到主屏幕收藏本站，祝大家2026年新年快乐"
+                    "本站访问量暴增导致ai解读功能可能变慢，谢谢理解，2026新年快乐！"
                 ) : (
                     <>
                         已升级为PWA架构，可在设置中安装到本地
