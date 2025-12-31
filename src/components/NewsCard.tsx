@@ -3,6 +3,7 @@
 import React, { memo, useState, useMemo, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useTheme } from "./ThemeContext";
+import { useAiAnalysis } from "./AiAnalysisContext";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN, zhTW } from "date-fns/locale";
 import Modal from "./Modal";
@@ -250,7 +251,18 @@ function NewsCardComponent({
         return settings.lang === "tc" ? aiAnalysis.traditional : aiAnalysis.simplified;
     }, [aiAnalysis, settings.lang]);
 
+    const { queueLength } = useAiAnalysis();
+
     const loadingHint = useMemo(() => {
+        // 优先显示实际排队人数
+        const currentQueue = queuePosition > 0 ? queuePosition : queueLength;
+
+        if (currentQueue > 5) {
+            return settings.lang === "sc"
+                ? `前方还有 ${currentQueue} 个请求正在排队，请耐心等待...`
+                : `前方還有 ${currentQueue} 個請求正在排隊，請耐心等待...`;
+        }
+
         if (queuePosition > 1) {
             return settings.lang === "sc"
                 ? `排队中，前方还有 ${queuePosition - 1} 人...`
@@ -265,7 +277,7 @@ function NewsCardComponent({
         } else {
             return settings.lang === "sc" ? "即将完成..." : "即將完成...";
         }
-    }, [elapsedTime, queuePosition, settings.lang]);
+    }, [elapsedTime, queuePosition, queueLength, settings.lang]);
 
     const isAnalyzed = isLocallyAnalyzed || aiAnalysis !== null;
 
