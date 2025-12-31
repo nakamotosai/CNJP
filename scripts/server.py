@@ -16,6 +16,7 @@ import trafilatura
 from opencc import OpenCC
 from googlenewsdecoder import gnewsdecoder
 from logging.handlers import RotatingFileHandler
+from dotenv import load_dotenv
 
 # ================= 配置 =================
 # 获取脚本所在目录
@@ -39,8 +40,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("news_analysis")
-
-from dotenv import load_dotenv
 
 # 加载环境变量
 # 1. 加载 scripts/.env (Ollama Access Key)
@@ -84,9 +83,16 @@ def get_r2_client():
         region_name='auto'
     )
 
-# 并发控制：一次只允许一个请求使用 Ollama
+# 并发控制 & 去重机制
 ollama_lock = asyncio.Lock()
-# 简单的全局队列计数
+fetch_semaphore = asyncio.Semaphore(3)  # 限制同时进行网页抓取的数量，防止网络拥堵
+resolve_semaphore = asyncio.Semaphore(5) # 限制同时进行 URL 解析的数量
+
+# 任务状态追踪
+active_resolving_tasks: Dict[str, asyncio.Event] = {} # raw_url_hash -> Event: 正在解析 URL 
+resolved_url_cache: Dict[str, str] = {} # raw_url_hash -> real_url: 解析结果缓存 (内存级)
+
+active_analysis_tasks: Dict[str, asyncio.Event] = {} # real_url_hash -> Event: 正在分析 (抓取+Ollama)
 queue_count = 0
 cc = OpenCC('s2twp')  # 简体转台湾繁体
 
@@ -105,19 +111,22 @@ async def get_queue_count():
     return queue_count
 
 # ================= 工具函数 =================
-def extract_real_url(google_url: str) -> str:
-    """转换 Google News RSS URL 为原始新闻链接"""
+def extract_real_url_sync(google_url: str) -> str:
+    """转换 Google News RSS URL 为原始新闻链接 (同步版)"""
     if "news.google.com" not in google_url:
         return google_url
     try:
         decoded_url = gnewsdecoder(google_url)
         if decoded_url and decoded_url.get('status') and decoded_url.get('decoded_url'):
             url = decoded_url['decoded_url']
-            logger.debug(f"URL_DECODE_SUCCESS | {url[:50]}")
             return url
     except Exception as e:
         logger.warning(f"URL_DECODE_FAILED | {google_url[:50]} | {e}")
     return google_url
+
+async def extract_real_url(google_url: str) -> str:
+    """异步包装器：转换 Google News RSS URL"""
+    return await asyncio.to_thread(extract_real_url_sync, google_url)
 
 def cache_exists(hash_id: str) -> bool:
     try:
@@ -144,6 +153,7 @@ async def put_cache(hash_id: str, data: dict):
         ContentType='application/json'
     )
 
+# ... (Port Clean up functions remain same) ...
 def is_port_in_use(port: int) -> bool:
     """检查端口是否被占用"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -185,6 +195,7 @@ def kill_process_on_port(port: int):
     except Exception as e:
         logger.error(f"PORT_CLEANUP | Error: {e}")
 
+# ... (Pydantic models remain same) ...
 # ================= Pydantic 模型 =================
 class AnalyzeRequest(BaseModel):
     url: HttpUrl
@@ -255,13 +266,47 @@ async def queue_status():
 @app.post("/analyze")
 async def analyze_news(request: AnalyzeRequest):
     url_str = str(request.url)
-    real_url = extract_real_url(url_str)
+    
+    # === 第一层去重：基于原始 URL (Raw URL Deduplication) ===
+    # 目的：防止大量用户点击同一个 Google Redirect Link 造成服务器瞬间压力
+    raw_url_hash = hashlib.md5(url_str.encode()).hexdigest()
+    
+    real_url = None
+    
+    # 1.1 检查内存缓存中是否已解析过此 URL
+    if raw_url_hash in resolved_url_cache:
+        real_url = resolved_url_cache[raw_url_hash]
+    
+    # 1.2 如果正在解析，等待
+    elif raw_url_hash in active_resolving_tasks:
+        logger.info(f"URL_RESOLVE_WAIT | {raw_url_hash[:8]} | Waiting for ongoing resolution")
+        try:
+            await asyncio.wait_for(active_resolving_tasks[raw_url_hash].wait(), timeout=30)
+            if raw_url_hash in resolved_url_cache:
+                real_url = resolved_url_cache[raw_url_hash]
+        except Exception as e:
+            logger.warning(f"URL_RESOLVE_TIMEOUT | {raw_url_hash[:8]} | {e}")
+            
+    # 1.3 亲自解析
+    if not real_url:
+        active_resolving_tasks[raw_url_hash] = asyncio.Event()
+        try:
+            async with resolve_semaphore: # 限制并发解析数量
+                real_url = await extract_real_url(url_str)
+                resolved_url_cache[raw_url_hash] = real_url
+        finally:
+            active_resolving_tasks[raw_url_hash].set()
+            del active_resolving_tasks[raw_url_hash]
+
+    # === 正式处理流程 ===
     hash_id = hashlib.md5(real_url.encode()).hexdigest()
     
-    # 检查 R2 缓存
+    # 2. 检查 R2 缓存 (Cache Check)
     try:
-        if cache_exists(hash_id):
-            cached_data = get_cache(hash_id)
+        # 放入线程以防阻塞
+        exists = await asyncio.to_thread(cache_exists, hash_id)
+        if exists:
+            cached_data = await asyncio.to_thread(get_cache, hash_id)
             logger.info(f"CACHE_HIT | {hash_id[:8]}")
             return {
                 "source": "cache",
@@ -271,39 +316,76 @@ async def analyze_news(request: AnalyzeRequest):
                 "cached": True
             }
         elif request.check_only:
-            return {"cached": False, "hash_id": hash_id, "source": "none"}
+             return {"cached": False, "hash_id": hash_id, "source": "none"}
     except Exception as e:
         logger.warning(f"CACHE_ERROR | {hash_id[:8]} | {e}")
 
     if request.check_only:
         return {"cached": False, "hash_id": hash_id, "source": "none"}
 
-    # 加入队列
+    # 3. 第二层去重：基于真实 URL 的任务 (Real URL Deduplication)
+    # 检查是否有正在进行的相同任务
+    if hash_id in active_analysis_tasks:
+        logger.info(f"TASK_DEDUPE | Waiting for existing task: {hash_id[:8]}")
+        try:
+            # 等待原任务完成（最长等待 300秒）
+            await asyncio.wait_for(active_analysis_tasks[hash_id].wait(), timeout=300)
+            
+            # 任务完成后再次检查缓存
+            exists = await asyncio.to_thread(cache_exists, hash_id)
+            if exists:
+                cached_data = await asyncio.to_thread(get_cache, hash_id)
+                logger.info(f"DEDUPE_SUCCESS | {hash_id[:8]} | Retrieved from fresh cache")
+                return {
+                    "source": "cache_dedupe",
+                    "hash_id": hash_id,
+                    "data": cached_data,
+                    "queue_position": 0,
+                    "cached": True
+                }
+            else:
+                logger.warning(f"DEDUPE_AMBIGUOUS | Task finished but no cache: {hash_id[:8]}")
+                raise HTTPException(status_code=503, detail="前序排队任务处理失败，请重试")
+                
+        except asyncio.TimeoutError:
+            raise HTTPException(status_code=504, detail="等待排队任务超时")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"DEDUPE_ERROR | {hash_id[:8]} | {e}")
+            raise HTTPException(status_code=500, detail="等待排队任务时发生错误")
+
+    # 4. 成为“领头”任务 (Become Leader)
+    active_analysis_tasks[hash_id] = asyncio.Event()
+
+    # 加入队列计数
     queue_pos = await increment_queue()
     logger.info(f"QUEUE_JOIN | {hash_id[:8]} | pos={queue_pos}")
     start_time = datetime.now()
     
     try:
-        # 抓取网页内容 (非异步函数，放入线程)
-        downloaded = await asyncio.to_thread(trafilatura.fetch_url, real_url)
-        if downloaded:
-            content = await asyncio.to_thread(trafilatura.extract, downloaded)
-            metadata = await asyncio.to_thread(trafilatura.extract_metadata, downloaded)
-            title = metadata.title if metadata and metadata.title else "新闻文章"
-        else:
-            content = None
-            title = "新闻文章"
+        # 限制抓取并发数
+        content = None
+        title = "新闻文章"
+        
+        async with fetch_semaphore:
+            # 抓取网页内容 (非异步函数，放入线程)
+            downloaded = await asyncio.to_thread(trafilatura.fetch_url, real_url)
+            if downloaded:
+                content = await asyncio.to_thread(trafilatura.extract, downloaded)
+                metadata = await asyncio.to_thread(trafilatura.extract_metadata, downloaded)
+                title = metadata.title if metadata and metadata.title else "新闻文章"
         
         if not content or len(content) < 50:
             raise HTTPException(status_code=422, detail="未能提取到有效的文章正文内容")
 
-        # 检查是否包含付费墙或订阅提示（通常 trafilatura 会提取到这些文本）
+        # 检查是否包含付费墙或订阅提示
         paywall_keywords = ["続きを読む", "会員限定", "購読", "ログインして読"]
         if any(kw in content for kw in paywall_keywords) and len(content) < 300:
              logger.warning(f"PAYWALL_DETECTED | {hash_id[:8]} | Content length: {len(content)}")
-             raise HTTPException(status_code=422, detail="检测到付费订阅限制或网页无法正常抓取，AI 无法获取正文进行解读")
+             raise HTTPException(status_code=422, detail="检测到付费订阅限制，AI 无法获取正文")
 
-        # 使用 Ollama 分析
+        # 使用 Ollama 分析 (串行执行)
         try:
             async with ollama_lock:
                 logger.info(f"OLLAMA_START | {hash_id[:8]} | {title[:30]}")
@@ -413,6 +495,11 @@ async def analyze_news(request: AnalyzeRequest):
         }
         
     finally:
+        # 关键：无论成功还是失败，都要唤醒等待者并从任务列表中移除
+        if hash_id in active_analysis_tasks:
+            active_analysis_tasks[hash_id].set()
+            del active_analysis_tasks[hash_id]
+            
         await decrement_queue()
 
 # ================= 离线补课逻辑 =================

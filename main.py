@@ -7,7 +7,7 @@ import time
 import requests
 import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
@@ -278,7 +278,8 @@ def fetch_all_china_news():
     # 新的RSS URL，包含排除参数。增加排除 TVer 和 电视剧关键词，以及特定的集数模式
     # Google News search query 语法支持一些排除，但正则类匹配有限，主要靠后续 Python 过滤
     query = "中国 -中国地方 -中国電力 -中国銀行 -中国道 -中国新人 -中国大会 -TVer -电视剧 -第*集 -有料記事 -会員限定"
-    url = f"https://news.google.com/rss/search?q={query}&hl=ja&gl=JP&ceid=JP:ja"
+    encoded_query = quote(query)
+    url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ja&gl=JP&ceid=JP:ja&scoring=n"
     feed = feedparser.parse(url)
     entries = []
     for entry in feed.entries:
