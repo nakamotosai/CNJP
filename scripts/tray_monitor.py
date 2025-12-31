@@ -127,6 +127,7 @@ class TrayMonitor:
         self.status = "检查中..."
         self.ollama_status = "未知"
         self.r2_status = "未知"
+        self.queue_count = 0
         self.vram_info = "未知"
         self.vram_percent = 0
         self.icon_color = "gray"
@@ -174,8 +175,11 @@ class TrayMonitor:
         return image
 
     def get_menu(self):
+        queue_text = f"正在处理: {self.queue_count} 个请求" if self.queue_count > 0 else "当前无待处理请求"
         return pystray.Menu(
             pystray.MenuItem(f"显存占用: {self.vram_info}", lambda: None, enabled=False),
+            pystray.MenuItem(queue_text, lambda: None, enabled=False),
+            pystray.Menu.SEPARATOR,
             pystray.MenuItem(f"整体状态: {self.status}", lambda: None, enabled=False),
             pystray.MenuItem(f"Ollama: {self.ollama_status}", lambda: None, enabled=False),
             pystray.MenuItem(f"R2 存储: {self.r2_status}", lambda: None, enabled=False),
@@ -338,6 +342,17 @@ class TrayMonitor:
             try:
                 # 稍微增加超时时间到 5 秒
                 r = requests.get(HEALTH_URL, timeout=5)
+                
+                # 额外获取队列状态
+                try:
+                    q_res = requests.get("http://127.0.0.1:8000/queue", timeout=2)
+                    if q_res.status_code == 200:
+                        q_data = q_res.json()
+                        # queue_length 是排队数，如果正在处理则 +1 看起来更直观
+                        self.queue_count = q_data.get("queue_length", 0) + (1 if q_data.get("is_processing") else 0)
+                except:
+                    self.queue_count = 0
+
                 if r.status_code == 200:
                     fail_count = 0
                     data = r.json()

@@ -192,12 +192,20 @@ function NewsCardComponent({
                     errorData = { detail: `服务器错误 (${response.status}): ${errorText.slice(0, 100)}` };
                 }
 
-                if (errorData.offline || response.status === 503) {
+                if (errorData.offline || response.status === 503 || response.status === 502) {
                     setIsOffline(true);
                     throw new Error(settings.lang === "sc"
-                        ? "站长电脑关机中，AI服务暂时不可用"
-                        : "站長電腦關機中，AI服務暫時不可用");
+                        ? "站长的电脑没开机，等开机后会自动进行解读，请耐心等待。"
+                        : "站長的電腦沒開機，等開機後會自動進行解讀，請耐心等待。");
                 }
+
+                // 处理付费墙/正文提取失败 (422)
+                if (response.status === 422) {
+                    throw new Error(settings.lang === "sc"
+                        ? "该文章受付费订阅限制或无法抓取正文，AI 无法解读"
+                        : "該文章受付費訂閱限制或無法抓取正文，AI 無法解讀");
+                }
+
                 throw new Error(errorData.detail || errorData.error || `请求失败: ${response.status}`);
             }
 
@@ -213,8 +221,8 @@ function NewsCardComponent({
             if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network'))) {
                 setIsOffline(true);
                 setAnalyzeError(settings.lang === "sc"
-                    ? "站长电脑关机中，AI服务暂时不可用"
-                    : "站長電腦關機中，AI服務暫時不可用");
+                    ? "站长的电脑没开机，等开机后会自动进行解读，请耐心等待。"
+                    : "站長的電腦沒開機，等開機後會自動進行解讀，請耐心等待。");
             } else {
                 setAnalyzeError(err instanceof Error ? err.message : "分析失败，请重试");
             }

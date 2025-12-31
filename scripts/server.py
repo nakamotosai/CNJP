@@ -297,6 +297,12 @@ async def analyze_news(request: AnalyzeRequest):
         if not content or len(content) < 50:
             raise HTTPException(status_code=422, detail="未能提取到有效的文章正文内容")
 
+        # 检查是否包含付费墙或订阅提示（通常 trafilatura 会提取到这些文本）
+        paywall_keywords = ["続きを読む", "会員限定", "購読", "ログインして読"]
+        if any(kw in content for kw in paywall_keywords) and len(content) < 300:
+             logger.warning(f"PAYWALL_DETECTED | {hash_id[:8]} | Content length: {len(content)}")
+             raise HTTPException(status_code=422, detail="检测到付费订阅限制或网页无法正常抓取，AI 无法获取正文进行解读")
+
         # 使用 Ollama 分析
         try:
             async with ollama_lock:
@@ -408,6 +414,62 @@ async def analyze_news(request: AnalyzeRequest):
         
     finally:
         await decrement_queue()
+
+# ================= 离线补课逻辑 =================
+
+async def process_pending_requests():
+    """定期检查 R2 中挂起的请求并自动补课"""
+    logger.info("WORKER | Background worker started.")
+    while True:
+        try:
+            client = await asyncio.to_thread(get_r2_client)
+            # 列出所有 pending/ 下的文件
+            response = await asyncio.to_thread(
+                client.list_objects_v2,
+                Bucket=R2_BUCKET_NAME,
+                Prefix="pending/"
+            )
+            
+            contents = response.get('Contents', [])
+            if contents:
+                logger.info(f"WORKER | Found {len(contents)} pending requests.")
+                for obj in contents:
+                    key = obj['Key']
+                    if not key.endswith('.json'): continue
+                    
+                    try:
+                        # 下载并读取
+                        res = await asyncio.to_thread(client.get_object, Bucket=R2_BUCKET_NAME, Key=key)
+                        import json
+                        pending_data = json.loads(res['Body'].read().decode('utf-8'))
+                        original_url = pending_data.get('url')
+                        
+                        if original_url:
+                            logger.info(f"WORKER | Auto-processing: {original_url[:50]}...")
+                            # 模拟一次处理请求 (不带 check_only)
+                            req = AnalyzeRequest(url=original_url)
+                            await analyze_news(req)
+                        
+                        # 处理完或已存在缓存，删除补课记录
+                        await asyncio.to_thread(client.delete_object, Bucket=R2_BUCKET_NAME, Key=key)
+                        logger.info(f"WORKER | Cleaned up pending task: {key}")
+                        
+                    except Exception as e:
+                        logger.error(f"WORKER | Error processing {key}: {e}")
+                    
+                    # 适当延迟，避免连续高负载
+                    await asyncio.sleep(2)
+            
+        except Exception as e:
+            logger.error(f"WORKER | Worker loop error: {e}")
+            
+        # 每隔 5 分钟巡检一次
+        await asyncio.sleep(300)
+
+@app.on_event("startup")
+async def startup_event():
+    # 启动后台补课协程
+    asyncio.create_task(process_pending_requests())
 
 if __name__ == "__main__":
     import uvicorn

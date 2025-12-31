@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
 /**
  * AI 新闻解读 API (Edge Runtime)
@@ -261,9 +261,29 @@ export async function POST(request: NextRequest) {
 
             const isOffline = response.status === 502 || response.status === 503;
 
+            if (isOffline && s3Client && inputUrl) {
+                try {
+                    const realUrl = await resolveUrl(inputUrl);
+                    const hashId = await getMd5(realUrl);
+                    const putCommand = new PutObjectCommand({
+                        Bucket: R2_BUCKET_NAME,
+                        Key: `pending/${hashId}.json`,
+                        Body: JSON.stringify({
+                            url: inputUrl,
+                            real_url: realUrl,
+                            requested_at: new Date().toISOString()
+                        }),
+                        ContentType: 'application/json'
+                    });
+                    await s3Client.send(putCommand);
+                } catch (e) {
+                    console.error('Failed to queue offline request:', e);
+                }
+            }
+
             return NextResponse.json(
                 {
-                    error: isOffline ? '站长电脑关机中，且无历史缓存' : (errorData.detail || errorData.error),
+                    error: isOffline ? '站长的电脑没开机，等开机后会自动进行解读，请耐心等待。' : (errorData.detail || errorData.error),
                     detail: errorData.detail,
                     offline: isOffline
                 },
