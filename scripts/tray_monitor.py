@@ -184,11 +184,13 @@ class TrayMonitor:
             pystray.MenuItem(f"Ollama: {self.ollama_status}", lambda: None, enabled=False),
             pystray.MenuItem(f"R2 存储: {self.r2_status}", lambda: None, enabled=False),
             pystray.Menu.SEPARATOR,
+            pystray.Menu.SEPARATOR,
             pystray.MenuItem("查看日志", self.show_logs),
             pystray.MenuItem("一键清理系统内存", self.clean_memory),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("仅重启 AI 解读后端", self.restart_only_server),
             pystray.MenuItem("尝试重启所有服务 (含 Ollama)", self.restart_service),
+            pystray.MenuItem("重启 watchdog 本身", self.restart_self),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("退出监控", self.on_exit)
         )
@@ -239,6 +241,11 @@ class TrayMonitor:
 
         except Exception as e:
             self.log_error(f"Memory cleanup failed: {e}")
+
+    def restart_self(self, icon, item):
+        """重启监控程序本身"""
+        self.should_restart = True
+        self.on_exit(icon, item)
 
     def restart_only_server(self):
         """只重启 server.py，不影响其他 Python 进程（包括 tray_monitor 自己）"""
@@ -391,6 +398,7 @@ class TrayMonitor:
             time.sleep(10)
 
     def run(self):
+        self.should_restart = False
         self.icon = pystray.Icon(
             "AI_Monitor",
             self.create_battery_image(0, "gray"),
@@ -408,3 +416,18 @@ if __name__ == "__main__":
     
     monitor = TrayMonitor()
     monitor.run()
+    
+    # 检查是否需要重启
+    if getattr(monitor, 'should_restart', False):
+        try:
+            # 释放锁文件
+            if lock_file_handle:
+                lock_file_handle.close()
+            # 重启
+            python = sys.executable
+            # 使用 os.execl 替换当前进程
+            os.execl(python, python, *sys.argv)
+        except Exception as e:
+            # 如果重启失败，记录日志
+            with open(os.path.join(SERVER_DIR, "logs", "monitor_restart_error.log"), "a") as f:
+                f.write(f"Restart failed: {e}\n")

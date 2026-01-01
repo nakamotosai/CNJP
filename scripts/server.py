@@ -6,7 +6,7 @@ import sys
 import socket
 from datetime import datetime
 from typing import Optional, Dict, Any
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 import boto3
@@ -100,6 +100,45 @@ async def increment_queue():
     global queue_count
     queue_count += 1
     return queue_count
+
+# ================= 限流控制 (Rate Limiting) =================
+# 简单的内存限流：IP -> [timestamp1, timestamp2, ...]
+request_history: Dict[str, list] = {}
+RATE_LIMIT_WINDOW = 60  # 窗口大小：60秒
+RATE_LIMIT_MAX_REQUESTS = 2  # 限制次数：2次
+
+def check_rate_limit(client_ip: str):
+    """检查 IP 是否超限，返回 True 表示允许，False 表示超限"""
+    # 1. 本地回环地址 / 内网地址 豁免 (用于自动预热)
+    if client_ip in ["127.0.0.1", "::1", "localhost"]:
+        return True
+        
+    global request_history
+    now = datetime.now().timestamp()
+    
+    # 初始化
+    if client_ip not in request_history:
+        request_history[client_ip] = []
+    
+    # 清理过期记录
+    request_history[client_ip] = [t for t in request_history[client_ip] if now - t < RATE_LIMIT_WINDOW]
+    
+    # 检查数量
+    if len(request_history[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+        return False
+    
+    # 记录本次请求 (注意：只有真正进入处理流程才记录，所以在调用此函数前通常已经确定要处理)
+    # 但为了逻辑严谨，我们由调用方决定何时添加 timestamp? 
+    # 或者在这里先检查，如果通过，在真正执行时再 append?
+    # 策略：这里只做 Check & Record。如果由调用方决定记录，可以分开。
+    # 为了简化，这里检查通过就记录消耗。
+    request_history[client_ip].append(now)
+    return True
+
+# 回滚限流计数 (当发现命中缓存不需要消耗算力时)
+def rollback_rate_limit(client_ip: str):
+    if client_ip in request_history and request_history[client_ip]:
+        request_history[client_ip].pop()
 
 async def decrement_queue():
     global queue_count
@@ -264,7 +303,7 @@ async def queue_status():
     )
 
 @app.post("/analyze")
-async def analyze_news(request: AnalyzeRequest):
+async def analyze_news(request: AnalyzeRequest, request_obj: Request):
     url_str = str(request.url)
     
     # === 第一层去重：基于原始 URL (Raw URL Deduplication) ===
@@ -289,6 +328,13 @@ async def analyze_news(request: AnalyzeRequest):
             
     # 1.3 亲自解析
     if not real_url:
+        # === 限流检查点 1：解析 URL 也是一种资源消耗，但相对较小，暂且不计，或者计入？
+        # 用户需求是“真正触发解读”才算。解析URL算前置步骤。
+        # 但如果大量请求解析也是负担。
+        # 按照用户描述：“直接从R2秒出的文章不算，只计算真正触发解读”。
+        # 所以我们在进入 Ollama 之前做强校验。
+        
+        active_resolving_tasks[raw_url_hash] = asyncio.Event()
         active_resolving_tasks[raw_url_hash] = asyncio.Event()
         try:
             async with resolve_semaphore: # 限制并发解析数量
@@ -301,7 +347,8 @@ async def analyze_news(request: AnalyzeRequest):
     # === 正式处理流程 ===
     hash_id = hashlib.md5(real_url.encode()).hexdigest()
     
-    # 2. 检查 R2 缓存 (Cache Check)
+    # 2. 检查 R2 缓存 (Cache Check) - 使用 真实URL Hash
+
     try:
         # 放入线程以防阻塞
         exists = await asyncio.to_thread(cache_exists, hash_id)
@@ -314,7 +361,21 @@ async def analyze_news(request: AnalyzeRequest):
                 "data": cached_data,
                 "queue_position": 0,
                 "cached": True
+                "queue_position": 0,
+                "cached": True
             }
+        
+        # 2.1 额外检查：如果前台(route.ts)没命中RawUrl缓存，但这里命中了RealUrl缓存
+        # 说明是旧数据，需要补写 RawUrl 缓存以供下次秒出
+        if exists and hash_id != raw_url_hash:
+             try:
+                 # 将这份数据也存一份到 raw_url_hash
+                 cached_data = await asyncio.to_thread(get_cache, hash_id)
+                 await put_cache(raw_url_hash, cached_data)
+                 logger.info(f"CACHE_HEALING | Backfilled raw_url cache: {raw_url_hash[:8]}")
+             except Exception as e:
+                 logger.warning(f"CACHE_HEALING_FAIL | {e}")
+        
         elif request.check_only:
              return {"cached": False, "hash_id": hash_id, "source": "none"}
     except Exception as e:
@@ -354,6 +415,19 @@ async def analyze_news(request: AnalyzeRequest):
         except Exception as e:
             logger.error(f"DEDUPE_ERROR | {hash_id[:8]} | {e}")
             raise HTTPException(status_code=500, detail="等待排队任务时发生错误")
+
+    # 4. 准备执行 AI 解读 (算力消耗点)
+    
+    # === 限流检查点 2：真正消耗算力前 ===
+    client_ip = request_obj.client.host
+    # 如果有反向代理(Cloudflare)，需尝试获取真实 IP
+    # 注意：FastAPI 获取 header 需要 request_obj
+    cf_ip = request_obj.headers.get("cf-connecting-ip")
+    real_ip = cf_ip if cf_ip else client_ip
+    
+    if not check_rate_limit(real_ip):
+         logger.warning(f"RATE_LIMIT | {real_ip} | Limit exceeded")
+         raise HTTPException(status_code=429, detail="每分钟解读次数限制 2 次，请休息一下再试（排队请求除外）")
 
     # 4. 成为“领头”任务 (Become Leader)
     active_analysis_tasks[hash_id] = asyncio.Event()
@@ -482,7 +556,15 @@ async def analyze_news(request: AnalyzeRequest):
         
         try:
             await put_cache(hash_id, analysis_data)
-            logger.info(f"CACHE_SAVE | {hash_id[:8]}")
+        try:
+            # 双重存储：
+            # 1. 存 main hash (真实URL)
+            await put_cache(hash_id, analysis_data)
+            # 2. 存 raw hash (原始URL) -> 秒出关键
+            if raw_url_hash != hash_id:
+                await put_cache(raw_url_hash, analysis_data)
+                
+            logger.info(f"CACHE_SAVE | {hash_id[:8]} & {raw_url_hash[:8]}")
         except Exception as e:
             logger.warning(f"CACHE_SAVE_ERROR | {hash_id[:8]} | {e}")
         

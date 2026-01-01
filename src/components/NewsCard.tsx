@@ -417,16 +417,26 @@ function NewsCardComponent({
                                         {loadingHint}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500">
-                                        {settings.lang === "sc" ? "通常需 15-30 秒" : "通常需 15-30 秒"}
+                                        {settings.lang === "sc"
+                                            ? "通常 30 秒左右解读完毕，高峰时可能长达 1 分钟，请耐心等待。"
+                                            : "通常 30 秒左右解讀完畢，高峰時可能长达 1 分鐘，請耐心等待。"}
                                     </p>
                                 </div>
                                 {/* 简单的进度条 */}
                                 <div className="w-48 h-1 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden mt-2">
                                     <div
                                         className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
-                                        style={{ width: `${Math.min((elapsedTime / 25) * 100, 95)}%` }}
+                                        style={{ width: `${Math.min((elapsedTime / 60) * 100, 95)}%` }}
                                     />
                                 </div>
+
+                                {/* 后台运行提示 */}
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500 pt-2 opacity-80 max-w-[280px]">
+                                    {settings.lang === "sc"
+                                        ? "您可以关闭此弹窗继续浏览，AI 将在后台持续解读，稍后回来即可查看结果。"
+                                        : "您可以關閉此彈窗繼續瀏覽，AI 將在後台持續解讀，稍後回來即可查看結果。"
+                                    }
+                                </p>
                             </div>
                         )}
 
