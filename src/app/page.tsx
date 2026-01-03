@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import BulletinBoard from "@/components/BulletinBoard";
 import CategoryNav from "@/components/CategoryNav";
@@ -12,10 +13,19 @@ import FavModal from "@/components/modals/FavModal";
 import ArchiveModal from "@/components/modals/ArchiveModal";
 import ArchiveDrawer from "@/components/ArchiveDrawer";
 import BackToTop from "@/components/BackToTop";
-import LiveView from "@/components/LiveView";
-import DisasterSection from "@/components/disaster/DisasterSection";
+const LiveView = dynamic(() => import("@/components/LiveView"), {
+  ssr: false,
+  loading: () => <div className="h-[400px] flex items-center justify-center text-gray-400">Loading Live Feeds...</div>
+});
+const WeatherView = dynamic(() => import("@/components/disaster/WeatherView"), { ssr: false });
+const EarthquakeView = dynamic(() => import("@/components/disaster/EarthquakeView"), {
+  ssr: false,
+  loading: () => <div className="h-[400px] flex items-center justify-center text-gray-400">Loading Map...</div>
+});
+const OtherDisasterView = dynamic(() => import("@/components/disaster/OtherDisasterView"), { ssr: false });
+const CityEncyclopediaCard = dynamic(() => import("@/components/disaster/CityEncyclopediaCard"), { ssr: false });
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-import { Search, Loader2, X, Flame, Calendar, ArrowUpDown } from "lucide-react";
+import { Search, Loader2, X, Flame, Calendar, ArrowUpDown, Sparkles, CloudRain } from "lucide-react";
 import { useTheme } from "@/components/ThemeContext";
 import { CATEGORY_MAP } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
@@ -59,9 +69,14 @@ export default function Home() {
     if (defaultTab && ['news', 'live', 'disaster'].includes(defaultTab)) {
       setActiveTab(defaultTab);
       if (defaultTab === 'live') setMountLive(true);
+      // 'disaster' tab is now 'More', we can still mount it if needed or just leave it
       if (defaultTab === 'disaster') setMountDisaster(true);
     }
   }, []);
+
+  // Sub-tab State for Live Page
+  const [liveSubTab, setLiveSubTab] = useState<'video' | 'quake' | 'weather' | 'other'>('video');
+  const [weatherCity, setWeatherCity] = useState("东京");
 
   // Retention Strategy: Keep tabs in background for 5 minutes
   const newsUnmountRef = useRef<NodeJS.Timeout | null>(null);
@@ -119,10 +134,16 @@ export default function Home() {
       }
     }
 
-    return () => {
-      // We don't necessarily want to clear on every activeTab change if we want the timers to persist
-    };
   }, [activeTab]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (newsUnmountRef.current) clearTimeout(newsUnmountRef.current);
+      if (liveUnmountRef.current) clearTimeout(liveUnmountRef.current);
+      if (disasterUnmountRef.current) clearTimeout(disasterUnmountRef.current);
+    };
+  }, []);
 
   // Filter & Search
   const [currentFilter, setCurrentFilter] = useState("all");
@@ -157,7 +178,7 @@ export default function Home() {
 
   // Pull to refresh
   const [pullStartY, setPullStartY] = useState(0);
-
+  const [pullStartX, setPullStartX] = useState(0); // NEW: Track X to detect horizontal swipe
   const [pullCurrentY, setPullCurrentY] = useState(0);
   const PULL_THRESHOLD = 80;
 
@@ -193,6 +214,10 @@ export default function Home() {
   };
 
   const handleTabChange = (tab: 'news' | 'live' | 'disaster') => {
+    if (tab === 'disaster') {
+      window.open("https://utopia.saaaai.com/", "_blank");
+      return;
+    }
     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     window.scrollTo(0, 0);
     setActiveTab(tab);
@@ -557,9 +582,14 @@ export default function Home() {
   }, [allNewsData, rawNewsData]);
 
 
-  // 无限滚动主要逻辑
+  // 无限滚动主要逻辑 (Optimized with throttling)
+  const lastScrollCallRef = useRef<number>(0);
   useEffect(() => {
     const handleScroll = () => {
+      const now = Date.now();
+      if (now - lastScrollCallRef.current < 200) return; // 200ms debounce
+      lastScrollCallRef.current = now;
+
       const scrollPos = window.innerHeight + window.scrollY;
       const threshold = document.body.offsetHeight - 800; // 提前 800px 触发
 
@@ -579,8 +609,6 @@ export default function Home() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [dataSource.length, isHistoryLoaded, isSearchingAll]);
-
-
 
 
   // Section: Hot Keywords (Full Scope Support)
@@ -714,12 +742,26 @@ export default function Home() {
   // Touch Handlers
   const handleTouchStart = (e: React.TouchEvent) => {
 
-    if (window.scrollY === 0) setPullStartY(e.touches[0].clientY);
+    if (window.scrollY === 0) {
+      setPullStartY(e.touches[0].clientY);
+      setPullStartX(e.touches[0].clientX); // Track X as well
+    }
   };
   const handleTouchMove = (e: React.TouchEvent) => {
     if (pullStartY > 0 && window.scrollY === 0) {
       const currentY = e.touches[0].clientY;
-      if (currentY > pullStartY) setPullCurrentY(currentY - pullStartY);
+      const currentX = e.touches[0].clientX;
+      const deltaY = currentY - pullStartY;
+      const deltaX = Math.abs(currentX - pullStartX);
+
+      // If horizontal swipe is detected (deltaX > deltaY), cancel pull-to-refresh
+      if (deltaX > Math.abs(deltaY) && deltaX > 10) {
+        setPullStartY(0); // This effectively "cancels" the ongoing pull check
+        setPullCurrentY(0);
+        return;
+      }
+
+      if (currentY > pullStartY) setPullCurrentY(deltaY);
     }
   };
   const handleTouchEnd = async () => {
@@ -729,7 +771,7 @@ export default function Home() {
       setIsRefreshing(false);
     }
     setPullStartY(0);
-
+    setPullStartX(0); // Reset X
     setPullCurrentY(0);
   };
   const handleRefresh = async () => {
@@ -901,10 +943,12 @@ export default function Home() {
                 transition={{ duration: 0.15 }}
                 className="w-full max-w-[600px] lg:max-w-[1200px] mx-auto overflow-hidden"
               >
-                {/* Bulletin Board - Now outside Header */}
+                {/* Bulletin Board - Now outside Header (Hidden temporarily) */}
+                {/* 
                 <div className="bulletin-container w-full max-w-[600px] lg:max-w-[1200px] mx-auto mb-3 px-4">
                   <BulletinBoard isActive={activeTab === 'news'} />
                 </div>
+                */}
 
                 {/* CategoryNav */}
                 <CategoryNav
@@ -1198,16 +1242,19 @@ export default function Home() {
           )}
 
           {/* Disaster Tab - 5-Min Retention */}
+          {/* Tab 3: More (Previously Disaster) - Placeholder */}
           {mountDisaster && (
             <div className={activeTab === 'disaster' ? "block" : "hidden"}>
               <motion.div
-                key="disaster-tab"
+                key="more-tab"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.2 }}
-                className="w-full"
+                className="w-full py-32 flex flex-col items-center justify-center text-gray-400"
               >
-                <DisasterSection />
+                <Sparkles className="w-20 h-20 mb-6 opacity-30" />
+                <h2 className="text-xl font-medium mb-2">{settings.lang === "sc" ? "更多功能" : "更多功能"}</h2>
+                <p className="text-sm opacity-70">{settings.lang === "sc" ? "精彩内容即将推出" : "精彩內容即將推出"}</p>
               </motion.div>
             </div>
           )}
@@ -1219,8 +1266,59 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
+                className="w-full max-w-[600px] lg:max-w-[1200px] mx-auto"
               >
-                <LiveView />
+                {/* 2nd Level Navigation (Sub-tabs) */}
+                <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto no-scrollbar">
+                  {[
+                    { id: 'video', label: settings.lang === "sc" ? "视频直播" : "視頻直播" },
+                    { id: 'quake', label: settings.lang === "sc" ? "地震灾害" : "地震災害" },
+                    { id: 'weather', label: settings.lang === "sc" ? "气象情报" : "氣象情報" },
+                    { id: 'other', label: settings.lang === "sc" ? "其他功能" : "其他功能" },
+                  ].map((sub) => (
+                    <button
+                      key={sub.id}
+                      onClick={() => setLiveSubTab(sub.id as any)}
+                      className={`
+                        px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200
+                        ${liveSubTab === sub.id
+                          ? "bg-[var(--primary)] text-white shadow-md transform scale-105"
+                          : "bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10"
+                        }
+                      `}
+                    >
+                      {sub.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-2 text-center">
+                  {/* Content Area */}
+                  <div className="px-4">
+                    {liveSubTab === 'video' && (
+                      <LiveView />
+                    )}
+
+                    {liveSubTab === 'quake' && (
+                      <EarthquakeView />
+                    )}
+
+                    {liveSubTab === 'weather' && (
+                      <div className="flex flex-col lg:flex-row items-stretch gap-4 text-left">
+                        <div className="flex-1 min-w-0">
+                          <WeatherView onCityChange={setWeatherCity} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <CityEncyclopediaCard cityName={weatherCity} />
+                        </div>
+                      </div>
+                    )}
+
+                    {liveSubTab === 'other' && (
+                      <OtherDisasterView />
+                    )}
+                  </div>
+                </div>
               </motion.div>
             </div>
           )}

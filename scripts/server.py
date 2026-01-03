@@ -195,7 +195,10 @@ async def put_cache(hash_id: str, data: dict):
 # ... (Port Clean up functions remain same) ...
 def is_port_in_use(port: int) -> bool:
     """检查端口是否被占用"""
+    import socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # 设置 SO_REUSEADDR 以便在 TIME_WAIT 状态下也能进行绑定测试
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             s.bind(('0.0.0.0', port))
             return False
@@ -335,7 +338,6 @@ async def analyze_news(request: AnalyzeRequest, request_obj: Request):
         # 所以我们在进入 Ollama 之前做强校验。
         
         active_resolving_tasks[raw_url_hash] = asyncio.Event()
-        active_resolving_tasks[raw_url_hash] = asyncio.Event()
         try:
             async with resolve_semaphore: # 限制并发解析数量
                 real_url = await extract_real_url(url_str)
@@ -359,8 +361,6 @@ async def analyze_news(request: AnalyzeRequest, request_obj: Request):
                 "source": "cache",
                 "hash_id": hash_id,
                 "data": cached_data,
-                "queue_position": 0,
-                "cached": True
                 "queue_position": 0,
                 "cached": True
             }
@@ -555,8 +555,6 @@ async def analyze_news(request: AnalyzeRequest, request_obj: Request):
         }
         
         try:
-            await put_cache(hash_id, analysis_data)
-        try:
             # 双重存储：
             # 1. 存 main hash (真实URL)
             await put_cache(hash_id, analysis_data)
@@ -648,36 +646,44 @@ if __name__ == "__main__":
     MAX_RETRIES = 5
     RETRY_DELAY = 3
     
-    for attempt in range(MAX_RETRIES):
-        # 检查端口是否被占用
-        if is_port_in_use(PORT):
-            logger.warning(f"PORT_CHECK | Port {PORT} is in use. Attempting to free it... (attempt {attempt + 1}/{MAX_RETRIES})")
-            kill_process_on_port(PORT)
-            time.sleep(2)  # 等待进程完全终止
-            
-            # 再次检查
-            if is_port_in_use(PORT):
-                logger.warning(f"PORT_CHECK | Port {PORT} still in use after cleanup. Waiting...")
-                time.sleep(RETRY_DELAY)
-                continue
-        
-        try:
-            logger.info("Starting Server...")
-            # 使用 log_config=None 以避免 uvicorn 尝试初始化其默认日志配置
-            uvicorn.run(app, host="0.0.0.0", port=PORT, log_config=None)
-            break  # 正常退出时跳出循环
-        except Exception as e:
-            logger.error(f"CRITICAL | Server error: {e}")
-            if "Address already in use" in str(e) or "10048" in str(e):
-                logger.info(f"Port conflict detected. Retrying in {RETRY_DELAY}s...")
-                time.sleep(RETRY_DELAY)
-            else:
-                # 其他错误也等待一下再重试
-                logger.info(f"Restarting in {RETRY_DELAY}s...")
-                time.sleep(RETRY_DELAY)
-        except KeyboardInterrupt:
-            logger.info("Server stopped by user.")
-            break
+    # for attempt in range(MAX_RETRIES):
+    #     # 检查端口是否被占用
+    #     if is_port_in_use(PORT):
+    #         logger.warning(f"PORT_CHECK | Port {PORT} is in use. Attempting to free it... (attempt {attempt + 1}/{MAX_RETRIES})")
+    #         kill_process_on_port(PORT)
+    #         time.sleep(2)  # 等待进程完全终止
+    #         
+    #         # 再次检查
+    #         if is_port_in_use(PORT):
+    #             logger.warning(f"PORT_CHECK | Port {PORT} still in use after cleanup. Waiting...")
+    #             time.sleep(RETRY_DELAY)
+    #             continue
+    #     
+    #     try:
+    #         logger.info("Starting Server...")
+    #         # 使用 log_config=None 以避免 uvicorn 尝试初始化其默认日志配置
+    #         uvicorn.run(app, host="0.0.0.0", port=PORT, log_config=None)
+    #         break  # 正常退出时跳出循环
+    #     except Exception as e:
+    #         logger.error(f"CRITICAL | Server error: {e}")
+    #         if "Address already in use" in str(e) or "10048" in str(e):
+    #             logger.info(f"Port conflict detected. Retrying in {RETRY_DELAY}s...")
+    #             time.sleep(RETRY_DELAY)
+    #         else:
+    #             # 其他错误也等待一下再重试
+    #             logger.info(f"Restarting in {RETRY_DELAY}s...")
+    #             time.sleep(RETRY_DELAY)
+    #     except KeyboardInterrupt:
+    #         logger.info("Server stopped by user.")
+    #         break
+    try:
+        logger.info("Starting Server...")
+        # 使用 log_config=None 以避免 uvicorn 尝试初始化其默认日志配置
+        uvicorn.run(app, host="0.0.0.0", port=PORT, log_config=None)
+    except Exception as e:
+        logger.error(f"CRITICAL | Server error: {e}")
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user.")
     else:
         logger.error(f"FATAL | Failed to start server after {MAX_RETRIES} attempts. Giving up.")
         sys.exit(1)

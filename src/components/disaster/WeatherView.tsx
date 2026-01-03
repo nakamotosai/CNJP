@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { Cloud, MapPin, Loader2, CloudRain, Sun, CloudSun, Snowflake, CloudLightning, ChevronDown, Droplets, Wind, Thermometer, Umbrella } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../ThemeContext";
@@ -45,7 +45,7 @@ interface WeatherData {
     };
 }
 
-export default function WeatherView({ onCityChange }: { onCityChange?: (cityName: string) => void }) {
+const WeatherView = memo(function WeatherView({ onCityChange }: { onCityChange?: (cityName: string) => void }) {
     const { settings } = useTheme();
     const [selectedCity, setSelectedCity] = useState<City>(CITIES[0]);
     const [data, setData] = useState<WeatherData | null>(null);
@@ -370,4 +370,6 @@ export default function WeatherView({ onCityChange }: { onCityChange?: (cityName
             </div>
         </div>
     );
-}
+});
+
+export default WeatherView;

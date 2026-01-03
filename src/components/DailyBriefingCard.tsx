@@ -74,8 +74,25 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
         container.addEventListener('scroll', handleScroll);
         // 初始计算
         handleScroll();
+
+        // New Interaction: Auto-peek animation to show scrollability
+        // 只有被展开或者处于存档模式才触发，且只触发一次
+        const hasPeeked = sessionStorage.getItem(`peeked-${briefing.id}`);
+        if (!hasPeeked && (isExpanded || isArchive)) {
+            // Wait a bit for layout to settle
+            setTimeout(() => {
+                if (container) {
+                    container.scrollTo({ left: 60, behavior: 'smooth' });
+                    setTimeout(() => {
+                        container.scrollTo({ left: 0, behavior: 'smooth' });
+                    }, 800);
+                    sessionStorage.setItem(`peeked-${briefing.id}`, 'true');
+                }
+            }, 1000);
+        }
+
         return () => container.removeEventListener('scroll', handleScroll);
-    }, [briefing.key_highlights]);
+    }, [briefing.key_highlights, isExpanded, isArchive, briefing.id]);
 
     // 获取态势定调内容
     const stanceContent = useMemo(() => {

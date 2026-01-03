@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useTheme } from "../ThemeContext";
 
 // --- Types ---
@@ -271,7 +271,7 @@ function LeafletMap({ quakes }: { quakes: QuakeData[] }) {
 }
 
 // --- Main View Component ---
-export default function EarthquakeView() {
+const EarthquakeView = memo(function EarthquakeView() {
     const { settings } = useTheme();
     const [quakes, setQuakes] = useState<QuakeData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -377,4 +377,6 @@ export default function EarthquakeView() {
             </div>
         </div>
     );
-}
+});
+
+export default EarthquakeView;

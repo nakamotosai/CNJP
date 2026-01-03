@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { Play, Wifi, Clock, ExternalLink, ChevronDown, MonitorPlay } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,7 +22,7 @@ interface LiveData {
     streams: StreamData[];
 }
 
-export default function LiveView() {
+const LiveView = memo(function LiveView() {
     const [data, setData] = useState<LiveData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedStreamId, setSelectedStreamId] = useState<string>('');
@@ -133,6 +133,8 @@ export default function LiveView() {
                                         src={`https://i.ytimg.com/vi/${stream.videoId}/mqdefault.jpg`}
                                         alt={stream.displayName}
                                         className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        decoding="async"
                                         onError={(e) => (e.currentTarget.style.display = 'none')}
                                     />
                                     {/* Overlay Gradient */}
@@ -249,4 +251,6 @@ export default function LiveView() {
             </div>
         </div>
     );
-}
+});
+
+export default LiveView;

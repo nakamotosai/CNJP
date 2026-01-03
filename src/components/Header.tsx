@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "./ThemeContext";
-import { Settings, Heart, Tv, Sparkles, Newspaper, X, CloudRain, AlertTriangle, ArrowRight } from "lucide-react";
+import { Settings, Heart, Tv, Sparkles, Newspaper, X, CloudRain, AlertTriangle, ArrowRight, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
@@ -125,6 +125,26 @@ export default function Header({
     setShowBadge(false);
   };
 
+  // Chat Tab Red Dot Logic
+  const [showChatDot, setShowChatDot] = useState(false);
+
+  useEffect(() => {
+    const lastChatVisit = localStorage.getItem("last_chat_visit");
+    const today = new Date().toISOString().split('T')[0];
+    if (lastChatVisit !== today) {
+      setShowChatDot(true);
+    }
+  }, []);
+
+  const handleTabClick = (tabId: 'news' | 'live' | 'disaster') => {
+    if (tabId === 'disaster') {
+      const today = new Date().toISOString().split('T')[0];
+      localStorage.setItem("last_chat_visit", today);
+      setShowChatDot(false);
+    }
+    onTabChange(tabId);
+  };
+
   const englishText = "https://cn.saaaai.com";
 
   const tabs = [
@@ -138,15 +158,15 @@ export default function Header({
     {
       id: 'live' as const,
       icon: Tv,
-      labelFull: settings.lang === "sc" ? "日本实时监控" : "日本實時監控",
-      labelShort: settings.lang === "sc" ? "直播" : "直播",
+      labelFull: settings.lang === "sc" ? "实时综合资讯" : "即時綜合資訊",
+      labelShort: settings.lang === "sc" ? "实时" : "即時",
       activeColor: "text-red-500"
     },
     {
       id: 'disaster' as const,
-      icon: CloudRain,
-      labelFull: settings.lang === "sc" ? "日本天气灾害" : "日本天氣災害",
-      labelShort: settings.lang === "sc" ? "灾害" : "災害",
+      icon: MessageCircle,
+      labelFull: settings.lang === "sc" ? "匿名实时聊天" : "匿名實時聊天",
+      labelShort: settings.lang === "sc" ? "聊天" : "聊天",
       activeColor: "text-blue-500"
     }
   ];
@@ -346,7 +366,7 @@ export default function Header({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
+                  onClick={() => handleTabClick(tab.id)}
                   className={`
                     relative h-[32px] dark:h-[34px] flex items-center justify-center text-[13px] font-medium 
                     transition-all duration-300 ease-in-out rounded-xl backdrop-blur-sm overflow-hidden
@@ -369,6 +389,9 @@ export default function Header({
                       </span>
                     </span>
                   </span>
+                  {tab.id === 'disaster' && showChatDot && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  )}
                 </button>
               );
             })}

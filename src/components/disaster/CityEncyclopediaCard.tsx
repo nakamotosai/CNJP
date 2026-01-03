@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { memo } from "react";
 import { ExternalLink, Sparkles, MapPin, Info } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 
@@ -115,7 +116,7 @@ interface CityEncyclopediaCardProps {
     cityName: string;
 }
 
-export default function CityEncyclopediaCard({ cityName }: CityEncyclopediaCardProps) {
+const CityEncyclopediaCard = memo(function CityEncyclopediaCard({ cityName }: CityEncyclopediaCardProps) {
     const { settings } = useTheme();
 
     const tcKey = SC_TC_MAP[cityName] || cityName;
@@ -220,4 +221,6 @@ export default function CityEncyclopediaCard({ cityName }: CityEncyclopediaCardP
             </AnimatePresence>
         </div>
     );
-}
+});
+
+export default CityEncyclopediaCard;
