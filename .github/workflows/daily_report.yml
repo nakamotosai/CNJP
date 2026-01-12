@@ -25,7 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         # 确保必备库已安装
-        pip install python-dotenv boto3 requests duckduckgo_search opencc-python-reimplemented
+        pip install python-dotenv boto3 requests duckduckgo_search opencc-python-reimplemented google-generativeai
 
     - name: Run Daily Digest Script
       env:
@@ -34,6 +34,7 @@ jobs:
         R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
         R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
         R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         
         # Ollama Secrets (Removed)
         # OLLAMA_API_URL: ${{ secrets.OLLAMA_API_URL }}

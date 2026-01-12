@@ -5,6 +5,7 @@ import requests
 import time
 import re
 import subprocess
+import random
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from botocore.exceptions import ClientError
@@ -50,6 +51,13 @@ except ImportError:
 
 # 降低单次处理新闻条数上限，从 120 降至 100，进一步防止 TPM 超限
 MAX_NEWS_ITEMS = 100 
+
+# 反爬虫伪装 UA 池
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+] 
 
 # 本地文件路径
 LOCAL_SAVE_DIR = os.path.join(SCRIPT_DIR, "local_summaries")
@@ -235,19 +243,46 @@ def search_web_for_context(keywords, target_date_str):
     if not keywords: return ""
     print(f"[-] [Network] 正在回溯情报 ({target_date_str}): {keywords} ...")
     context_results = []
-    try:
-        with DDGS() as ddgs:
-            for query in keywords:
-                historical_query = f"{query} {target_date_str}"
-                try:
+    
+    for query in keywords:
+        historical_query = f"{query} {target_date_str}"
+        max_retries = 3
+        success = False
+        
+        for attempt in range(max_retries):
+            try:
+                # 随机选择 User-Agent
+                headers = {"User-Agent": random.choice(USER_AGENTS)}
+                
+                with DDGS(headers=headers) as ddgs:
+                    # 获取结果，加上异常处理
                     results = list(ddgs.text(historical_query, max_results=2))
-                    for res in results:
-                        context_results.append(f"【情报-{query}】{res['body']}")
-                except Exception as e:
-                    print(f"[!] 关键词 '{query}' 搜索失败: {e}")
-                time.sleep(1)
-    except Exception as e:
-        print(f"[!] 搜索引擎服务不可用: {e}")
+                    
+                    if results:
+                        for res in results:
+                            # 兼容不同版本的字段
+                            body = res.get('body') or res.get('snippet') or ""
+                            context_results.append(f"【情报-{query}】{body}")
+                        success = True
+                        break # 成功则退出重试循环
+                    else:
+                         # 没结果可能是真没结果，也可能是被ban，稍微等一下再试
+                         if attempt < max_retries - 1:
+                             time.sleep(1)
+            except Exception as e:
+                print(f"    [Retry] 关键词 '{query}' 第 {attempt+1} 次失败: {e}")
+                
+            # 指数退避: 1s, 2s, 4s... 加随机抖动
+            if not success and attempt < max_retries - 1:
+                wait_time = (2 ** attempt) + random.uniform(0.1, 1.0)
+                time.sleep(wait_time)
+
+        if not success:
+            print(f"[!] 关键词 '{query}' 搜索均失败或无结果。")
+            
+        # 关键词之间必须有停顿
+        time.sleep(random.uniform(1.5, 3.0))
+
     return "\n".join(context_results)
 
 def generate_structured_summary(titles, web_context, prev_context_str, keywords, target_date_str):

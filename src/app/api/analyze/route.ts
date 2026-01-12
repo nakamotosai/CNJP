@@ -424,29 +424,8 @@ export async function POST(request: NextRequest) {
             // 继续向下执行，进入 Fallback 流程
         }
 
-        // 3. Fallback: 转发到本地 FastAPI (Ollama)
-        // [Cloudflare Deployment] 本地 Ollama 在云端无法访问，且用户要求禁用本地 fallback
-        // console.log(`[Fallback] Forwarding to FastAPI: ${FASTAPI_URL}`);
-        // const response = await fetch(`${FASTAPI_URL}/analyze`, {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(body),
-        // });
-
-        // if (!response.ok) {
-        //     const errorText = await response.text();
-        //     let errorData;
-        //     try { errorData = JSON.parse(errorText); } catch { errorData = { detail: errorText }; }
-        //     return NextResponse.json(
-        //         {
-        //             error: (errorData.detail || errorData.error) || '所有 AI 方案均已失败',
-        //             fallback_failed: true
-        //         },
-        //         { status: response.status }
-        //     );
-        // }
-        // const data = await response.json();
-        // return NextResponse.json(data);
+        // 3. Fallback: 转发到本地 FastAPI (Ollama) - 已移除
+        // Cloudflare Deployment: 本地 Ollama 无法访问，且已弃用
 
         return NextResponse.json(
             { error: 'Google Gemini Analysis Failed. Local Fallback is disabled for Cloudflare deployment.' },

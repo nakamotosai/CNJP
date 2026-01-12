@@ -11,16 +11,9 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
-from ollama import Client
-
 # Load environment variables
 load_dotenv()
 try:
-    # 尝试加载 scripts/.env (Ollama 配置)
-    script_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", ".env")
-    if os.path.exists(script_env):
-        load_dotenv(script_env)
-    
     # 尝试加载根目录 .env.local (R2 配置)
     local_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env.local")
     if os.path.exists(local_env):
@@ -331,38 +324,9 @@ def google_translate_batch(texts, target_lang='zh-CN', source_lang='ja'):
             raise Exception(f"Batch mismatch: {len(translated_lines)} vs {len(valid_texts)}")
                 
     except Exception as e:
-        print(f"❌ Google Translate failed: {e}. Switching to Ollama fallback...")
-        try:
-            # Fallback to Ollama
-            host = os.environ.get('OLLAMA_HOST', 'https://ollama.saaaai.com')
-            headers = {
-                'CF-Access-Client-Id': os.environ.get('CF_ACCESS_CLIENT_ID', ''),
-                'CF-Access-Client-Secret': os.environ.get('CF_ACCESS_CLIENT_SECRET', '')
-            }
-            client = Client(host=host, headers=headers)
-            
-            # Simple prompt for batch translation
-            # Note: For strict alignment, item-by-item is safer but slower. 
-            # Given title length, item-by-item is acceptable for < 50 items.
-            print(f"  Using Ollama to translate {len(valid_texts)} titles...")
-            
-            for i, text in enumerate(valid_texts):
-                try:
-                    prompt = f"Translate the following news title from Japanese to {target_lang}. Output ONLY the translated text, no explanation:\n\n{text}"
-                    r = client.chat(
-                        model='qwen3:8b', 
-                        messages=[{'role': 'user', 'content': prompt}],
-                        options={"temperature": 0.3}
-                    )
-                    translated = r['message']['content'].strip()
-                    # Remove any quotes if model adds them
-                    translated = translated.strip('"').strip("'")
-                    results[text_map[i]] = translated
-                except Exception as oe:
-                    print(f"  Ollama failed for item {i}: {oe}")
-                    
-        except Exception as fallback_err:
-            print(f"❌ Ollama fallback also failed: {fallback_err}")
+        print(f"❌ Google Translate failed: {e}. Skipping batch...")
+        # Fallback removed as Ollama is deprecated
+        pass
 
     return results
 
