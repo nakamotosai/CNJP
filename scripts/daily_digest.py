@@ -48,18 +48,8 @@ except ImportError:
     genai = None
     print("[!] Google Generative AI SDK not found. Install with `pip install google-generativeai`")
 
-# Ollama 配置
-OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'https://ollama.saaaai.com/api/generate')
-OLLAMA_MODEL = "qwen3:8b"
-
-# Cloudflare Access 配置
-CF_ACCESS_CLIENT_ID = os.getenv('CF_ACCESS_CLIENT_ID')
-CF_ACCESS_CLIENT_SECRET = os.getenv('CF_ACCESS_CLIENT_SECRET')
-
-# 【性能配置】更严格的限制，避免 8B 模型过载
-CTX_SIZE = 12288 
-# 降低单次处理新闻条数上限，从 300 降至 120，确保模型即便在上下文压力下也能产出高质量摘要
-MAX_NEWS_ITEMS = 120 
+# 降低单次处理新闻条数上限，从 120 降至 100，进一步防止 TPM 超限
+MAX_NEWS_ITEMS = 100 
 
 # 本地文件路径
 LOCAL_SAVE_DIR = os.path.join(SCRIPT_DIR, "local_summaries")
@@ -174,19 +164,24 @@ def to_tc(text):
         return cc_converter.convert(text)
     return text 
 
-def call_google_gemini(prompt, system, format_json=False):
-    if not genai: return None
-    print("[-] [Gemini] Calling Google Gemini 3...")
+def call_ai_model(prompt, system, format_json=False):
+    if not genai:
+        print("[!] Google Generative AI SDK not initialized.")
+        return None
+        
+    print("[-] [AI] Calling Google Gemma 3 (27b-it)...")
     try:
+        # Merge system prompt into user prompt as system_instruction might not be supported
+        full_prompt = f"{system}\n\n{prompt}" if system else prompt
+        
         model = genai.GenerativeModel(
             model_name="gemma-3-27b-it",
             generation_config={
-                "temperature": 0.6,
-                "response_mime_type": "application/json" if format_json else "text/plain"
-            },
-            system_instruction=system
+                "temperature": 0.6
+                # "response_mime_type": "application/json" # Not supported by gemma-3-27b-it
+            }
         )
-        response = model.generate_content(prompt)
+        response = model.generate_content(full_prompt)
         text = response.text
         if format_json:
              # Clean up markdown code blocks if present
@@ -195,84 +190,6 @@ def call_google_gemini(prompt, system, format_json=False):
     except Exception as e:
         print(f"[!] Gemini Error: {e}")
         return None
-
-def call_ollama_safe(prompt, system, format_json=False):
-    # FALLBACK LOGIC: Try Google Gemini First
-    gemini_result = call_google_gemini(prompt, system, format_json)
-    if gemini_result:
-        return gemini_result
-
-    print("[-] [Fallback] Switching to Ollama...")
-    # 自动更正 URL
-    api_url = OLLAMA_API_URL.strip()
-    if not api_url.endswith('/api/generate') and not api_url.endswith('/api/chat'):
-        api_url = api_url.rstrip('/') + '/api/generate'
-
-    payload = {
-        "model": OLLAMA_MODEL,
-        "prompt": prompt,
-        "system": system,
-        "stream": False,
-        "options": {
-            "temperature": 0.2, # 稍微提高一点稳定性
-            "num_ctx": CTX_SIZE,
-            "num_predict": -1
-        }
-    }
-    if format_json:
-        payload["format"] = "json"
-
-    # 使用 curl 调用，规避 requests 可能存在的证书或超时问题
-    curl_cmd = [
-        "curl", "-s", "-L", "-X", "POST", api_url,
-        "-H", f"CF-Access-Client-Id: {CF_ACCESS_CLIENT_ID.strip()}",
-        "-H", f"CF-Access-Client-Secret: {CF_ACCESS_CLIENT_SECRET.strip()}",
-        "-H", "Content-Type: application/json",
-        "-d", json.dumps(payload)
-    ]
-    
-    try:
-        result = subprocess.run(curl_cmd, capture_output=True, text=True, encoding='utf-8', timeout=180)
-        if result.returncode != 0:
-            print(f"[!!!] Curl 传输层失败: {result.stderr}")
-            return None
-            
-        output = result.stdout.strip()
-        if not output:
-            print(f"[!!!] API 返回内容为空")
-            return None
-
-        try:
-            res_json = json.loads(output)
-            if 'error' in res_json:
-                print(f"\n[!!!] 模型报错: {res_json['error']}")
-                return None
-            return res_json.get('response')
-        except json.JSONDecodeError:
-            print(f"\n[!!!] 无法解析 API 返回的 JSON")
-            return None
-    except Exception as e:
-        print(f"\n[!!!] Curl 调用异常: {e}")
-        return None
-
-def unload_model():
-    """强制卸载模型以释放显存"""
-    api_url = OLLAMA_API_URL.strip()
-    if not api_url.endswith('/api/generate') and not api_url.endswith('/api/chat'):
-        api_url = api_url.rstrip('/') + '/api/generate'
-
-    payload = {"model": OLLAMA_MODEL, "keep_alive": 0}
-    curl_cmd = [
-        "curl", "-s", "-L", "-X", "POST", api_url,
-        "-H", "Content-Type: application/json",
-        "-H", f"CF-Access-Client-Id: {CF_ACCESS_CLIENT_ID.strip()}",
-        "-H", f"CF-Access-Client-Secret: {CF_ACCESS_CLIENT_SECRET.strip()}",
-        "-d", json.dumps(payload)
-    ]
-    try:
-        subprocess.run(curl_cmd, timeout=10)
-    except:
-        pass
 
 # --- 3. 核心业务逻辑 ---
 
@@ -308,7 +225,7 @@ def identify_hot_topics(titles):
     system = "你是一名新闻主编。请从标题列表中识别 2-3 个核心议题关键词。只输出关键词，用中文逗号分隔。禁止输出任何其他文字。"
     prompt = f"新闻标题流：\n{titles_text}\n\n请输出3个核心关键词（中文）："
 
-    res = call_ollama_safe(prompt, system)
+    res = call_ai_model(prompt, system)
     if not res: return ["中日关系", "地区局势"]
     
     cleaned = res.replace("，", ",").replace("、", ",").replace("\n", ",")
@@ -357,7 +274,7 @@ def generate_structured_summary(titles, web_context, prev_context_str, keywords,
         "请生成 JSON 摘要："
     )
 
-    res_json_str = call_ollama_safe(prompt, system, format_json=True)
+    res_json_str = call_ai_model(prompt, system, format_json=True)
     obj = extract_json_from_text(res_json_str)
     
     if obj:
@@ -394,7 +311,7 @@ def select_highlights_json(titles):
     )
     
     prompt = f"新闻列表：\n{titles_text}\n\n请严格按格式输出 JSON (5条)："
-    return call_ollama_safe(prompt, system, format_json=True)
+    return call_ai_model(prompt, system, format_json=True)
 
 def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count, target_date_str, keywords):
     print(f"[-] [Data] 正在组装并清洗数据...")
@@ -504,6 +421,10 @@ def main():
     keywords = identify_hot_topics(titles_for_ai)
     web_context = search_web_for_context(keywords, target_date)
     summary_obj = generate_structured_summary(titles_for_ai, web_context, prev_context_str, keywords, target_date)
+    
+    print("[-] [Rate Limit] 暂停 30 秒以释放 TPM 配额...")
+    time.sleep(30)
+    
     highlights_json = select_highlights_json(titles_for_ai)
     
     final_data = construct_final_data(
@@ -523,7 +444,7 @@ def main():
     upload_json_to_r2(s3_client, json_output_str, f"{R2_TARGET_PREFIX}latest.json")
 
     time.sleep(10)
-    unload_model()
+    # unload_model() # Removed
     print("\n[√] 日报任务处理完毕。")
 
 if __name__ == "__main__":

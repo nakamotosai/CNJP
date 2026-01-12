@@ -573,62 +573,7 @@ def update_news():
     if r2_client:
         print(f"✅ R2 上传完成：data.json, archive/index.json, 及 {len(uploaded_archives)} 个日期存档")
 
-    # === 4. 自动预热/预解读逻辑 ===
-    pre_warm_cache(homepage_news)
 
-def pre_warm_cache(news_list):
-    """
-    自动触发本地 AI 对高优先级新闻进行预解读
-    """
-    print("\n=== 开始 AI 预热 (Pre-warming) ===")
-    target_urls = []
-    # 优先筛选军事/经济/时政
-    priority_cats = ["军事", "经济", "时政"]
-    
-    # 1. 优先找重点分类
-    for item in news_list:
-        if item.get('category') in priority_cats:
-            target_urls.append(item['link'])
-        if len(target_urls) >= 5: break
-    
-    # 2. 如果不够5个，用其他补足
-    if len(target_urls) < 5:
-        for item in news_list:
-            if item['link'] not in target_urls:
-                target_urls.append(item['link'])
-            if len(target_urls) >= 5: break
-            
-    print(f"选中 {len(target_urls)} 篇文章进行预热...")
-    
-    for i, url in enumerate(target_urls):
-        try:
-            print(f"  [{i+1}/{len(target_urls)}] 正在请求 AI 解读: {url[:40]}...")
-            # 这里的 timeout 设置较长，确保本地 AI 有足够时间处理 (30-60s)
-            # 因为 server.py 有队列，如果前面在这个脚本运行期间有积压，可能会慢
-            # 但既然是空闲运行，我们阻塞等待也无妨
-            resp = requests.post(
-                "http://127.0.0.1:8000/analyze", 
-                json={"url": url, "check_only": False}, 
-                timeout=120 # 2分钟超时，足够跑完一篇
-            )
-            if resp.status_code == 200:
-                print("    ✅ 预热成功")
-            elif resp.status_code == 429:
-                print("    ⚠️ 触发限流 (预热白名单可能未生效)")
-            else:
-                print(f"    ❌ 预热失败: {resp.status_code}")
-                
-        except requests.exceptions.Timeout:
-            print("    ⏳ 请求超时 (可能正在后台处理中)")
-        except requests.exceptions.ConnectionError:
-            print("    ❌ 连接失败 (本地 Server 未启动?)")
-        except Exception as e:
-            print(f"    ❌ 发生错误: {e}")
-        
-        # 稍微间隔一下
-        time.sleep(2)
-
-    print("=== AI 预热结束 ===")
 
 if __name__ == "__main__":
     update_news()

@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import * as cheerio from 'cheerio';
-import { search, SafeSearchType } from 'duck-duck-scrape';
 import { gemmaModel } from '@/lib/gemini';
-import crypto from 'crypto';
-// Cloudflare Pages 需要明确指定 Edge Runtime
-// export const runtime = 'edge';
 
-// import { decodeGoogleNewsUrl } from '@/lib/google-news-decoder'; // Puppeteer removed for Cloudflare compatibility
+// Cloudflare Pages 需要明确指定 Edge Runtime
+export const runtime = 'edge';
 
 /**
- * AI 新闻解读 API (Node.js Runtime)
+ * AI 新闻解读 API (Edge Runtime)
  * 
  * 逻辑升级：
  * 1. 优先尝试 Google Gemini (Gemma 3) 进行解读。
  * 2. 支持搜索增强：自动提取标题关键词并搜索背景信息。
- * 3. 失败自动降级：如果 Google API 失败，回退到本地 FastAPI (Ollama)。
+ * 3. Edge Runtime 兼容：使用 fetch API 替代 duck-duck-scrape。
  * 4. 保持 R2 缓存机制。
  */
 
@@ -39,25 +36,88 @@ if (R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY) {
     });
 }
 
-// Edge-compatible SHA-256 hash
-function md5(str: string) {
-    return crypto.createHash('md5').update(str).digest('hex');
+// Edge-compatible hash function using Web Crypto API
+async function hashString(str: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// 辅助函数：通过标题搜索真实链接 (DDGS)
+// ========== Edge 兼容的 DuckDuckGo 搜索实现 ==========
+interface DDGSearchResult {
+    title: string;
+    url: string;
+    description: string;
+}
+
+// Edge 兼容的 DDGS 搜索函数
+async function ddgsSearch(query: string, locale: string = 'ja-JP'): Promise<DDGSearchResult[]> {
+    try {
+        // DuckDuckGo HTML 搜索（Edge 兼容）
+        const encodedQuery = encodeURIComponent(query);
+        const searchUrl = `https://html.duckduckgo.com/html/?q=${encodedQuery}&kl=${locale}`;
+
+        const response = await fetch(searchUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'ja-JP,ja;q=0.9,en;q=0.8'
+            },
+            signal: AbortSignal.timeout(10000)
+        });
+
+        if (!response.ok) {
+            console.warn(`[DDGS] Search request failed: ${response.status}`);
+            return [];
+        }
+
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        const results: DDGSearchResult[] = [];
+
+        // 解析 DuckDuckGo HTML 搜索结果
+        $('.result').each((i, elem) => {
+            if (i >= 5) return false; // 最多取5个结果
+
+            const $result = $(elem);
+            const $link = $result.find('.result__a');
+            const title = $link.text().trim();
+            let url = $link.attr('href') || '';
+            const description = $result.find('.result__snippet').text().trim();
+
+            // DDG 的链接需要解码
+            if (url.startsWith('//duckduckgo.com/l/?')) {
+                const match = url.match(/uddg=([^&]+)/);
+                if (match) {
+                    url = decodeURIComponent(match[1]);
+                }
+            }
+
+            if (title && url) {
+                results.push({ title, url, description });
+            }
+        });
+
+        console.log(`[DDGS] Found ${results.length} results for: ${query.substring(0, 30)}...`);
+        return results;
+    } catch (e) {
+        console.warn(`[DDGS] Search failed:`, e);
+        return [];
+    }
+}
+
 // 辅助函数：通过标题搜索真实链接 (DDGS)
 async function findDetailedUrl(title: string): Promise<string | null> {
     if (!title) return null;
     try {
         console.log(`[Gemini] Attempting to find original URL via DDGS for: ${title.substring(0, 30)}...`);
-        const results = await search(title, {
-            safeSearch: SafeSearchType.STRICT,
-            locale: 'ja-JP'
-        });
+        const results = await ddgsSearch(title, 'jp-jp');
 
-        if (results.results && results.results.length > 0) {
+        if (results.length > 0) {
             // 过滤掉 Google News 自身的链接
-            for (const r of results.results) {
+            for (const r of results) {
                 if (!r.url.includes("news.google.com") && !r.url.includes("google.com/search")) {
                     console.log(`[Gemini] Found alternative URL via DDGS: ${r.url}`);
                     return r.url;
@@ -78,18 +138,6 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
         let preFetchedHtml = ""; // 用于存储 Puppeteer 直接获取的 HTML
 
         // 策略 1: 尝试通过 DDGS 搜索原文链接 (优先使用，速度快)
-        // 用户明确希望使用 DDGS 抓取
-        if (title && url.includes("news.google.com")) {
-            const altUrl = await findDetailedUrl(title);
-            if (altUrl) {
-                realUrl = altUrl;
-                // 注意：这里我们找到了真实链接，接下来会走下面的标准 fetch 流程
-                // 不需要 Puppeteer
-            }
-        }
-
-        // 策略 1: 尝试通过 DDGS 搜索原文链接 (优先使用，速度快)
-        // 用户明确希望使用 DDGS 抓取
         if (title && url.includes("news.google.com")) {
             const altUrl = await findDetailedUrl(title);
             if (altUrl) {
@@ -163,17 +211,13 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
 }
 
 // 辅助函数：搜索增强
-// 辅助函数：搜索增强
 async function searchContext(keyword: string): Promise<string> {
     if (!keyword) return "";
     try {
-        const results = await search(keyword, {
-            safeSearch: SafeSearchType.STRICT,
-            locale: 'zh-CN' // 搜索中文背景
-        });
+        const results = await ddgsSearch(keyword, 'cn-zh');
 
-        if (results.results && results.results.length > 0) {
-            return results.results.slice(0, 2).map(r => `[搜索背景] ${r.title}: ${r.description}`).join('\n');
+        if (results.length > 0) {
+            return results.slice(0, 2).map(r => `[搜索背景] ${r.title}: ${r.description}`).join('\n');
         }
     } catch (e: any) {
         if (e.message && e.message.includes("DDG detected an anomaly")) {
@@ -254,7 +298,7 @@ export async function POST(request: NextRequest) {
         // 1. R2 缓存检查（如果 force=true 则跳过）
         if (s3Client && inputUrl && !forceRefresh) {
             try {
-                const hashId = md5(inputUrl);
+                const hashId = await hashString(inputUrl);
                 const command = new GetObjectCommand({
                     Bucket: R2_BUCKET_NAME,
                     Key: `analysis/${hashId}.json`,
@@ -306,7 +350,7 @@ export async function POST(request: NextRequest) {
 
             // 写入缓存
             if (s3Client) {
-                const hashId = md5(inputUrl);
+                const hashId = await hashString(inputUrl);
                 await s3Client.send(new PutObjectCommand({
                     Bucket: R2_BUCKET_NAME,
                     Key: `analysis/${hashId}.json`,
@@ -317,7 +361,7 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
                 source: "gemini-3",
-                hash_id: md5(inputUrl),
+                hash_id: await hashString(inputUrl),
                 data: data,
                 cached: false
             });
