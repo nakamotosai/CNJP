@@ -4,6 +4,9 @@ import * as cheerio from 'cheerio';
 import { search, SafeSearchType } from 'duck-duck-scrape';
 import { gemmaModel } from '@/lib/gemini';
 import crypto from 'crypto';
+// Cloudflare Pages 需要明确指定 Edge Runtime
+export const runtime = 'edge';
+
 // import { decodeGoogleNewsUrl } from '@/lib/google-news-decoder'; // Puppeteer removed for Cloudflare compatibility
 
 /**
