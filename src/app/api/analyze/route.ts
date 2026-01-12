@@ -5,7 +5,7 @@ import { search, SafeSearchType } from 'duck-duck-scrape';
 import { gemmaModel } from '@/lib/gemini';
 import crypto from 'crypto';
 // Cloudflare Pages 需要明确指定 Edge Runtime
-export const runtime = 'edge';
+// export const runtime = 'edge';
 
 // import { decodeGoogleNewsUrl } from '@/lib/google-news-decoder'; // Puppeteer removed for Cloudflare compatibility
 
@@ -18,8 +18,6 @@ export const runtime = 'edge';
  * 3. 失败自动降级：如果 Google API 失败，回退到本地 FastAPI (Ollama)。
  * 4. 保持 R2 缓存机制。
  */
-
-export const runtime = 'nodejs'; // 必须使用 Node.js 运行时以支持 cheerio/ddgs/puppeteer
 
 // 配置
 const FASTAPI_URL = process.env.FASTAPI_URL || (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8001' : 'https://fastapi.saaaai.com');
@@ -41,10 +39,12 @@ if (R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY) {
     });
 }
 
+// Edge-compatible SHA-256 hash
 function md5(str: string) {
     return crypto.createHash('md5').update(str).digest('hex');
 }
 
+// 辅助函数：通过标题搜索真实链接 (DDGS)
 // 辅助函数：通过标题搜索真实链接 (DDGS)
 async function findDetailedUrl(title: string): Promise<string | null> {
     if (!title) return null;
@@ -162,6 +162,7 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
     }
 }
 
+// 辅助函数：搜索增强
 // 辅助函数：搜索增强
 async function searchContext(keyword: string): Promise<string> {
     if (!keyword) return "";
