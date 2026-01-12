@@ -52,60 +52,104 @@ interface DDGSearchResult {
     description: string;
 }
 
-// Edge 兼容的 DDGS 搜索函数
+// Edge 兼容的 DDGS 搜索函数 (增强版:重试+随机UA)
 async function ddgsSearch(query: string, locale: string = 'ja-JP'): Promise<DDGSearchResult[]> {
-    try {
-        // DuckDuckGo HTML 搜索（Edge 兼容）
-        const encodedQuery = encodeURIComponent(query);
-        const searchUrl = `https://html.duckduckgo.com/html/?q=${encodedQuery}&kl=${locale}`;
+    const userAgents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+    ];
 
-        const response = await fetch(searchUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'ja-JP,ja;q=0.9,en;q=0.8'
-            },
-            signal: AbortSignal.timeout(10000)
-        });
+    const maxRetries = 3;
 
-        if (!response.ok) {
-            console.warn(`[DDGS] Search request failed: ${response.status}`);
-            return [];
-        }
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            // DuckDuckGo HTML 搜索（Edge 兼容）
+            // 在 Cloudflare 上，html.duckduckgo.com 容易触发 403，需要重试
+            const encodedQuery = encodeURIComponent(query);
+            const searchUrl = `https://html.duckduckgo.com/html/?q=${encodedQuery}&kl=${locale}&df=w`; // df=w (Past week) maybe helpful? Removed for broad search.
+            // 实际上基础 URL 是最稳的
 
-        const html = await response.text();
-        const $ = cheerio.load(html);
-        const results: DDGSearchResult[] = [];
+            const randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
 
-        // 解析 DuckDuckGo HTML 搜索结果
-        $('.result').each((i, elem) => {
-            if (i >= 5) return false; // 最多取5个结果
+            if (attempt > 0) {
+                console.log(`[DDGS] Retry attempt ${attempt + 1} for: ${query.substring(0, 10)}...`);
+                // 简单延时 (busy wait in edge is hard, but await new Promise works)
+                await new Promise(r => setTimeout(r, 1000 * attempt));
+            }
 
-            const $result = $(elem);
-            const $link = $result.find('.result__a');
-            const title = $link.text().trim();
-            let url = $link.attr('href') || '';
-            const description = $result.find('.result__snippet').text().trim();
+            const response = await fetch(searchUrl, {
+                headers: {
+                    'User-Agent': randomUA,
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Referer': 'https://html.duckduckgo.com/'
+                },
+                signal: AbortSignal.timeout(8000) // 稍短一点的超时，快速失败重试
+            });
 
-            // DDG 的链接需要解码
-            if (url.startsWith('//duckduckgo.com/l/?')) {
-                const match = url.match(/uddg=([^&]+)/);
-                if (match) {
-                    url = decodeURIComponent(match[1]);
+            if (response.status === 403 || response.status === 429) {
+                console.warn(`[DDGS] Blocked (HTTP ${response.status}) on attempt ${attempt + 1}`);
+                continue; // Retry
+            }
+
+            if (!response.ok) {
+                console.warn(`[DDGS] Search request failed: ${response.status}`);
+                continue;
+            }
+
+            const html = await response.text();
+
+            // 检查是不是反爬验证页面
+            if (html.includes("If this error persists, please let us know") || html.includes("Rate limit")) {
+                console.warn(`[DDGS] Rate limit detection in HTML on attempt ${attempt + 1}`);
+                continue;
+            }
+
+            const $ = cheerio.load(html);
+            const results: DDGSearchResult[] = [];
+
+            // 解析 DuckDuckGo HTML 搜索结果
+            $('.result').each((i, elem) => {
+                if (i >= 5) return false; // 最多取5个结果
+
+                const $result = $(elem);
+                const $link = $result.find('.result__a');
+                const title = $link.text().trim();
+                let url = $link.attr('href') || '';
+                const description = $result.find('.result__snippet').text().trim();
+
+                // DDG 的链接需要解码
+                if (url.startsWith('//duckduckgo.com/l/?')) {
+                    const match = url.match(/uddg=([^&]+)/);
+                    if (match) {
+                        url = decodeURIComponent(match[1]);
+                    }
                 }
+
+                if (title && url) {
+                    results.push({ title, url, description });
+                }
+            });
+
+            if (results.length > 0) {
+                console.log(`[DDGS] Success: Found ${results.length} results.`);
+                return results;
+            } else {
+                // 有时候是真搜不到，有时候是被 ban 返回了空壳页面
+                // 尝试继续重试看看是不是 IP 问题
+                console.log(`[DDGS] No results found on attempt ${attempt + 1}.`);
             }
 
-            if (title && url) {
-                results.push({ title, url, description });
-            }
-        });
-
-        console.log(`[DDGS] Found ${results.length} results for: ${query.substring(0, 30)}...`);
-        return results;
-    } catch (e) {
-        console.warn(`[DDGS] Search failed:`, e);
-        return [];
+        } catch (e) {
+            console.warn(`[DDGS] Attempt ${attempt + 1} error:`, e);
+        }
     }
+
+    console.warn(`[DDGS] All retries failed for query: ${query}`);
+    return [];
 }
 
 // 辅助函数：通过标题搜索真实链接 (DDGS)
@@ -151,8 +195,9 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
         let html = preFetchedHtml;
         let finalUrl = realUrl;
 
-        // 只有当 Puppeteer 没有获取到内容时，才执行常规 fetch
-        if (!html) {
+        // 只有当 URL 不再是 Google News 时，才执行常规 fetch
+        // Cloudflare 环境 fetch 无法处理 news.google.com 的复杂 JS 重定向，会导致抓取到 Google 的介绍页
+        if (!html && !realUrl.includes("news.google.com")) {
             const headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -161,7 +206,7 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
 
             let response = await fetch(realUrl, {
                 headers,
-                redirect: 'follow',
+                redirect: 'follow', // 尝试跟随 HTTP 重定向
                 signal: AbortSignal.timeout(15000)
             });
 
@@ -169,6 +214,10 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
 
             html = await response.text();
             finalUrl = response.url;
+        } else if (realUrl.includes("news.google.com")) {
+            console.warn(`[Gemini] Aborting fetch: Unable to resolve actual URL from Google News link: ${realUrl}`);
+            // 返回空内容，这将触发下面的 content.length <= 50 检查，从而进入 "Title Only" 模式
+            return { title: title || "未知文章", content: "" };
         }
 
         // 如果解码后的URL仍然重定向到 Google News，记录警告
