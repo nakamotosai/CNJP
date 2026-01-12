@@ -8,7 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { zhCN, zhTW } from "date-fns/locale";
 import Modal from "./Modal";
 import { CATEGORY_MAP, CATEGORY_DOT_COLORS } from "@/lib/constants";
-import { Heart, ExternalLink, Tag, Sparkles, Loader2, AlertCircle, Clock, Zap, Users, WifiOff } from "lucide-react";
+import { Heart, ExternalLink, Tag, Sparkles, Loader2, AlertCircle, Clock, Zap, Users, WifiOff, RefreshCcw } from "lucide-react";
 
 export interface NewsItem {
     title: string;
@@ -32,7 +32,7 @@ interface AnalysisResult {
 }
 
 interface AnalyzeResponse {
-    source: "cache" | "generate";
+    source: "cache" | "generate" | "gemini-3";
     hash_id: string;
     data: AnalysisResult;
     queue_position?: number;
@@ -67,7 +67,7 @@ function NewsCardComponent({
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analyzeError, setAnalyzeError] = useState<string | null>(null);
     const [isOffline, setIsOffline] = useState(false);
-    const [analyzeSource, setAnalyzeSource] = useState<"cache" | "generate" | null>(null);
+    const [analyzeSource, setAnalyzeSource] = useState<"cache" | "generate" | "gemini-3" | null>(null);
     const [showAnalysis, setShowAnalysis] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [totalTime, setTotalTime] = useState<number | null>(null);
@@ -151,10 +151,10 @@ function NewsCardComponent({
         }
     };
 
-    const handleAiAnalyze = async (e: React.MouseEvent) => {
+    const handleAiAnalyze = async (e: React.MouseEvent, forceRefresh: boolean = false) => {
         e.stopPropagation();
 
-        if (aiAnalysis) {
+        if (aiAnalysis && !forceRefresh) {
             setShowAnalysis(!showAnalysis);
             return;
         }
@@ -177,7 +177,7 @@ function NewsCardComponent({
             const response = await fetch(`${AI_ANALYZE_API}/analyze?t=${Date.now()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: item.link }),
+                body: JSON.stringify({ url: item.link, title: item.title, title_ja: item.title_ja, force: forceRefresh }),
             });
 
             if (timerRef.current) clearInterval(timerRef.current);
@@ -410,20 +410,21 @@ function NewsCardComponent({
 
                         {/* 加载状态 - 极简模式 */}
                         {isAnalyzing && (
-                            <div className="py-4 flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                            <div className="py-4 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in slide-in-from-bottom-2">
                                 <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-[var(--text-main)] dark:text-gray-200">
+                                <div className="space-y-1 max-w-[90%] mx-auto">
+                                    <p className="text-[11px] text-gray-400 dark:text-gray-500">
                                         {loadingHint}
                                     </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                                    <p className="text-[11px] text-gray-400 dark:text-gray-500">
                                         {settings.lang === "sc"
                                             ? "通常 30 秒左右解读完毕，高峰时可能长达 1 分钟，请耐心等待。"
                                             : "通常 30 秒左右解讀完畢，高峰時可能长达 1 分鐘，請耐心等待。"}
                                     </p>
                                 </div>
+
                                 {/* 简单的进度条 */}
-                                <div className="w-48 h-1 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden mt-2">
+                                <div className="w-48 h-1 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
                                         style={{ width: `${Math.min((elapsedTime / 60) * 100, 95)}%` }}
@@ -431,7 +432,7 @@ function NewsCardComponent({
                                 </div>
 
                                 {/* 后台运行提示 */}
-                                <p className="text-[10px] text-gray-400 dark:text-gray-500 pt-2 opacity-80 max-w-[280px]">
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500 opacity-80 max-w-[280px]">
                                     {settings.lang === "sc"
                                         ? "您可以关闭此弹窗继续浏览，AI 将在后台持续解读，稍后回来即可查看结果。"
                                         : "您可以關閉此彈窗繼續瀏覽，AI 將在後台持續解讀，稍後回來即可查看結果。"
@@ -454,16 +455,44 @@ function NewsCardComponent({
                                     </div>
 
                                     {/* 耗时/来源标记 */}
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
+                                        {analyzeSource === "gemini-3" && (
+                                            <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full border border-blue-100 dark:border-blue-900/30">
+                                                <Zap className="w-3 h-3" /> Google Gemma 3
+                                            </span>
+                                        )}
+                                        {analyzeSource === "generate" && (
+                                            <span className="text-[10px] font-medium px-2 py-0.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full border border-orange-100 dark:border-orange-900/30">
+                                                Ollama Qwen
+                                            </span>
+                                        )}
                                         {analyzeSource === "cache" ? (
                                             <span className="text-[10px] font-medium px-2 py-0.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-full">
-                                                秒出
+                                                云端缓存
                                             </span>
                                         ) : totalTime !== null && (
                                             <span className="text-[10px] text-gray-400">
                                                 {totalTime}s
                                             </span>
                                         )}
+                                        {/* 重新解读按钮 */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setAiAnalysis(null);
+                                                setShowAnalysis(false);
+                                                setAnalyzeSource(null);
+                                                setTotalTime(null);
+                                                setAnalyzeError(null);
+                                                // 触发新的解读，强制刷新
+                                                handleAiAnalyze(e, true);
+                                            }}
+                                            disabled={isAnalyzing}
+                                            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all"
+                                            title={settings.lang === "sc" ? "重新解读" : "重新解讀"}
+                                        >
+                                            <RefreshCcw className="w-3.5 h-3.5" />
+                                        </button>
                                     </div>
                                 </div>
 

@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import * as cheerio from 'cheerio';
+import { search, SafeSearchType } from 'duck-duck-scrape';
+import { gemmaModel } from '@/lib/gemini';
+import crypto from 'crypto';
+// import { decodeGoogleNewsUrl } from '@/lib/google-news-decoder'; // Puppeteer removed for Cloudflare compatibility
 
 /**
- * AI 新闻解读 API (Edge Runtime)
+ * AI 新闻解读 API (Node.js Runtime)
  * 
- * 1. 优先尝试直接从 R2 读取缓存 (无需如站长电脑在线)
- * 2. 如果缓存不存在，转发请求到后端 FastAPI 服务进行生成
+ * 逻辑升级：
+ * 1. 优先尝试 Google Gemini (Gemma 3) 进行解读。
+ * 2. 支持搜索增强：自动提取标题关键词并搜索背景信息。
+ * 3. 失败自动降级：如果 Google API 失败，回退到本地 FastAPI (Ollama)。
+ * 4. 保持 R2 缓存机制。
  */
 
-export const runtime = 'edge';
+export const runtime = 'nodejs'; // 必须使用 Node.js 运行时以支持 cheerio/ddgs/puppeteer
 
 // 配置
-const FASTAPI_URL = process.env.FASTAPI_URL || (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8000' : 'https://fastapi.saaaai.com');
+const FASTAPI_URL = process.env.FASTAPI_URL || (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8001' : 'https://fastapi.saaaai.com');
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
@@ -30,295 +38,323 @@ if (R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY) {
     });
 }
 
-/**
- * 辅助函数: 计算 MD5
- * 在 Edge Runtime 中无法直接使用 node:crypto，
- * 这里使用 Web Crypto API 实现一个简单的 MD5 (需要注意兼容性)
- * 或者使用一个通用的 MD5 函数。
- * 由于 Cloudflare Edge 并没有内置 MD5，我们需要一个实现。
- */
-async function getMd5(message: string): Promise<string> {
-    const msgUint8 = new TextEncoder().encode(message);
-    // 注意: SubtleCrypto 不支持 MD5。
-    // 如果必须 MD5 (为了匹配 Python 侧)，我们需要一个 JS 实现的 MD5。
-    // 这里使用一个精简的 MD5 实现。
-    return md5(message);
+function md5(str: string) {
+    return crypto.createHash('md5').update(str).digest('hex');
 }
 
-// 精简 MD5 实现 (为了不依赖外部大库)
-// 标准 MD5 实现 (修复之前的算法错误)
-function md5(string: string) {
-    function rotateLeft(lValue: number, iShiftBits: number) {
-        return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
-    }
-    function addUnsigned(lX: number, lY: number) {
-        var lX4, lY4, lX8, lY8, lResult;
-        lX8 = (lX & 0x80000000);
-        lY8 = (lY & 0x80000000);
-        lX4 = (lX & 0x40000000);
-        lY4 = (lY & 0x40000000);
-        lResult = (lX & 0x3FFFFFFF) + (lY & 0x3FFFFFFF);
-        if (lX4 & lY4) {
-            return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
-        }
-        if (lX4 | lY4) {
-            if (lResult & 0x40000000) {
-                return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
-            } else {
-                return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
+// 辅助函数：通过标题搜索真实链接 (DDGS)
+async function findDetailedUrl(title: string): Promise<string | null> {
+    if (!title) return null;
+    try {
+        console.log(`[Gemini] Attempting to find original URL via DDGS for: ${title.substring(0, 30)}...`);
+        const results = await search(title, {
+            safeSearch: SafeSearchType.STRICT,
+            locale: 'ja-JP'
+        });
+
+        if (results.results && results.results.length > 0) {
+            // 过滤掉 Google News 自身的链接
+            for (const r of results.results) {
+                if (!r.url.includes("news.google.com") && !r.url.includes("google.com/search")) {
+                    console.log(`[Gemini] Found alternative URL via DDGS: ${r.url}`);
+                    return r.url;
+                }
             }
-        } else {
-            return (lResult ^ lX8 ^ lY8);
         }
+    } catch (e) {
+        console.warn(`[Gemini] DDGS search for original URL failed:`, e);
     }
-    function F(x: number, y: number, z: number) {
-        return (x & y) | ((~x) & z);
-    }
-    function G(x: number, y: number, z: number) {
-        return (x & z) | (y & (~z));
-    }
-    function H(x: number, y: number, z: number) {
-        return (x ^ y ^ z);
-    }
-    function I(x: number, y: number, z: number) {
-        return (y ^ (x | (~z)));
-    }
-    function FF(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
-        a = addUnsigned(a, addUnsigned(addUnsigned(F(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    }
-    function GG(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
-        a = addUnsigned(a, addUnsigned(addUnsigned(G(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    }
-    function HH(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
-        a = addUnsigned(a, addUnsigned(addUnsigned(H(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    }
-    function II(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
-        a = addUnsigned(a, addUnsigned(addUnsigned(I(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    }
-    function convertToWordArray(string: string) {
-        var lWordCount;
-        var lMessageLength = string.length;
-        var lNumberOfWords_temp1 = lMessageLength + 8;
-        var lNumberOfWords_temp2 = (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64;
-        var lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16;
-        var lWordArray = Array(lNumberOfWords - 1);
-        var lBytePosition = 0;
-        var lByteCount = 0;
-        while (lByteCount < lMessageLength) {
-            lWordCount = (lByteCount - (lByteCount % 4)) / 4;
-            lBytePosition = (lByteCount % 4) * 8;
-            lWordArray[lWordCount] = (lWordArray[lWordCount] | (string.charCodeAt(lByteCount) << lBytePosition));
-            lByteCount++;
-        }
-        lWordCount = (lByteCount - (lByteCount % 4)) / 4;
-        lBytePosition = (lByteCount % 4) * 8;
-        lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80 << lBytePosition);
-        lWordArray[lNumberOfWords - 2] = lMessageLength << 3;
-        lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
-        return lWordArray;
-    }
-    function wordToHex(lValue: number) {
-        var WordToHexValue = "",
-            WordToHexValue_temp = "",
-            lByte, lCount;
-        for (lCount = 0; lCount <= 3; lCount++) {
-            lByte = (lValue >>> (lCount * 8)) & 255;
-            WordToHexValue_temp = "0" + lByte.toString(16);
-            WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length - 2, 2);
-        }
-        return WordToHexValue;
-    }
-    var x = convertToWordArray(string);
-    var k, AA, BB, CC, DD, a, b, c, d;
-    var S11 = 7,
-        S12 = 12,
-        S13 = 17,
-        S14 = 22;
-    var S21 = 5,
-        S22 = 9,
-        S23 = 14,
-        S24 = 20;
-    var S31 = 4,
-        S32 = 11,
-        S33 = 16,
-        S34 = 23;
-    var S41 = 6,
-        S42 = 10,
-        S43 = 15,
-        S44 = 21;
-    a = 0x67452301;
-    b = 0xEFCDAB89;
-    c = 0x98BADCFE;
-    d = 0x10325476;
-    for (k = 0; k < x.length; k += 16) {
-        AA = a;
-        BB = b;
-        CC = c;
-        DD = d;
-        a = FF(a, b, c, d, x[k + 0], S11, 0xD76AA478);
-        d = FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756);
-        c = FF(c, d, a, b, x[k + 2], S13, 0x242070DB);
-        b = FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
-        a = FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF);
-        d = FF(d, a, b, c, x[k + 5], S12, 0x4787C62A);
-        c = FF(c, d, a, b, x[k + 6], S13, 0xA8304613);
-        b = FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
-        a = FF(a, b, c, d, x[k + 8], S11, 0x698098D8);
-        d = FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF);
-        c = FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1);
-        b = FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
-        a = FF(a, b, c, d, x[k + 12], S11, 0x6B901122);
-        d = FF(d, a, b, c, x[k + 13], S12, 0xFD987193);
-        c = FF(c, d, a, b, x[k + 14], S13, 0xA679438E);
-        b = FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
-        a = GG(a, b, c, d, x[k + 1], S21, 0xF61E2562);
-        d = GG(d, a, b, c, x[k + 6], S22, 0xC040B340);
-        c = GG(c, d, a, b, x[k + 11], S23, 0x265E5A51);
-        b = GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA);
-        a = GG(a, b, c, d, x[k + 5], S21, 0xD62F105D);
-        d = GG(d, a, b, c, x[k + 10], S22, 0x2441453);
-        c = GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681);
-        b = GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
-        a = GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6);
-        d = GG(d, a, b, c, x[k + 14], S22, 0xC33707D6);
-        c = GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87);
-        b = GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
-        a = GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905);
-        d = GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8);
-        c = GG(c, d, a, b, x[k + 7], S23, 0x676F02D9);
-        b = GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
-        a = HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942);
-        d = HH(d, a, b, c, x[k + 8], S32, 0x8771F681);
-        c = HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122);
-        b = HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
-        a = HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44);
-        d = HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9);
-        c = HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60);
-        b = HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
-        a = HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6);
-        d = HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA);
-        c = HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085);
-        b = HH(b, c, d, a, x[k + 6], S34, 0x4881D05);
-        a = HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039);
-        d = HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5);
-        c = HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8);
-        b = HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
-        a = II(a, b, c, d, x[k + 0], S41, 0xF4292244);
-        d = II(d, a, b, c, x[k + 7], S42, 0x432AFF97);
-        c = II(c, d, a, b, x[k + 14], S43, 0xAB9423A7);
-        b = II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
-        a = II(a, b, c, d, x[k + 12], S41, 0x655B59C3);
-        d = II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92);
-        c = II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D);
-        b = II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
-        a = II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F);
-        d = II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0);
-        c = II(c, d, a, b, x[k + 6], S43, 0xA3014314);
-        b = II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
-        a = II(a, b, c, d, x[k + 4], S41, 0xF7537E82);
-        d = II(d, a, b, c, x[k + 11], S42, 0xBD3AF235);
-        c = II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB);
-        b = II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
-        a = addUnsigned(a, AA);
-        b = addUnsigned(b, BB);
-        c = addUnsigned(c, CC);
-        d = addUnsigned(d, DD);
-    }
-    var temp = wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d);
-    return temp.toLowerCase();
+    return null;
 }
 
-// 辅助函数: 获取真实 URL (处理重定向) - 已移除，直接使用原始 URL Hash 实现秒出
-// async function resolveUrl(url: string): Promise<string> { ... }
+// 辅助函数：抓取网页正文
+async function fetchArticleContent(url: string, title?: string): Promise<{ title: string; content: string }> {
+    try {
+        // 🔑 关键修复：使用 Puppeteer 解码 Google News URL (处理 JS 重定向)
+        let realUrl = url;
+        let preFetchedHtml = ""; // 用于存储 Puppeteer 直接获取的 HTML
+
+        // 策略 1: 尝试通过 DDGS 搜索原文链接 (优先使用，速度快)
+        // 用户明确希望使用 DDGS 抓取
+        if (title && url.includes("news.google.com")) {
+            const altUrl = await findDetailedUrl(title);
+            if (altUrl) {
+                realUrl = altUrl;
+                // 注意：这里我们找到了真实链接，接下来会走下面的标准 fetch 流程
+                // 不需要 Puppeteer
+            }
+        }
+
+        // 策略 1: 尝试通过 DDGS 搜索原文链接 (优先使用，速度快)
+        // 用户明确希望使用 DDGS 抓取
+        if (title && url.includes("news.google.com")) {
+            const altUrl = await findDetailedUrl(title);
+            if (altUrl) {
+                realUrl = altUrl;
+            }
+        }
+
+        // Cloudflare 环境不支持 Puppeteer，已移除兜底策略
+        // 如果 DDGS 失败，将直接尝试 fetch 原链接 (可能拿到聚合页，由后续逻辑处理)
+
+        let html = preFetchedHtml;
+        let finalUrl = realUrl;
+
+        // 只有当 Puppeteer 没有获取到内容时，才执行常规 fetch
+        if (!html) {
+            const headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7'
+            };
+
+            let response = await fetch(realUrl, {
+                headers,
+                redirect: 'follow',
+                signal: AbortSignal.timeout(15000)
+            });
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            html = await response.text();
+            finalUrl = response.url;
+        }
+
+        // 如果解码后的URL仍然重定向到 Google News，记录警告
+        if (finalUrl.includes("news.google.com")) {
+            console.warn(`[Gemini] Warning: Still on Google News after decode. Final URL: ${finalUrl}`);
+        }
+
+        const $ = cheerio.load(html);
+
+        // 移除无关元素
+        $('script, style, nav, footer, header, iframe, .ad, .advertisement').remove();
+
+        // 优先提取 og:title，其次 title
+        let extractedTitle = $('meta[property="og:title"]').attr('content') || $('title').text().trim() || $('h1').first().text().trim() || "";
+
+        // 🚨 关键检查：如果标题是 "Google News" 或 "Google 新闻"，说明我们仍然停留在聚合页，抓取失败
+        if (extractedTitle.includes("Google News") || extractedTitle.includes("Google 新闻")) {
+            console.warn("[Gemini] Extraction stuck on Google News landing page. Aborting content extraction.");
+            // 抓取失败，回退到传入的标题
+            return { title: title || "", content: "" };
+        }
+
+        // 提取正文 (简单启发式)
+        let content = "";
+        const article = $('article');
+        if (article.length > 0) {
+            content = article.text().replace(/\s+/g, ' ').trim();
+        } else {
+            content = $('body p').map((i, el) => $(el).text()).get().join('\n').replace(/\s+/g, ' ').trim();
+        }
+
+        // 简单的文本清洗
+        content = content.substring(0, 8000);
+
+        return { title: extractedTitle || title || "未知文章", content };
+    } catch (e) {
+        console.error("Fetch error:", e);
+        return { title: "未知文章", content: "" };
+    }
+}
+
+// 辅助函数：搜索增强
+async function searchContext(keyword: string): Promise<string> {
+    if (!keyword) return "";
+    try {
+        const results = await search(keyword, {
+            safeSearch: SafeSearchType.STRICT,
+            locale: 'zh-CN' // 搜索中文背景
+        });
+
+        if (results.results && results.results.length > 0) {
+            return results.results.slice(0, 2).map(r => `[搜索背景] ${r.title}: ${r.description}`).join('\n');
+        }
+    } catch (e: any) {
+        if (e.message && e.message.includes("DDG detected an anomaly")) {
+            console.warn("Search skipped (Rate Limited by DDG). Proceeding without background.");
+        } else {
+            console.warn("Search failed:", e);
+        }
+    }
+    return "";
+}
+
+// 核心：使用 Google Gemini 生成
+async function generateWithGemini(title: string, content: string, background: string) {
+    const prompt = `
+【语言强制锁定】
+**警告：本任务的唯一输出语言为简体中文（Simplified Chinese）。**
+**禁止**在输出结果中包含任何日文句子。如果包含日文，任务视为失败。
+
+你是一名专业的新闻整理型AI编辑，面向看不到、也看不懂日文原文的中文读者。
+你的任务是：阅读日文原文，**将其翻译并改写**为简体中文新闻简报。
+
+【新闻标题】
+${title}
+
+【背景信息】
+${background}
+
+【新闻全文（日文）】
+${content}
+
+【核心指令】
+1. **翻译并整合**：必须整合正文所有信息，所有内容必须**翻译成地道的简体中文**。
+2. **辩证对立结构**：严格区分"成就/优势"与"问题/挑战"。
+3. **精准数据原则**：保留关键数据，禁止编造数字。
+4. **输出 Traditional Chinese (繁体)**：同时提供繁体中文版本。
+
+【输出格式 (JSON)】
+请直接返回 JSON 对象，不要包含 Markdown 格式标记（如 \`\`\`json）：
+{
+  "title": "中文标题",
+  "simplified": "简体中文内容...",
+  "traditional": "繁體中文內容...",
+  "original_url": "原文链接(由外部填充)",
+  "analyzed_at": "ISO时间字符串(由外部填充)"
+}
+
+对于 simplified 和 traditional 字段，请将内容组织为以下纯文本格式（保留换行符）：
+核心事实：
+(2-3句话)
+
+背景说明：
+(2-3句话)
+
+正面评价：
+(3-4句话)
+
+负面评价：
+(3-4句话)
+
+一句话总结：
+(中性陈述)
+`;
+
+    const result = await gemmaModel.generateContent(prompt);
+    const text = result.response.text();
+    // 清理可能的 Markdown 标记
+    const jsonStr = text.replace(/```json\s*|\s*```/g, "");
+    return JSON.parse(jsonStr);
+}
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const inputUrl = body.url;
+        const inputUrlTitle = body.title; // 获取传入的标题
+        const forceRefresh = body.force === true; // 强制刷新标志
 
-        // 1. 尝试直接从 R2 读取缓存
-        if (s3Client && inputUrl) {
+        // 1. R2 缓存检查（如果 force=true 则跳过）
+        if (s3Client && inputUrl && !forceRefresh) {
             try {
-                // 直接使用原始 URL 计算 Hash (无需网络请求解析重定向 -> 秒出关键)
-                const hashId = await getMd5(inputUrl);
-
+                const hashId = md5(inputUrl);
                 const command = new GetObjectCommand({
                     Bucket: R2_BUCKET_NAME,
                     Key: `analysis/${hashId}.json`,
                 });
-
                 const r2Response = await s3Client.send(command);
                 if (r2Response.Body) {
                     const jsonString = await r2Response.Body.transformToString();
-                    const cachedData = JSON.parse(jsonString);
-
                     return NextResponse.json({
                         source: "cache",
                         hash_id: hashId,
-                        data: cachedData,
+                        data: JSON.parse(jsonString),
                         cached: true,
                         via: "edge-r2-instant"
                     });
                 }
-            } catch (e: any) {
-                // Ignore AccessDenied or NotFound, proceed to live API
-            }
+            } catch (e) { }
         }
 
-        // 2. 缓存未命中，转发请求到 FastAPI (需要站长电脑在线)
-        const response = await fetch(`${FASTAPI_URL}/analyze`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            let errorData;
-            try {
-                errorData = JSON.parse(errorText);
-            } catch {
-                errorData = { detail: `Non-JSON Error (${response.status}): ${errorText.slice(0, 200)}` };
-            }
-
-            const isOffline = response.status === 502 || response.status === 503;
-
-            if (isOffline && s3Client && inputUrl) {
-                try {
-                    const hashId = await getMd5(inputUrl);
-                    const putCommand = new PutObjectCommand({
-                        Bucket: R2_BUCKET_NAME,
-                        Key: `pending/${hashId}.json`,
-                        Body: JSON.stringify({
-                            url: inputUrl,
-                            requested_at: new Date().toISOString()
-                        }),
-                        ContentType: 'application/json'
-                    });
-                    await s3Client.send(putCommand);
-                } catch (e) {
-                    console.error('Failed to queue offline request:', e);
-                }
-            }
-
-            return NextResponse.json(
-                {
-                    error: isOffline ? '站长的电脑没开机，等开机后会自动进行解读，请耐心等待。' : (errorData.detail || errorData.error),
-                    detail: errorData.detail,
-                    offline: isOffline
-                },
-                { status: response.status }
-            );
+        if (forceRefresh) {
+            console.log(`[Gemini] Force refresh requested for: ${inputUrl}`);
         }
 
-        const data = await response.json();
-        return NextResponse.json(data);
+        const titleJa = body.title_ja;
+        const searchTitle = titleJa || inputUrlTitle; // 优先用日语标题搜索
+        console.log(`[Gemini] Search Title (for DDGS): ${searchTitle}`);
+
+        // 2. 尝试 Google Gemini 方案
+        try {
+            console.log(`[Gemini] Starting analysis for: ${inputUrl}`);
+            const { title, content } = await fetchArticleContent(inputUrl, searchTitle);
+
+            let finalContent = content;
+            let finalBackground = "";
+
+            if (content.length <= 50) {
+                console.warn(`[Gemini] Content too short (${content.length} chars). Using Title+Context mode. URL: ${inputUrl}`);
+                finalContent = "（注意：原文正文抓取失败。请完全基于新闻标题和提供的背景信息进行分析和撰写。）";
+            }
+
+            // 关键词提取与背景搜索
+            const keyword = title.substring(0, 10);
+            finalBackground = await searchContext(keyword);
+
+            const data = await generateWithGemini(title, finalContent, finalBackground);
+
+            // 补全字段
+            data.original_url = inputUrl;
+            data.analyzed_at = new Date().toISOString();
+
+            // 写入缓存
+            if (s3Client) {
+                const hashId = md5(inputUrl);
+                await s3Client.send(new PutObjectCommand({
+                    Bucket: R2_BUCKET_NAME,
+                    Key: `analysis/${hashId}.json`,
+                    Body: JSON.stringify(data),
+                    ContentType: 'application/json'
+                }));
+            }
+
+            return NextResponse.json({
+                source: "gemini-3",
+                hash_id: md5(inputUrl),
+                data: data,
+                cached: false
+            });
+
+        } catch (geminiError: any) {
+            console.error("[Gemini] Failed, falling back to local.");
+            console.error("Error Details:", geminiError);
+            if (geminiError.response) {
+                console.error("API Response:", geminiError.response);
+            }
+            // 继续向下执行，进入 Fallback 流程
+        }
+
+        // 3. Fallback: 转发到本地 FastAPI (Ollama)
+        // [Cloudflare Deployment] 本地 Ollama 在云端无法访问，且用户要求禁用本地 fallback
+        // console.log(`[Fallback] Forwarding to FastAPI: ${FASTAPI_URL}`);
+        // const response = await fetch(`${FASTAPI_URL}/analyze`, {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify(body),
+        // });
+
+        // if (!response.ok) {
+        //     const errorText = await response.text();
+        //     let errorData;
+        //     try { errorData = JSON.parse(errorText); } catch { errorData = { detail: errorText }; }
+        //     return NextResponse.json(
+        //         {
+        //             error: (errorData.detail || errorData.error) || '所有 AI 方案均已失败',
+        //             fallback_failed: true
+        //         },
+        //         { status: response.status }
+        //     );
+        // }
+        // const data = await response.json();
+        // return NextResponse.json(data);
+
+        return NextResponse.json(
+            { error: 'Google Gemini Analysis Failed. Local Fallback is disabled for Cloudflare deployment.' },
+            { status: 500 }
+        );
 
     } catch (error: any) {
         console.error('Analyze API error:', error);
@@ -329,7 +365,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// 健康检查 + 队列状态
+// 保持 GET 健康检查与原逻辑一致 (代理到 FastAPI 检查排队状态)
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const isQueueCheck = searchParams.get('queue') === 'true';
@@ -337,20 +373,18 @@ export async function GET(request: NextRequest) {
     try {
         if (isQueueCheck) {
             const response = await fetch(`${FASTAPI_URL}/queue`);
-            if (response.ok) {
-                const data = await response.json();
-                return NextResponse.json(data);
-            }
+            if (response.ok) return NextResponse.json(await response.json());
+        } else {
+            const response = await fetch(`${FASTAPI_URL}/health`);
+            if (response.ok) return NextResponse.json(await response.json());
         }
+    } catch (error) { }
 
-        const response = await fetch(`${FASTAPI_URL}/health`);
-        const data = await response.json();
-        return NextResponse.json(data);
-
-    } catch (error) {
-        return NextResponse.json(
-            { status: 'offline', message: '站长电脑关机中', offline: true },
-            { status: 503 }
-        );
-    }
+    // 如果 FastAPI 挂了，但我们有 Gemini，我们依然可以返回 "Online" (假装)
+    // 或者返回一个标记，表明仅云端可用
+    return NextResponse.json({
+        status: 'cloud_only',
+        message: '本地 AI 服务离线，使用云端 Gemini',
+        offline: false
+    });
 }

@@ -12,7 +12,7 @@ interface AnalysisTask {
     result?: {
         simplified: string;
         traditional: string;
-        source: "cache" | "generate";
+        source: "cache" | "generate" | "gemini-3";
     };
     error?: string;
     startTime: number;

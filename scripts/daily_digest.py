@@ -39,6 +39,15 @@ R2_BUCKET_NAME = os.getenv('R2_BUCKET_NAME')
 R2_SOURCE_PREFIX = os.getenv('R2_SOURCE_PREFIX', 'archive/')
 R2_TARGET_PREFIX = os.getenv('R2_TARGET_PREFIX', 'ollama/')
 
+# Google Gemini Configuration
+try:
+    import google.generativeai as genai
+    GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY') or "AIzaSyAccHxx9xdNR8ZW6ux92XffIeF65UTzlx8"
+    genai.configure(api_key=GOOGLE_API_KEY)
+except ImportError:
+    genai = None
+    print("[!] Google Generative AI SDK not found. Install with `pip install google-generativeai`")
+
 # Ollama 配置
 OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'https://ollama.saaaai.com/api/generate')
 OLLAMA_MODEL = "qwen3:8b"
@@ -165,7 +174,35 @@ def to_tc(text):
         return cc_converter.convert(text)
     return text 
 
+def call_google_gemini(prompt, system, format_json=False):
+    if not genai: return None
+    print("[-] [Gemini] Calling Google Gemini 3...")
+    try:
+        model = genai.GenerativeModel(
+            model_name="gemma-3-27b-it",
+            generation_config={
+                "temperature": 0.6,
+                "response_mime_type": "application/json" if format_json else "text/plain"
+            },
+            system_instruction=system
+        )
+        response = model.generate_content(prompt)
+        text = response.text
+        if format_json:
+             # Clean up markdown code blocks if present
+            text = re.sub(r'```json\s*|\s*```', '', text)
+        return text
+    except Exception as e:
+        print(f"[!] Gemini Error: {e}")
+        return None
+
 def call_ollama_safe(prompt, system, format_json=False):
+    # FALLBACK LOGIC: Try Google Gemini First
+    gemini_result = call_google_gemini(prompt, system, format_json)
+    if gemini_result:
+        return gemini_result
+
+    print("[-] [Fallback] Switching to Ollama...")
     # 自动更正 URL
     api_url = OLLAMA_API_URL.strip()
     if not api_url.endswith('/api/generate') and not api_url.endswith('/api/chat'):

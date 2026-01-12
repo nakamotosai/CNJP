@@ -305,6 +305,21 @@ async def queue_status():
         estimated_wait_seconds=queue_length * 30
     )
 
+@app.post("/decode")
+async def decode_url(request: dict):
+    """解码 Google News URL 为真实新闻链接"""
+    url = request.get("url", "")
+    if not url:
+        return {"error": "No URL provided", "decoded_url": None}
+    
+    try:
+        real_url = await extract_real_url(url)
+        logger.info(f"URL_DECODE_SUCCESS | {url[:50]}... -> {real_url[:50]}...")
+        return {"decoded_url": real_url, "original_url": url}
+    except Exception as e:
+        logger.warning(f"URL_DECODE_ERROR | {url[:50]}... | {e}")
+        return {"error": str(e), "decoded_url": url}
+
 @app.post("/analyze")
 async def analyze_news(request: AnalyzeRequest, request_obj: Request):
     url_str = str(request.url)
@@ -642,7 +657,7 @@ if __name__ == "__main__":
     import uvicorn
     import time
     
-    PORT = 8000
+    PORT = 8001
     MAX_RETRIES = 5
     RETRY_DELAY = 3
     
