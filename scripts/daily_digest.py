@@ -62,6 +62,42 @@ USER_AGENTS = [
 # 本地文件路径
 LOCAL_SAVE_DIR = os.path.join(SCRIPT_DIR, "local_summaries")
 
+# 读取世界基准文案 (Source of Truth)
+WORLD_BASELINE = ""
+try:
+    baseline_path = os.path.join(project_root, "src", "lib", "world-baseline.ts")
+    if os.path.exists(baseline_path):
+        with open(baseline_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            # 简单的提取逻辑：提取 export const WORLD_BASELINE = `...`; 中间反引号的内容
+            import re
+            match = re.search(r'export const WORLD_BASELINE = `(.*?)`;', content, re.DOTALL)
+            if match:
+                WORLD_BASELINE = match.group(1).strip()
+                print("[-] [System] 已加载本地基准文案 (Local Fallback)")
+            else:
+                print("[!] 无法从 ts 文件解析世界基准文案")
+    else:
+        print(f"[!] 未找到基准文件: {baseline_path}")
+except Exception as e:
+    print(f"[!] 读取基准文件失败: {e}")
+
+# 尝试从 R2 加载最新基准 (Override Local)
+try:
+    # 假设 R2 公开 URL 由环境变量提供，或者硬编码（因为 daily_digest.py 也是通过 Action 运行，有 Secrets）
+    # 但 Python 脚本可能没有 NEXT_PUBLIC_R2_URL 环境变量，通常只有 R2 Credentials。
+    # 这里我们直接用 boto3 去 fetch，因为我们有权限。
+    def fetch_r2_baseline():
+        global WORLD_BASELINE
+        # 使用这里定义的 get_r2_client 稍后会定义，或者直接在这里极其简化的手动构造请求？
+        # 不，还是复用 boto3 更稳。
+        # 由于 get_r2_client 在下面定义，我们先稍后调用。
+        pass
+except Exception:
+    pass
+
+
+
 # --- 2. 工具函数 ---
 
 def get_r2_client():
@@ -180,7 +216,12 @@ def call_ai_model(prompt, system, format_json=False):
     print("[-] [AI] Calling Google Gemma 3 (27b-it)...")
     try:
         # Merge system prompt into user prompt as system_instruction might not be supported
-        full_prompt = f"{system}\n\n{prompt}" if system else prompt
+        # [注入世界基准]
+        final_system = system
+        if WORLD_BASELINE:
+             final_system = f"{system}\n\n【世界基准 (World Baseline)】\n{WORLD_BASELINE}\n\n请基于上述基准进行分析，除非新闻原文明确提及了相反的最新事实。"
+        
+        full_prompt = f"{final_system}\n\n{prompt}" if final_system else prompt
         
         model = genai.GenerativeModel(
             model_name="gemma-3-27b-it",
@@ -463,6 +504,26 @@ def construct_final_data(summary_obj, highlights_json, lookup_dict, total_count,
 def main():
     target_date = get_target_date_str()
     print(f"=== 启动智能主编系统 (Enhanced Stability): {target_date} ===")
+
+    # [新增] 尝试从 R2 下载最新的世界基准覆盖本地
+    try:
+        r2 = get_r2_client()
+        if r2:
+            print("[-] [Init] 检查云端世界基准 (config/world_baseline.json)...")
+            bucket = os.getenv("R2_BUCKET_NAME", "cnjp-data")
+            try:
+                response = r2.get_object(Bucket=bucket, Key="config/world_baseline.json")
+                body = response['Body'].read().decode('utf-8')
+                data = json.loads(body)
+                if data and data.get("content"):
+                    global WORLD_BASELINE
+                    WORLD_BASELINE = data.get("content")
+                    print("[-] [Init] 成功加载云端动态基准！")
+            except Exception as inner_e:
+                print(f"[-] [Init] 云端未找到基准或读取失败: {inner_e}")
+    except Exception as e:
+        print(f"[-] [Init] 云端基准加载逻辑跳过: {e}")
+
     
     s3_client = get_r2_client()
     # 为调试/补发，如果不强制检查，可以注释掉下面这段

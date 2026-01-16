@@ -315,10 +315,44 @@ async function searchContext(keyword: string): Promise<string> {
 
 // 核心：使用 Google Gemini 生成
 async function generateWithGemini(title: string, content: string, background: string) {
+    // 1. 默认使用本地静态基准（兜底）=> 改用 Lite 版
+    const { WORLD_BASELINE_LITE: localBaseline } = await import('@/lib/world-baseline');
+    let effectiveBaseline = localBaseline;
+
+    // 2. 尝试从 R2 加载最新的动态基准 (带超时控制)
+    try {
+        const r2Url = process.env.NEXT_PUBLIC_R2_URL;
+        if (r2Url) {
+            // 使用 AbortController 设置 2 秒超时，避免拖慢 API 响应
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+            const res = await fetch(`${r2Url}/config/world_baseline.json?t=${Date.now()}`, {
+                signal: controller.signal,
+                next: { revalidate: 3600 } // ISR 1小时缓存
+            });
+            clearTimeout(timeoutId);
+
+            if (res.ok) {
+                const data = await res.json();
+                // 优先尝试获取 content_lite
+                if (data && data.content_lite) {
+                    effectiveBaseline = data.content_lite;
+                    console.log("[Baseline] Loaded dynamic baseline (Lite) from R2");
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("[Baseline] Failed to load dynamic baseline, using local fallback.");
+    }
+
     const prompt = `
 【语言强制锁定】
 **警告：本任务的唯一输出语言为简体中文（Simplified Chinese）。**
 **禁止**在输出结果中包含任何日文句子。如果包含日文，任务视为失败。
+
+【世界基准 (World Baseline)】
+${effectiveBaseline}
 
 你是一名专业的新闻整理型AI编辑，面向看不到、也看不懂日文原文的中文读者。
 你的任务是：阅读日文原文，**将其翻译并改写**为简体中文新闻简报。
@@ -340,6 +374,7 @@ ${content}
 3. **辩证对立结构**：严格区分"成就/优势"与"问题/挑战"。
 4. **精准数据原则**：保留关键数据，禁止编造数字。
 5. **输出 Traditional Chinese (繁体)**：同时提供繁体中文版本。
+6. **基准校验**：请务必基于【世界基准】中的人名和关系现状进行解读，除非新闻原文明确提到了相反的**最新**事实（如新任首相上台）。
 
 【输出格式 (JSON)】
 请直接返回 JSON 对象，不要包含 Markdown 格式标记（如 \`\`\`json）：
