@@ -75,7 +75,7 @@ async function ddgsSearch(query: string, locale: string = 'ja-JP'): Promise<DDGS
             if (attempt > 0) {
                 console.log(`[DDGS] Retry attempt ${attempt + 1} for: ${query.substring(0, 10)}...`);
                 // 简单延时 (busy wait in edge is hard, but await new Promise works)
-                await new Promise(r => setTimeout(r, 1000 * attempt));
+                await new Promise<void>(r => setTimeout(r, 1000 * attempt));
             }
 
             const response = await fetch(searchUrl, {
@@ -129,13 +129,19 @@ async function ddgsSearch(query: string, locale: string = 'ja-JP'): Promise<DDGS
                     }
                 }
 
+                // 🚨 过滤掉 DuckDuckGo 的广告链接 (y.js) 和其他无关链接
+                if (url.includes("duckduckgo.com/y.js") || url.includes("ad_provider") || url.includes("ad_domain")) {
+                    console.log(`[DDGS] Ignoring Ad link: ${url.substring(0, 50)}...`);
+                    return; // skip this iteration
+                }
+
                 if (title && url) {
                     results.push({ title, url, description });
                 }
             });
 
             if (results.length > 0) {
-                console.log(`[DDGS] Success: Found ${results.length} results.`);
+                console.log(`[DDGS] Success: Found ${results.length} organic results.`);
                 return results;
             } else {
                 // 有时候是真搜不到，有时候是被 ban 返回了空壳页面
@@ -179,7 +185,7 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
     try {
         // 🔑 关键修复：使用 Puppeteer 解码 Google News URL (处理 JS 重定向)
         let realUrl = url;
-        let preFetchedHtml = ""; // 用于存储 Puppeteer 直接获取的 HTML
+        const preFetchedHtml = ""; // 用于存储 Puppeteer 直接获取的 HTML
 
         // 策略 1: 尝试通过 DDGS 搜索原文链接 (优先使用，速度快)
         if (title && url.includes("news.google.com")) {
@@ -233,6 +239,12 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
         // 优先提取 og:title，其次 title
         let extractedTitle = $('meta[property="og:title"]').attr('content') || $('title').text().trim() || $('h1').first().text().trim() || "";
 
+        // 过滤常见的无效标题
+        if (/^403|404|Access Denied|Robot Check|Captcha|Security Challenge|Just a moment/i.test(extractedTitle)) {
+            console.warn(`[Gemini] Invalid title detected: ${extractedTitle}. Ignoring extracted title.`);
+            extractedTitle = "";
+        }
+
         // 🚨 关键检查：如果标题是 "Google News" 或 "Google 新闻"，说明我们仍然停留在聚合页，抓取失败
         if (extractedTitle.includes("Google News") || extractedTitle.includes("Google 新闻")) {
             console.warn("[Gemini] Extraction stuck on Google News landing page. Aborting content extraction.");
@@ -240,17 +252,40 @@ async function fetchArticleContent(url: string, title?: string): Promise<{ title
             return { title: title || "", content: "" };
         }
 
-        // 提取正文 (简单启发式)
+        // 提取正文 (优化版选择器)
         let content = "";
-        const article = $('article');
-        if (article.length > 0) {
-            content = article.text().replace(/\s+/g, ' ').trim();
-        } else {
-            content = $('body p').map((i, el) => $(el).text()).get().join('\n').replace(/\s+/g, ' ').trim();
+
+        // 尝试常见的文章容器
+        const selectors = [
+            'article',
+            '[role="main"]',
+            '.article-body',
+            '.story-body',
+            '.post-content',
+            '.entry-content',
+            '.main-content',
+            'main'
+        ];
+
+        for (const selector of selectors) {
+            const el = $(selector);
+            if (el.length > 0) {
+                // 移除容器内的无关元素 (再次清洗，防止容器内包含推荐)
+                el.find('.read-more, .related, .share, .tags, .author-bio, .advertisement, .ad').remove();
+                content = el.text().replace(/\s+/g, ' ').trim();
+                if (content.length > 100) break; // 找到足够长的内容就停止
+            }
+        }
+
+        // 如果上述选择器都失败，且不是 Google News，才尝试 body p (作为最后兜底，但要非常小心)
+        if (!content && !extractedTitle.includes("Google News")) {
+            console.warn("[Gemini] No article container found. Falling back to body p.");
+            // 仅提取前 20 个段落，避免抓取到底部页脚的垃圾信息
+            content = $('body p').slice(0, 20).map((i, el) => $(el).text()).get().join('\n').replace(/\s+/g, ' ').trim();
         }
 
         // 简单的文本清洗
-        content = content.substring(0, 8000);
+        content = content.substring(0, 12000); // 稍微放宽长度限制
 
         return { title: extractedTitle || title || "未知文章", content };
     } catch (e) {
@@ -291,7 +326,7 @@ async function generateWithGemini(title: string, content: string, background: st
 【新闻标题】
 ${title}
 
-【背景信息】
+【背景信息(供参考)】
 ${background}
 
 【新闻全文（日文）】
@@ -299,9 +334,12 @@ ${content}
 
 【核心指令】
 1. **翻译并整合**：必须整合正文所有信息，所有内容必须**翻译成地道的简体中文**。
-2. **辩证对立结构**：严格区分"成就/优势"与"问题/挑战"。
-3. **精准数据原则**：保留关键数据，禁止编造数字。
-4. **输出 Traditional Chinese (繁体)**：同时提供繁体中文版本。
+2. **内容相关性校验**：
+   - 请首先核对【新闻全文】是否与【新闻标题】相关。
+   - 如果【新闻全文】的内容与标题完全无关（例如全是广告、无关的科技新闻、验证码提示等），请**忽略全文**，仅基于【新闻标题】和【背景信息】进行撰写，并在"一句话总结"中注明"（注：原文抓取受限，基于标题解读）"。
+3. **辩证对立结构**：严格区分"成就/优势"与"问题/挑战"。
+4. **精准数据原则**：保留关键数据，禁止编造数字。
+5. **输出 Traditional Chinese (繁体)**：同时提供繁体中文版本。
 
 【输出格式 (JSON)】
 请直接返回 JSON 对象，不要包含 Markdown 格式标记（如 \`\`\`json）：
@@ -374,22 +412,35 @@ export async function POST(request: NextRequest) {
         const searchTitle = titleJa || inputUrlTitle; // 优先用日语标题搜索
         console.log(`[Gemini] Search Title (for DDGS): ${searchTitle}`);
 
+        // 🚨 安全性检查：简单的 SSRF 防范
+        try {
+            const parsedUrl = new URL(inputUrl);
+            if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+                return NextResponse.json({ error: "Invalid protocol" }, { status: 400 });
+            }
+            // 可以在此处添加更多域名限制或黑名单
+        } catch (e) {
+            return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+        }
+
         // 2. 尝试 Google Gemini 方案
         try {
             console.log(`[Gemini] Starting analysis for: ${inputUrl}`);
-            const { title, content } = await fetchArticleContent(inputUrl, searchTitle);
 
+            // 🚀 性能优化：并行执行网页抓取和背景信息搜索
+            const [articleResult, backgroundResult] = await Promise.all([
+                fetchArticleContent(inputUrl, searchTitle),
+                searchContext(searchTitle || "未知新闻")
+            ]);
+
+            const { title, content } = articleResult;
             let finalContent = content;
-            let finalBackground = "";
+            const finalBackground = backgroundResult;
 
             if (content.length <= 50) {
                 console.warn(`[Gemini] Content too short (${content.length} chars). Using Title+Context mode. URL: ${inputUrl}`);
                 finalContent = "（注意：原文正文抓取失败。请完全基于新闻标题和提供的背景信息进行分析和撰写。）";
             }
-
-            // 关键词提取与背景搜索
-            const keyword = title.substring(0, 10);
-            finalBackground = await searchContext(keyword);
 
             const data = await generateWithGemini(title, finalContent, finalBackground);
 

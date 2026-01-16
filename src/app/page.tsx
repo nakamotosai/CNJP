@@ -203,14 +203,25 @@ export default function Home() {
       setCategoryToast(null);
     }, 1500);
   }, []);
-  // SECTION 1: Manual Trending Keywords
-  const trendingNow = ["高市", "台湾", "逮捕"];
+  // SECTION 1: AI Trending Keywords (Hot Search)
+  const trendingNow = useMemo(() => {
+    if (dailyBriefing?.keywords?.hot && dailyBriefing.keywords.hot.length > 0) {
+      // Ensure we only take top 3-4 mainly
+      return dailyBriefing.keywords.hot.slice(0, 4);
+    }
+    return ["中日关系", "地区局势", "经贸合作"]; // Fallback
+  }, [dailyBriefing]);
+
   const TC_MAP: Record<string, string> = {
+    // Basic mapping, though AI should handle TC if needed, or we rely on the component to display as is
     "高市": "高市",
     "滨崎步": "濱崎步",
     "台湾": "台灣",
     "逮捕": "逮捕",
-    "香港": "香港"
+    "香港": "香港",
+    "中日关系": "中日關係",
+    "地区局势": "地區局勢",
+    "经贸合作": "經貿合作"
   };
 
   const handleTabChange = (tab: 'news' | 'live' | 'disaster') => {
@@ -542,18 +553,25 @@ export default function Home() {
       setPendingLastUpdated("");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      // 更新最新数据后，如果历史已加载，也应该尝试合并更新 allNewsData
-      // 简单起见，这里可以让 loadAllArchiveData 重新判断或不做处理，
-      // 因为新内容通常很少，暂时仅更新 rawNewsData。
-      // 若要严谨，可将 pendingNewsData merge 到 allNewsData:
-      if (isHistoryLoaded) {
+      // 更新最新数据后，如果有 allNewsData（即预加载过或完全加载过），也必须合并更新
+      // 否则 dataSource 依然优先读取旧的 allNewsData，导致新内容不显示
+      if (allNewsData.length > 0) {
         setAllNewsData(prev => {
           const next = [...prev];
           const seen = new Set(next.map(n => n.link));
-          pendingNewsData.forEach(item => {
-            if (!seen.has(item.link)) next.unshift(item);
-          });
-          return next.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          // pendingNewsData 是最新的在前，所以倒序插入或者unshift
+          // 这里简单的做法是：合并 -> 去重 -> 重新排序
+          const combined = [...pendingNewsData, ...next];
+          const uniqueNew: NewsItem[] = [];
+          const combinedSeen = new Set();
+
+          for (const item of combined) {
+            if (!combinedSeen.has(item.link)) {
+              combinedSeen.add(item.link);
+              uniqueNew.push(item);
+            }
+          }
+          return uniqueNew.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         });
       }
     }
@@ -613,9 +631,16 @@ export default function Home() {
 
   // Section: Hot Keywords (Full Scope Support)
   const hotKeywords = useMemo(() => {
+    // Priority: AI-generated Rising Keywords
+    if (dailyBriefing?.keywords?.rising && dailyBriefing.keywords.rising.length > 0) {
+      return dailyBriefing.keywords.rising;
+    }
+
+    // Fallback: Client-side calculation
     const source = dataSource;
     if (!source || source.length === 0) return [];
 
+    // ... logic continues ...
     const STOP_WORDS = new Set([
       "的", "了", "是", "在", "和", "有", "我", "这", "就", "不", "人", "都", "一", "一个", "上", "也", "很", "到", "说", "要", "去", "你", "会", "着", "没有", "看", "怎么", "还是", "或者", "因为", "所以", "如果", "那个", "这个",
       "可以", "已经", "通过", "进行", "表示", "认为", "指出", "提到", "称", "显示", "发现", "介绍", "宣布", "透露", "强调",
@@ -666,7 +691,8 @@ export default function Home() {
       })
       .slice(0, 15)
       .map(([word]) => word);
-  }, [dataSource]);
+
+  }, [dataSource, dailyBriefing]);
 
   // Section: Hot Sources
   const hotSources = useMemo(() => {
@@ -784,6 +810,14 @@ export default function Home() {
   // Search Helpers
   const handleSearchInput = useCallback((val: string) => {
     setSearchInput(val);
+
+    // [Fix] 输入由于内容时，隐藏热词面板
+    if (val.trim()) {
+      setShowSuggestions(false);
+    } else {
+      setShowSuggestions(true);
+    }
+
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
       setSearchQuery(val.trim());
@@ -1017,9 +1051,20 @@ export default function Home() {
                         value={searchInput}
                         onChange={(e) => handleSearchInput(e.target.value)}
                         onFocus={() => {
-                          setShowSuggestions(true);
+                          // 仅当没内容时才显示热词
+                          if (!searchInput.trim()) {
+                            setShowSuggestions(true);
+                          }
                           setShowArchiveDrawer(false);
                           setTimeout(scrollToSearchBar, 50);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setSearchQuery(searchInput.trim());
+                            setShowSuggestions(false);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                            (e.target as HTMLInputElement).blur();
+                          }
                         }}
                         placeholder={settings.lang === "sc" ? "大家都在搜…" : "大家都在搜…"}
                         className="w-full h-full bg-transparent border-none outline-none text-[15px] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
@@ -1027,11 +1072,27 @@ export default function Home() {
                       {isSearchingAll && (
                         <Loader2 className="w-4 h-4 text-gray-400 animate-spin shrink-0" />
                       )}
-                      {searchInput && (
-                        <button onClick={handleClearSearch}>
-                          <X className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
-                        </button>
-                      )}
+
+                      {/* Search / Clear Actions */}
+                      <div className="flex items-center gap-1.5 mr-1">
+                        {searchInput && (
+                          <button
+                            onClick={() => {
+                              setSearchQuery(searchInput.trim());
+                              setShowSuggestions(false);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                            className="p-1.5 bg-gray-100/50 dark:bg-white/10 hover:bg-gray-200/50 dark:hover:bg-white/20 text-gray-600 dark:text-gray-300 rounded-full backdrop-blur-md transition-all active:scale-95 border border-gray-200/50 dark:border-white/10"
+                          >
+                            <Search className="w-3.5 h-3.5" strokeWidth={2.5} />
+                          </button>
+                        )}
+                        {searchInput && (
+                          <button onClick={handleClearSearch}>
+                            <X className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="w-[1px] h-6 bg-gray-200 dark:bg-white/10 shrink-0" />
@@ -1151,7 +1212,7 @@ export default function Home() {
                     >
                       <button
                         onClick={loadNewContent}
-                        className="group flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-floating shadow-blue-500/30 transition-all active:scale-95"
+                        className="group flex items-center gap-2 px-5 py-2.5 bg-blue-600/70 hover:bg-blue-600/80 text-white rounded-full shadow-floating shadow-blue-500/30 backdrop-blur-md border border-white/20 transition-all active:scale-95"
                       >
                         <span className="relative flex h-2.5 w-2.5">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-200 opacity-75"></span>
@@ -1261,7 +1322,7 @@ export default function Home() {
 
           {/* Persistent Live View - 5-Min Retention */}
           {mountLive && (
-            <div className={activeTab === 'live' ? "block" : "hidden"}>
+            <div className={activeTab === 'live' ? "block" : "hidden-keep-alive"}>
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -1269,7 +1330,7 @@ export default function Home() {
                 className="w-full max-w-[600px] lg:max-w-[1200px] mx-auto"
               >
                 {/* 2nd Level Navigation (Sub-tabs) */}
-                <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto no-scrollbar">
+                <div className="flex items-center justify-center gap-2 px-4 py-3 overflow-x-auto no-scrollbar">
                   {[
                     { id: 'video', label: settings.lang === "sc" ? "视频直播" : "視頻直播" },
                     { id: 'quake', label: settings.lang === "sc" ? "地震灾害" : "地震災害" },
@@ -1295,15 +1356,15 @@ export default function Home() {
                 <div className="mt-2 text-center">
                   {/* Content Area */}
                   <div className="px-4">
-                    {liveSubTab === 'video' && (
+                    <div className={liveSubTab === 'video' ? "block" : "hidden-keep-alive"}>
                       <LiveView />
-                    )}
+                    </div>
 
-                    {liveSubTab === 'quake' && (
+                    <div className={liveSubTab === 'quake' ? "block" : "hidden"}>
                       <EarthquakeView />
-                    )}
+                    </div>
 
-                    {liveSubTab === 'weather' && (
+                    <div className={liveSubTab === 'weather' ? "block" : "hidden"}>
                       <div className="flex flex-col lg:flex-row items-stretch gap-4 text-left">
                         <div className="flex-1 min-w-0">
                           <WeatherView onCityChange={setWeatherCity} />
@@ -1312,11 +1373,11 @@ export default function Home() {
                           <CityEncyclopediaCard cityName={weatherCity} />
                         </div>
                       </div>
-                    )}
+                    </div>
 
-                    {liveSubTab === 'other' && (
+                    <div className={liveSubTab === 'other' ? "block" : "hidden"}>
                       <OtherDisasterView />
-                    )}
+                    </div>
                   </div>
                 </div>
               </motion.div>

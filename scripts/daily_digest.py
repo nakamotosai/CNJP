@@ -210,6 +210,13 @@ def preprocess_data(news_data, limit=MAX_NEWS_ITEMS):
         for idx, item in enumerate(news_sorted):
             title = (item.get('title_cn') or item.get('title') or "").strip()
             origin = item.get('origin', '未知媒体')
+            link = item.get('link', '')
+
+            # [Filter] 屏蔽 TVer (电视剧非新闻)
+            if "TVer" in origin or "TVer" in title or "TVer" in link:
+                print(f"[-] [Filter] Skipping TVer content: {title[:20]}...")
+                continue
+
             if title:
                 ref_id = f"REF_{idx}"
                 full_title_str = f"[{ref_id}] {title} (来源: {origin})"
@@ -225,26 +232,43 @@ def preprocess_data(news_data, limit=MAX_NEWS_ITEMS):
     return titles_for_ai[:actual_limit], lookup_dict
 
 def identify_hot_topics(titles):
-    print(f"[-] [AI] 正在扫描全量标题以识别核心议题...")
-    # 抽取部分标题用于关键词识别，避免列表太长造成幻觉
-    sample_titles = titles[:40] 
+    print(f"[-] [AI] 正在扫描全量标题以识别核心议题 (Hot & Rising)...")
+    # 抽取更多标题用于关键词识别，确保覆盖面
+    sample_titles = titles[:150] 
     titles_text = "\n".join([f"- {t}" for t in sample_titles])
     
-    system = "你是一名新闻主编。请从标题列表中识别 2-3 个核心议题关键词。只输出关键词，用中文逗号分隔。禁止输出任何其他文字。"
-    prompt = f"新闻标题流：\n{titles_text}\n\n请输出3个核心关键词（中文）："
+    system = (
+        "你是一名新闻主编。请从标题列表中分析出：\n"
+        "1. **Hot (热门搜索)**: 3 个最核心、最宏观的议题关键词（如：中日关系、地区局势）。\n"
+        "2. **Rising (上升热词)**: 15 个具体的人名、地名、事件名或专有名词（如：石破茂、半导体、核废水）。\n"
+        "请返回 JSON 格式：{\"hot\": [\"词1\", \"词2\", \"词3\"], \"rising\": [\"词1\", ... \"词15\"]}"
+    )
+    prompt = f"新闻标题流：\n{titles_text}\n\n请输出 JSON 关键词数据："
 
-    res = call_ai_model(prompt, system)
-    if not res: return ["中日关系", "地区局势"]
+    res = call_ai_model(prompt, system, format_json=True)
     
-    cleaned = res.replace("，", ",").replace("、", ",").replace("\n", ",")
-    return [k.strip() for k in cleaned.split(",") if k.strip()][:3]
+    try:
+        data = extract_json_from_text(res)
+        if data and isinstance(data, dict):
+            hot = data.get('hot', [])[:3]
+            rising = data.get('rising', [])[:15]
+            if hot or rising:
+                return {"hot": hot, "rising": rising}
+    except Exception as e:
+        print(f"[!] 关键词解析失败: {e}")
+
+    # Fallback
+    return {"hot": ["中日关系", "地区局势", "经贸合作"], "rising": ["东京", "汇率", "签证", "旅游", "企业"]}
 
 def search_web_for_context(keywords, target_date_str):
-    if not keywords: return ""
-    print(f"[-] [Network] 正在回溯情报 ({target_date_str}): {keywords} ...")
+    # keywords 现在是 dict，只搜索 hot 关键词以节省时间
+    hot_keywords = keywords.get('hot', []) if isinstance(keywords, dict) else keywords
+    if not hot_keywords: return ""
+    
+    print(f"[-] [Network] 正在回溯情报 ({target_date_str}): {hot_keywords} ...")
     context_results = []
     
-    for query in keywords:
+    for query in hot_keywords:
         historical_query = f"{query} {target_date_str}"
         max_retries = 3
         success = False
@@ -290,7 +314,10 @@ def generate_structured_summary(titles, web_context, prev_context_str, keywords,
     # 为了保证摘要质量，选取前 80 条最具代表性的新闻给模型
     core_titles = titles[:80]
     titles_text = "\n".join([f"- {t}" for t in core_titles])
-    keywords_str = "、".join(keywords)
+    
+    # 仅使用 hot 关键词作为 prompt 背景
+    hot_keywords = keywords.get('hot', []) if isinstance(keywords, dict) else keywords
+    keywords_str = "、".join(hot_keywords)
     
     system = (
         f"你是决策层的情报分析师。日期：{target_date_str}。\n"

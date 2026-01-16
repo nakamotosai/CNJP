@@ -214,7 +214,7 @@ const LiveView = memo(function LiveView() {
                             {/* Video Info */}
                             <div className="p-5">
                                 <div className="flex items-start justify-between gap-4">
-                                    <div>
+                                    <div className="text-left">
                                         <h2 className="text-lg font-bold text-[var(--text-main)] leading-tight mb-2">
                                             {selectedStream.displayName}
                                         </h2>

@@ -263,19 +263,25 @@ function NewsCardComponent({
                 : `前方還有 ${currentQueue} 個請求正在排隊，請耐心等待...`;
         }
 
-        if (queuePosition > 1) {
-            return settings.lang === "sc"
-                ? `排队中，前方还有 ${queuePosition - 1} 人...`
-                : `排隊中，前方還有 ${queuePosition - 1} 人...`;
-        }
+        // 渐进式提示逻辑
         if (elapsedTime < 5) {
-            return settings.lang === "sc" ? "正在解析网页..." : "正在解析網頁...";
-        } else if (elapsedTime < 10) {
-            return settings.lang === "sc" ? "AI 正在分析内容..." : "AI 正在分析內容...";
+            return settings.lang === "sc" ? "AI 正在阅读全文..." : "AI 正在閱讀全文...";
+        } else if (elapsedTime < 12) {
+            return settings.lang === "sc"
+                ? "您可以暂时离开，AI 将在后台持续解读..."
+                : "您可以暫時離開，AI 將在後台持續解讀...";
         } else if (elapsedTime < 20) {
-            return settings.lang === "sc" ? "生成中，请耐心等待..." : "生成中，請耐心等待...";
+            return settings.lang === "sc"
+                ? "受技术或反爬限制，解读内容可能偶有偏差..."
+                : "受技術或反爬機制限制，解讀內容可能偶有偏差...";
+        } else if (elapsedTime < 28) {
+            return settings.lang === "sc"
+                ? "深度解读通常需要 30 秒左右，请耐心等待..."
+                : "深度解讀通常需要 30 秒左右，請耐心等待...";
         } else {
-            return settings.lang === "sc" ? "即将完成..." : "即將完成...";
+            return settings.lang === "sc"
+                ? "本次由 Google Gemma 3 模型为您解读..."
+                : "本次由 Google Gemma 3 模型為您解讀...";
         }
     }, [elapsedTime, queuePosition, queueLength, settings.lang]);
 
@@ -408,103 +414,121 @@ function NewsCardComponent({
                             <div className="h-px bg-gray-100 dark:bg-white/10 my-4" />
                         )}
 
-                        {/* 加载状态 - 极简模式 */}
-                        {isAnalyzing && (
-                            <div className="py-4 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-                                <div className="space-y-1 max-w-[90%] mx-auto">
-                                    <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                                        {loadingHint}
-                                    </p>
-                                    <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                                        {settings.lang === "sc"
-                                            ? "通常 30 秒左右解读完毕，高峰时可能长达 1 分钟，请耐心等待。"
-                                            : "通常 30 秒左右解讀完畢，高峰時可能长达 1 分鐘，請耐心等待。"}
-                                    </p>
-                                </div>
-
-                                {/* 简单的进度条 */}
-                                <div className="w-48 h-1 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
-                                        style={{ width: `${Math.min((elapsedTime / 60) * 100, 95)}%` }}
-                                    />
-                                </div>
-
-                                {/* 后台运行提示 */}
-                                <p className="text-[10px] text-gray-400 dark:text-gray-500 opacity-80 max-w-[280px]">
-                                    {settings.lang === "sc"
-                                        ? "您可以关闭此弹窗继续浏览，AI 将在后台持续解读，稍后回来即可查看结果。"
-                                        : "您可以關閉此彈窗繼續瀏覽，AI 將在後台持續解讀，稍後回來即可查看結果。"
-                                    }
-                                </p>
-                            </div>
-                        )}
-
-                        {/* AI 解读内容 - 纯文本流 */}
-                        {showAnalysis && aiAnalysis && (
-                            <div className="animate-in fade-in slide-in-from-bottom-2 pb-8">
-                                <div className="flex items-center justify-between mb-4">
+                        {/* 统一的 AI 分析区域容器 */}
+                        {(isAnalyzing || (showAnalysis && aiAnalysis)) && (
+                            <div className="animate-in fade-in slide-in-from-bottom-2 pb-2">
+                                {/* 统一头部：标题 + 状态徽章 */}
+                                <div className="flex items-center justify-between mb-4 select-none">
                                     <div className="flex items-center gap-2">
-                                        <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/20 rounded-lg">
-                                            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                        <div className={`p-1.5 rounded-lg transition-colors duration-500 ${isAnalyzing
+                                            ? "bg-indigo-50 dark:bg-indigo-500/10"
+                                            : "bg-indigo-50 dark:bg-indigo-500/20"
+                                            }`}>
+                                            {isAnalyzing ? (
+                                                <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                                            ) : (
+                                                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                            )}
                                         </div>
                                         <span className="font-bold text-[var(--text-main)] dark:text-zinc-100 text-base">
                                             AI {settings.lang === "sc" ? "深度解读" : "深度解讀"}
                                         </span>
                                     </div>
 
-                                    {/* 耗时/来源标记 */}
+                                    {/* 右侧状态/控制区 */}
                                     <div className="flex items-center gap-2">
-                                        {analyzeSource === "gemini-3" && (
-                                            <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full border border-blue-100 dark:border-blue-900/30">
-                                                <Zap className="w-3 h-3" /> Google Gemma 3
-                                            </span>
+                                        {isAnalyzing ? (
+                                            // 加载中状态
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-medium text-gray-400 tabular-nums">
+                                                    {elapsedTime}s
+                                                </span>
+                                                <div className="h-4 w-[1px] bg-gray-200 dark:bg-white/10" />
+                                                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 rounded-full animate-pulse">
+                                                    <Zap className="w-3 h-3 opacity-50" />
+                                                    {settings.lang === "sc" ? "正在生成..." : "正在生成..."}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            // 完成状态
+                                            <>
+                                                {analyzeSource === "gemini-3" && (
+                                                    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full border border-blue-100 dark:border-blue-900/30">
+                                                        <Zap className="w-3 h-3" /> Google Gemma 3 ({totalTime || 0}s)
+                                                    </span>
+                                                )}
+                                                {analyzeSource === "generate" && (
+                                                    <span className="text-[10px] font-medium px-2 py-0.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full border border-orange-100 dark:border-orange-900/30">
+                                                        Ollama Qwen
+                                                    </span>
+                                                )}
+                                                {analyzeSource === "cache" && (
+                                                    <span className="text-[10px] font-medium px-2 py-0.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-full">
+                                                        云端缓存
+                                                    </span>
+                                                )}
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setAiAnalysis(null);
+                                                        setShowAnalysis(false);
+                                                        setAnalyzeSource(null);
+                                                        setTotalTime(null);
+                                                        setAnalyzeError(null);
+                                                        handleAiAnalyze(e, true);
+                                                    }}
+                                                    disabled={isAnalyzing}
+                                                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all"
+                                                    title={settings.lang === "sc" ? "重新解读" : "重新解讀"}
+                                                >
+                                                    <RefreshCcw className="w-3.5 h-3.5" />
+                                                </button>
+                                            </>
                                         )}
-                                        {analyzeSource === "generate" && (
-                                            <span className="text-[10px] font-medium px-2 py-0.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full border border-orange-100 dark:border-orange-900/30">
-                                                Ollama Qwen
-                                            </span>
-                                        )}
-                                        {analyzeSource === "cache" ? (
-                                            <span className="text-[10px] font-medium px-2 py-0.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-full">
-                                                云端缓存
-                                            </span>
-                                        ) : totalTime !== null && (
-                                            <span className="text-[10px] text-gray-400">
-                                                {totalTime}s
-                                            </span>
-                                        )}
-                                        {/* 重新解读按钮 */}
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setAiAnalysis(null);
-                                                setShowAnalysis(false);
-                                                setAnalyzeSource(null);
-                                                setTotalTime(null);
-                                                setAnalyzeError(null);
-                                                // 触发新的解读，强制刷新
-                                                handleAiAnalyze(e, true);
-                                            }}
-                                            disabled={isAnalyzing}
-                                            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all"
-                                            title={settings.lang === "sc" ? "重新解读" : "重新解讀"}
-                                        >
-                                            <RefreshCcw className="w-3.5 h-3.5" />
-                                        </button>
                                     </div>
                                 </div>
 
-                                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
-                                    <div className="text-[15px] leading-relaxed text-gray-700 dark:text-gray-400 whitespace-pre-wrap font-sans">
-                                        {analysisContent}
-                                    </div>
+                                {/* 内容区域：骨架屏 vs 真实内容 */}
+                                <div className="relative min-h-[100px]">
+                                    {isAnalyzing ? (
+                                        <div className="space-y-4 animate-pulse pt-2">
+                                            {/* 骨架屏 - 模拟文本段落 */}
+                                            <div className="space-y-2">
+                                                <div className="h-4 bg-gray-100 dark:bg-white/5 rounded w-3/4"></div>
+                                                <div className="h-4 bg-gray-100 dark:bg-white/5 rounded w-full"></div>
+                                                <div className="h-4 bg-gray-100 dark:bg-white/5 rounded w-5/6"></div>
+                                            </div>
+                                            <div className="space-y-2 pt-2">
+                                                <div className="h-4 bg-gray-100 dark:bg-white/5 rounded w-2/3"></div>
+                                                <div className="h-4 bg-gray-100 dark:bg-white/5 rounded w-full"></div>
+                                            </div>
+
+                                            {/* 底部进度条与提示 */}
+                                            <div className="pt-6 flex flex-col items-center justify-center gap-3 opacity-90">
+                                                <div className="w-full max-w-[200px] h-1 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-indigo-500/50 transition-all duration-300 ease-out"
+                                                        style={{ width: `${Math.min((elapsedTime / 45) * 100, 95)}%` }}
+                                                    />
+                                                </div>
+                                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 animate-pulse">
+                                                    {loadingHint}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none animate-in fade-in duration-500">
+                                            <div className="text-[15px] leading-relaxed text-gray-700 dark:text-gray-400 whitespace-pre-wrap font-sans">
+                                                {analysisContent}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
 
-                        {/* 错误提示 - 极简模式 */}
+                        {/* 错误提示 */}
                         {analyzeError && (
                             <div className="py-4 text-center">
                                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg text-sm">
@@ -515,29 +539,15 @@ function NewsCardComponent({
                         )}
                     </div>
 
-                    {/* ===== 底部 AI 解读大按钮 ===== */}
-                    {(!aiAnalysis || !showAnalysis) && (
-                        <div className="pt-3 border-t border-gray-100 dark:border-border">
+                    {/* ===== 底部 AI 解读大按钮 (仅在未开始且未显示时显示) ===== */}
+                    {(!isAnalyzing && !(showAnalysis && aiAnalysis) && !analyzeError) && (
+                        <div className="pt-3 border-t border-gray-100 dark:border-border px-5 pb-5">
                             <button
                                 onClick={handleAiAnalyze}
-                                disabled={isAnalyzing}
-                                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${isAnalyzing
-                                    ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 cursor-not-allowed"
-                                    : "bg-[var(--primary)] text-white hover:brightness-110 shadow-lg shadow-[var(--primary)]/20"
-                                    }
-`}
+                                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all bg-[var(--primary)] text-white hover:brightness-110 shadow-lg shadow-[var(--primary)]/20"
                             >
-                                {isAnalyzing ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        <span>{settings.lang === "sc" ? `AI 解读中... ${elapsedTime}s` : `AI 解讀中... ${elapsedTime}s`}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Sparkles className="w-5 h-5" />
-                                        <span>{settings.lang === "sc" ? "AI 智能解读" : "AI 智能解讀"}</span>
-                                    </>
-                                )}
+                                <Sparkles className="w-5 h-5" />
+                                <span>{settings.lang === "sc" ? "AI 智能解读" : "AI 智能解讀"}</span>
                             </button>
                         </div>
                     )}

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Calendar, TrendingUp, Info, ChevronDown, ChevronUp, ExternalLink, Archive, X, Loader2, Target, AlertCircle, Compass, ChevronRight } from "lucide-react";
 import Modal from "./Modal";
 import { format, eachDayOfInterval, startOfDay, isAfter, subDays } from "date-fns";
+import DOMPurify from 'dompurify';
 
 export interface DailyBriefingData {
     title: string;
@@ -35,6 +36,10 @@ export interface DailyBriefingData {
     type: string;
     generated_at: string;
     news_count: number;
+    keywords?: {
+        hot: string[];
+        rising: string[];
+    };
 }
 
 interface DailyBriefingCardProps {
@@ -190,7 +195,7 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                     </div>
                     <div className="space-y-3">
                         {stance.split('\n').filter(l => l.trim()).map((line, li) => (
-                            <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                            <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: typeof window !== 'undefined' ? DOMPurify.sanitize(line) : line }} />
                         ))}
                     </div>
                 </div>
@@ -214,7 +219,7 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                             </div>
                             <div className="space-y-3">
                                 {events.split('\n').filter(l => l.trim()).map((line, li) => (
-                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: typeof window !== 'undefined' ? DOMPurify.sanitize(line) : line }} />
                                 ))}
                             </div>
                         </div>
@@ -234,7 +239,7 @@ function BriefingContent({ briefing, isExpanded = true, isArchive = false, lang 
                             </div>
                             <div className="space-y-3">
                                 {forecast.split('\n').filter(l => l.trim()).map((line, li) => (
-                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: line }} />
+                                    <p key={li} className="text-[14px] leading-[1.8] text-[var(--text-main)] dark:text-gray-400 font-medium" dangerouslySetInnerHTML={{ __html: typeof window !== 'undefined' ? DOMPurify.sanitize(line) : line }} />
                                 ))}
                             </div>
                         </div>
